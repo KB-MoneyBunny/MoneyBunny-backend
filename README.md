@@ -1,6 +1,6 @@
-# 돈버니 :rabbit:
+# 머니버니 :rabbit:
 
-안녕하세요, MZ 세대를 위한 맞춤형 금융 생활 플랫폼 "돈버니"입니다.
+안녕하세요, MZ 세대를 위한 맞춤형 금융 생활 플랫폼 "머니버니"입니다.
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Introduction
 
-돈버니:rabbit:는자산을 똑똑하게 분석하고,
+머니버니 :rabbit: 는자산을 똑똑하게 분석하고,
 나의 생활과 상황에 꼭 맞는 정책과 뉴스까지 추천해주는
 맞춤형 금융 생활 플랫폼입니다.
 
@@ -29,9 +29,23 @@
 
 ### 목적
 
+나와 관련된 정보를 빠르게 얻고자 하는 MZ세대(2030)가 간편하게 자산을 통합 관리하고
+나에게 필요한 정책과 금융 정보를 실시간으로 추천 및 알림 받을 수 있는 “개인 맞춤형 자산관리 플랫폼” 구축한다.
+
 ---
 
 ### 목표
+
+본 프로젝트는 MZ세대(2030)를 대상으로, 개인의 자산 상황과 관심 정보를 바탕으로 한 맞춤형 자산관리 + 정책 추천 통합 서비스를 구현함으로써 정보탐색의 번거로움 없이 실질적 혜택과 자기주도적 금융 습관 형성을 유도한다.
+
+1. 개인 차원의 효과
+   본 서비스를 통해 MZ 세대 사용자들은 체계적인 자산관리 습관을 형성할 수 있다. AI 기반 맞춤 알림과 실시간 피드백을 통해 소비 패턴에 대한 인지력이 향상되고, 목표달성을 위한 자기주도적 금융 관리 능력이 강화된다. 특히 게임화된 챌린지 기능은 절약과 저축을 재밌는 경험으로 전환시켜, 지속적인 참여와 동기부여를 이끌어낸다.
+
+2. 정보 접근성 및 활용도 개선
+   개인 맞춤형 정책 추천 시스템을 통해 복잡하고 분산된 정부 정책 정보를 효율적으로 제공함으로써, 정책 혜택 활용률이 개선될 것으로 예상된다. 사용자들은 번거로운 정보 탐색 과정 없이 자신에게 적합한 정책을 쉽게 확인하고 신청할 수 있어, 실질적인 경제 혜택을 누릴 수 있다
+
+3. 금융 리터러시 향상
+   월별 자산 분석 리포트와 AI 맞춤형 개선 제안을 통해 사용자들의 금융 이해도가 자연스럽게 향상된다. 전문적인 재무 분석 정보를 직관적으로 제공받음으로써, 복잡한 금융 개념을 쉽게 이해하고 실생활에 적용할 수 있다.
 
 ---
 
@@ -78,7 +92,7 @@ Databases <br>
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/inredzero"><img src="https://github.com/inredzero.png" width="100px;" alt=""/><br /><sub><b>팀장 : 안홍영 </b></sub></a><br /></td>
-      <td align="center"><a href="https://github.com/sangil6372"><img src="https://github.com/sangil6372.png" width="100px;" alt=""/><br /><sub><b>부팀장 : 박상일 </b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/sangil6372"><img src="https://github.com/sangil6372.png" width="100px;" alt=""/><br /><sub><b>PM : 박상일 </b></sub></a><br /></td>
       <td align="center"><a href="https://github.com/parksungb2n"><img src="https://github.com/parksungb2n.png" width="100px;" alt=""/><br /><sub><b>팀원 : 박성빈 </b></sub></a><br /></td>
      <tr/>
       <td align="center"><a href="https://github.com/eeeunjin"><img src="https://github.com/eeeunjin.png" width="100px;" alt=""/><br /><sub><b>팀원 : 서은진 </b></sub></a><br /></td>
