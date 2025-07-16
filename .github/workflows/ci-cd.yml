@@ -36,6 +36,11 @@ jobs:
           APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
         run: echo "$APPLICATION_DEV" | base64 --decode > src/main/resources/application-dev.yml
 
+      - name: Fix gradlew line endings
+        run: |
+          sudo apt-get install -y dos2unix
+          dos2unix ./gradlew
+
       - name: Grant permission to Gradle
         run: chmod +x ./gradlew
 
