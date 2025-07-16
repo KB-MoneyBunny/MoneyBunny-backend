@@ -1,0 +1,8 @@
+version: '3'
+services:
+  spring:
+    image: sangil6372/moneybunny:latest  
+    container_name: moneybunny
+    ports:
+      - 8080:8080
+    restart: always
