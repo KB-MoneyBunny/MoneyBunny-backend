@@ -1,3 +1,3 @@
 FROM openjdk:17
-COPY build/libs/moneybunny-0.0.1-SNAPSHOT.jar app.jar
-CMD ["java", "-jar", "app.jar"]
+COPY build/libs/MoneyBunny-backend-1.0-SNAPSHOT.war app.war
+CMD ["java", "-jar", "app.war"]
