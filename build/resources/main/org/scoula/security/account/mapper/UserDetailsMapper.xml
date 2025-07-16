@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.security.account.mapper.UserDetailsMapper">
+
+    <!-- 권한 정보 매핑 -->
+    <resultMap id="authMap" type="AuthVO">
+        <result property="username" column="username" />
+        <result property="auth" column="auth" />
+    </resultMap>
+
+    <!-- 사용자 정보 + 권한 목록 매핑 -->
+    <resultMap id="memberMap" type="MemberVO">
+        <id property="username" column="username" />          <!-- 기본키 지정 -->
+        <result property="password" column="password" />
+        <result property="email" column="email" />
+        <result property="regDate" column="reg_date" />
+        <result property="updateDate" column="update_date" />
+
+        <!-- 1:N 관계 매핑 - 권한 목록 -->
+        <collection property="authList" resultMap="authMap" />
+    </resultMap>
+
+    <!-- 사용자 정보 조회 쿼리 -->
+    <select id="get" resultMap="memberMap">
+        select m.username, password, email, reg_date, update_date, auth
+        from tbl_member m
+                 left outer join tbl_member_auth a on m.username = a.username
+        where m.username = #{username}
+    </select>
+
+</mapper>
