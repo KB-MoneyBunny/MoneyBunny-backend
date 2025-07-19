@@ -1,10 +1,41 @@
-.gradle
+####################################
+# 1. OS 관련
+####################################
+.DS_Store
+Thumbs.db
+
+####################################
+# 2. 빌드 결과물
+####################################
+/build/
 build/
-!gradle/wrapper/gradle-wrapper.jar
+out/
+*.class
+*.jar
+*.war
+*.log
+
+# 예외: src 디렉토리 내부 빌드/아웃 파일은 포함
 !**/src/main/**/build/
 !**/src/test/**/build/
+!**/src/main/**/out/
+!**/src/test/**/out/
 
-### IntelliJ IDEA ###
+####################################
+# 3. Gradle
+####################################
+.gradle/
+.gradle
+*.lock
+*.bin
+!gradle/wrapper/gradle-wrapper.jar
+!gradlew
+!gradlew.bat
+
+####################################
+# 4. IntelliJ IDEA
+####################################
+.idea/
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -12,11 +43,10 @@ build/
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### Eclipse ###
+####################################
+# 5. Eclipse
+####################################
 .apt_generated
 .classpath
 .factorypath
@@ -28,18 +58,39 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### NetBeans ###
+####################################
+# 6. NetBeans
+####################################
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+####################################
+# 7. VS Code
+####################################
 .vscode/
 
-### Mac OS ###
-.DS_Store
+####################################
+# 8. 테스트/분석 도구
+####################################
+/test-output/
+/reports/
+/coverage/
 
-### dev ###
+####################################
+# 9. 환경 설정 파일
+####################################
+*.env
+.env.*
 src/main/resources/application-dev.properties
+
+####################################
+# 10. 기타 무시할 파일
+####################################
+*.tmp
+*.swp
+*.html
+*.db
+*.sqlite
