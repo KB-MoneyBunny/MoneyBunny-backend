@@ -31,7 +31,6 @@ jobs:
             ${{ runner.os }}-gradle
             
       - name: Create application-dev.properties
-        if: env.APPLICATION_DEV != ''
         env:
           APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
         run: echo "$APPLICATION_DEV" | base64 --decode > src/main/resources/application-dev.properties
