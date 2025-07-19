@@ -42,4 +42,4 @@ bin/
 .DS_Store
 
 ### dev ###
-spring.config.import=optional:dotenv:.env
+src/main/resources/application-dev.properties
