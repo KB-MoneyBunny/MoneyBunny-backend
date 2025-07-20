@@ -1,4 +1,4 @@
-package org.scoula.policy.domain;
+package org.scoula.policy.domain.keyword;
 
 import lombok.Data;
 
