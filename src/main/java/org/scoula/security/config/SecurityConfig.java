@@ -172,6 +172,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/*",              // 루트 경로의 파일들
                 "/api/member/**",   // 회원 관련 공개 API
 
+                // 정책 수집 테스트용 경로 추가
+                "/admin/policy/sync",
+
                 // Swagger 관련 URL은 보안에서 제외
                 "/swagger-ui.html", "/webjars/**",
                 "/swagger-resources/**", "/v2/api-docs"
