@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.policy.mapper.PolicyMapper">
+
+    <!-- 정책 개수 체크  -->
+    <select id="countAllPolicies" resultType="int">
+        SELECT COUNT(*) FROM youth_policy
+    </select>
+
+
+    <!-- 정책 존재 여부 확인 -->
+    <select id="existsByPolicyNo" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM youth_policy
+            WHERE policy_no = #{policyNo}
+        )
+    </select>
+
+    <!-- 정책 저장 -->
+    <insert id="insertPolicy"
+            parameterType="org.scoula.policy.domain.YouthPolicyVO"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO youth_policy (
+            policy_no, title, description, support_content,
+            application_method, screening_method, submit_documents,
+            policy_benefit_amount, etc_notes, apply_url, ref_url_1, ref_url_2,
+            is_financial_support, created_at, updated_at
+        ) VALUES (
+                     #{policyNo}, #{title}, #{description}, #{supportContent},
+                     #{applicationMethod}, #{screeningMethod}, #{submitDocuments},
+                     #{policyBenefitAmount}, #{etcNotes}, #{applyUrl}, #{refUrl1}, #{refUrl2},
+                     #{isFinancialSupport}, #{createdAt}, #{updatedAt}
+                 )
+    </insert>
+
+    <!-- 조건 저장 -->
+    <insert id="insertCondition"
+            parameterType="org.scoula.policy.domain.YouthPolicyConditionVO">
+        INSERT INTO youth_policy_condition (
+            policy_id, min_age, max_age, age_limit_yn,
+             marriage_status, employment_status,
+            education_level, major, special_condition,
+            income_min, income_max, income_condition_code,
+            income_etc, additional_conditions, participant_target
+        ) VALUES (
+                     #{policyId}, #{minAge}, #{maxAge}, #{ageLimitYn},
+                    #{marriageStatus}, #{employmentStatus},
+                     #{educationLevel}, #{major}, #{specialCondition},
+                     #{incomeMin}, #{incomeMax}, #{incomeConditionCode},
+                     #{incomeEtc}, #{additionalConditions}, #{participantTarget}
+                 )
+    </insert>
+
+    <!-- 기간 저장 -->
+    <insert id="insertPeriod"
+            parameterType="org.scoula.policy.domain.YouthPolicyPeriodVO">
+        INSERT INTO youth_policy_period (
+            policy_id, apply_period, biz_start_date,
+            biz_end_date, biz_period_etc
+        ) VALUES (
+                     #{policyId}, #{applyPeriod}, #{bizStartDate},
+                     #{bizEndDate}, #{bizPeriodEtc}
+                 )
+    </insert>
+
+    <!-- 키워드 조회 -->
+    <select id="findKeywordByName"
+            resultType="org.scoula.policy.domain.PolicyKeywordVO">
+        SELECT id, keyword
+        FROM policy_keyword
+        WHERE keyword = #{keyword}
+    </select>
+
+    <!-- 키워드 저장 -->
+    <insert id="insertKeyword"
+            parameterType="org.scoula.policy.domain.PolicyKeywordVO"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO policy_keyword (keyword)
+        VALUES (#{keyword})
+    </insert>
+
+    <!-- 정책-키워드 연결 저장 -->
+    <insert id="insertPolicyKeyword">
+        INSERT INTO youth_policy_keyword (policy_id, keyword_id, created_at)
+        VALUES (#{policyId}, #{keywordId}, NOW())
+    </insert>
+
+
+    <!-- 지역 코드로 마스터 조회 -->
+    <select id="findRegionByCode"
+            resultType="org.scoula.policy.domain.PolicyRegionVO">
+        SELECT id, region_code
+        FROM policy_region
+        WHERE region_code = #{regionCode}
+    </select>
+
+    <!-- 지역 마스터 저장 -->
+    <insert id="insertRegion"
+            parameterType="org.scoula.policy.domain.PolicyRegionVO"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO policy_region (region_code)
+        VALUES (#{regionCode})
+    </insert>
+
+    <!-- 정책-지역 매핑 저장 -->
+    <insert id="insertPolicyRegion">
+        INSERT INTO youth_policy_region (policy_id, region_id, created_at)
+        VALUES (#{policyId}, #{regionId}, NOW())
+    </insert>
+
+</mapper>
