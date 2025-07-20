@@ -1,8 +1,7 @@
-package org.scoula.policy.domain;
+package org.scoula.policy.domain.region;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
 
 @Data
 public class PolicyRegionVO {
