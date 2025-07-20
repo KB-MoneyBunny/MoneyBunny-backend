@@ -66,13 +66,13 @@ public class PolicyDTO {
     private String marriageStatus;
 
     @JsonProperty("schoolCd")
-    private String education_level;
+    private String educationLevel;
 
     @JsonProperty("plcyMajorCd")
     private String major;
 
     @JsonProperty("jobCd")
-    private String employment_status;
+    private String employmentStatus;
 
     @JsonProperty("splzRlmRqisCn")
     private String specialCondition;
