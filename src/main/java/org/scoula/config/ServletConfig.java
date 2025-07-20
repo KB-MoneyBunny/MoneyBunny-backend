@@ -18,7 +18,8 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.exception",
         "org.scoula.controller",
         "org.scoula.board.controller",
-        "org.scoula.member.controller"  // 회원 컨트롤러 스캔
+        "org.scoula.member.controller",
+        "org.scoula.policy.controller"
 }) // Spring MVC용 컴포넌트 등록을 위한 스캔 패키지
 public class ServletConfig implements WebMvcConfigurer {
 

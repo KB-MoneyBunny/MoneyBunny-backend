@@ -55,6 +55,7 @@ dependencies {
     // ===== 웹 개발 관련 의존성 (JSP, Servlet, JSTL) =====
     // Java Servlet API - 웹 애플리케이션 개발의 기본 API (안정 버전 유지)
     implementation('javax.servlet:javax.servlet-api:4.0.1')
+    testImplementation 'junit:junit:4.13.1'
     // JSP API - JSP 페이지 개발을 위한 API (컴파일 시에만 필요)
     compileOnly 'javax.servlet.jsp:jsp-api:2.1'
     // JSTL - JSP 표준 태그 라이브러리 (안정 버전 유지)
