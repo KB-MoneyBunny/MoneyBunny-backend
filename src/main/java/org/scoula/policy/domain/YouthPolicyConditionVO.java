@@ -11,12 +11,7 @@ public class YouthPolicyConditionVO {
     private Integer maxAge;
     private Boolean ageLimitYn;
 
-//    private String regionCode;
     private String marriageStatus;
-    private String employmentStatus;
-    private String educationLevel;
-    private String major;
-    private String specialCondition;
 
     private Long incomeMin;
     private Long incomeMax;

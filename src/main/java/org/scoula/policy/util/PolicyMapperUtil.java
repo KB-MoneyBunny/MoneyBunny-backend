@@ -1,6 +1,14 @@
 package org.scoula.policy.util;
 
-import org.scoula.policy.domain.*;
+import org.scoula.policy.domain.YouthPolicyConditionVO;
+import org.scoula.policy.domain.YouthPolicyPeriodVO;
+import org.scoula.policy.domain.YouthPolicyVO;
+import org.scoula.policy.domain.education.*;
+import org.scoula.policy.domain.employment.*;
+import org.scoula.policy.domain.keyword.PolicyKeywordVO;
+import org.scoula.policy.domain.major.*;
+import org.scoula.policy.domain.region.PolicyRegionVO;
+import org.scoula.policy.domain.specialcondition.*;
 import org.scoula.policy.dto.PolicyDTO;
 
 import java.time.LocalDateTime;
@@ -11,6 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PolicyMapperUtil {
+
+    // 공통 분리 유틸
+    private static List<String> splitCommaSeparated(String raw) {
+        List<String> result = new ArrayList<>();
+        if (raw != null && !raw.trim().isEmpty()) {
+            for (String s : raw.split(",")) {
+                String cleaned = s.trim();
+                if (!cleaned.isEmpty()) {
+                    result.add(cleaned);
+                }
+            }
+        }
+        return result;
+    }
 
     // 정책 메인 VO 변환
     public static YouthPolicyVO toYouthPolicyVO(PolicyDTO dto) {
@@ -28,13 +50,7 @@ public class PolicyMapperUtil {
         vo.setRefUrl1(dto.getRefUrl1());
         vo.setRefUrl2(dto.getRefUrl2());
         vo.setIsFinancialSupport(null); // GPT 후처리 예정
-        vo.setCreatedAt(parseDateTime(dto.getCreatedDate())); //
-        vo.setUpdatedAt(parseDateTime(dto.getModifiedDate())); //
 
-        // 현재 시간 기준으로 등록/수정일 기록  -> update 로직은 일단 안 넣었음 추후에 만들 수도 ?
-        LocalDateTime now = LocalDateTime.now();
-        vo.setCreatedAt(now);
-        vo.setUpdatedAt(now);
         return vo;
     }
 
@@ -45,13 +61,7 @@ public class PolicyMapperUtil {
         vo.setMinAge(parseInteger(dto.getMinAge()));
         vo.setMaxAge(parseInteger(dto.getMaxAge()));
         vo.setAgeLimitYn("Y".equalsIgnoreCase(dto.getAgeLimitYn()));
-//        vo.setRegionCode(dto.getRegionCode());
         vo.setMarriageStatus(dto.getMarriageStatus());
-
-        vo.setEmploymentStatus(dto.getEmployment_status());     // jobCd
-        vo.setEducationLevel(dto.getEducation_level());         // schoolCd
-        vo.setMajor(dto.getMajor());                            // plcyMajorCd
-        vo.setSpecialCondition(dto.getSpecialCondition());      // splzRlmRqisCn
 
         vo.setIncomeMin(parseLong(dto.getEarnMinAmt()));
         vo.setIncomeMax(parseLong(dto.getEarnMaxAmt()));
@@ -61,7 +71,6 @@ public class PolicyMapperUtil {
         vo.setParticipantTarget(dto.getParticipantTarget());
         return vo;
     }
-
 
     // 정책 운영 기간 VO 변환
     public static YouthPolicyPeriodVO toPeriodVO(PolicyDTO dto, Long policyId) {
@@ -77,34 +86,116 @@ public class PolicyMapperUtil {
     // 키워드 분리
     public static List<PolicyKeywordVO> toKeywordList(String raw) {
         List<PolicyKeywordVO> list = new ArrayList<>();
-        if (raw != null && !raw.trim().isEmpty()) {
-            for (String word : raw.split(",")) {
-                String keyword = word.trim();
-                if (!keyword.isEmpty()) {
-                    PolicyKeywordVO vo = new PolicyKeywordVO();
-                    vo.setKeyword(keyword);
-                    list.add(vo);
-                }
-            }
-        }
-        return list;
-    }
-    // 지역 코드 분리
-    public static List<PolicyRegionVO> toRegionList(String raw) {
-        List<PolicyRegionVO> list = new ArrayList<>();
-        if (raw != null && !raw.trim().isEmpty()) {
-            for (String code : raw.split(",")) {
-                String regionCode = code.trim();
-                if (!regionCode.isEmpty()) {
-                    PolicyRegionVO vo = new PolicyRegionVO();
-                    vo.setRegionCode(regionCode);
-                    list.add(vo);
-                }
-            }
+        for (String keyword : splitCommaSeparated(raw)) {
+            PolicyKeywordVO vo = new PolicyKeywordVO();
+            vo.setKeyword(keyword);
+            list.add(vo);
         }
         return list;
     }
 
+    // 지역 코드 분리
+    public static List<PolicyRegionVO> toRegionList(String raw) {
+        List<PolicyRegionVO> list = new ArrayList<>();
+        for (String regionCode : splitCommaSeparated(raw)) {
+            PolicyRegionVO vo = new PolicyRegionVO();
+            vo.setRegionCode(regionCode);
+            list.add(vo);
+        }
+        return list;
+    }
+
+    // Major 분리
+    public static List<PolicyMajorVO> toMajorMasterList(String raw) {
+        List<PolicyMajorVO> list = new ArrayList<>();
+        for (String major : splitCommaSeparated(raw)) {
+            PolicyMajorVO vo = new PolicyMajorVO();
+            vo.setMajor(major);
+            list.add(vo);
+        }
+        return list;
+    }
+
+    public static List<YouthPolicyMajorVO> toMajorMappingList(List<PolicyMajorVO> majorList, Long policyId) {
+        List<YouthPolicyMajorVO> list = new ArrayList<>();
+        for (PolicyMajorVO major : majorList) {
+            YouthPolicyMajorVO mapping = new YouthPolicyMajorVO();
+            mapping.setPolicyId(policyId);
+            mapping.setMajorId(major.getId()); // insert 이후 설정 필요
+            mapping.setCreatedAt(LocalDateTime.now());
+            list.add(mapping);
+        }
+        return list;
+    }
+
+    // Education Level
+    public static List<PolicyEducationLevelVO> toEducationMasterList(String raw) {
+        List<PolicyEducationLevelVO> list = new ArrayList<>();
+        for (String edu : splitCommaSeparated(raw)) {
+            PolicyEducationLevelVO vo = new PolicyEducationLevelVO();
+            vo.setEducationLevel(edu);
+            list.add(vo);
+        }
+        return list;
+    }
+
+    public static List<YouthPolicyEducationLevelVO> toEducationMappingList(List<PolicyEducationLevelVO> eduList, Long policyId) {
+        List<YouthPolicyEducationLevelVO> list = new ArrayList<>();
+        for (PolicyEducationLevelVO edu : eduList) {
+            YouthPolicyEducationLevelVO mapping = new YouthPolicyEducationLevelVO();
+            mapping.setPolicyId(policyId);
+            mapping.setEducationLevelId(edu.getId());
+            mapping.setCreatedAt(LocalDateTime.now());
+            list.add(mapping);
+        }
+        return list;
+    }
+
+    // Employment Status
+    public static List<PolicyEmploymentStatusVO> toEmploymentMasterList(String raw) {
+        List<PolicyEmploymentStatusVO> list = new ArrayList<>();
+        for (String emp : splitCommaSeparated(raw)) {
+            PolicyEmploymentStatusVO vo = new PolicyEmploymentStatusVO();
+            vo.setEmploymentStatus(emp);
+            list.add(vo);
+        }
+        return list;
+    }
+
+    public static List<YouthPolicyEmploymentStatusVO> toEmploymentMappingList(List<PolicyEmploymentStatusVO> empList, Long policyId) {
+        List<YouthPolicyEmploymentStatusVO> list = new ArrayList<>();
+        for (PolicyEmploymentStatusVO emp : empList) {
+            YouthPolicyEmploymentStatusVO mapping = new YouthPolicyEmploymentStatusVO();
+            mapping.setPolicyId(policyId);
+            mapping.setEmploymentStatusId(emp.getId());
+            mapping.setCreatedAt(LocalDateTime.now());
+            list.add(mapping);
+        }
+        return list;
+    }
+
+    // Special Condition
+    public static List<PolicySpecialConditionVO> toSpecialConditionMasterList(String raw) {
+        List<PolicySpecialConditionVO> list = new ArrayList<>();
+        for (String sc : splitCommaSeparated(raw)) {
+            PolicySpecialConditionVO vo = new PolicySpecialConditionVO();
+            vo.setSpecialCondition(sc);
+            list.add(vo);
+        }
+        return list;
+    }
+
+    public static List<YouthPolicySpecialConditionVO> toSpecialConditionMappingList(List<PolicySpecialConditionVO> scList, Long policyId) {
+        List<YouthPolicySpecialConditionVO> list = new ArrayList<>();
+        for (PolicySpecialConditionVO sc : scList) {
+            YouthPolicySpecialConditionVO mapping = new YouthPolicySpecialConditionVO();
+            mapping.setPolicyId(policyId);
+            mapping.setSpecialConditionId(sc.getId());
+            mapping.setCreatedAt(LocalDateTime.now());
+            list.add(mapping);
+        }
+        return list;
+    }
 
     // 파싱 유틸
     private static Integer parseInteger(String s) {
@@ -132,15 +223,4 @@ public class PolicyMapperUtil {
         }
     }
 
-    private static LocalDateTime parseDateTime(String dateTimeStr) {
-        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) return null;
-        try {
-            if (dateTimeStr.matches("\\d{14}")) { // 예: 20230719123500
-                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            }
-            return LocalDateTime.parse(dateTimeStr); // ISO 형식 허용
-        } catch (DateTimeParseException e) {
-            return null;
-        }
-    }
 }
