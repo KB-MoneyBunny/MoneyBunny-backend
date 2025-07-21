@@ -74,7 +74,7 @@ public class PolicyDTO {
     @JsonProperty("jobCd")
     private String employmentStatus;
 
-    @JsonProperty("splzRlmRqisCn")
+    @JsonProperty("sbizCd")
     private String specialCondition;
 
     @JsonProperty("earnMinAmt")
