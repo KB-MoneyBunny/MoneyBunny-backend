@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.userPolicy.mapper.UserPolicyMapper">
+
+    <insert id="saveUserPolicyCondition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_policy_condition (user_id, age, marriage, income, created_at, updated_at)
+        VALUES (#{userId}, #{age}, #{marriage}, #{income}, NOW(), NOW())
+    </insert>
+
+    <insert id="saveUserMajors" parameterType="java.util.List">
+        INSERT INTO user_major (user_policy_condition_id, major_id, created_at)
+        VALUES
+        <foreach collection="list" item="major" separator=",">
+            (#{major.userPolicyConditionId}, #{major.majorId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserSpecialConditions" parameterType="java.util.List">
+        INSERT INTO user_special_condition (user_policy_condition_id, special_condition_id, created_at)
+        VALUES
+        <foreach collection="list" item="specialCondition" separator=",">
+            (#{specialCondition.userPolicyConditionId}, #{specialCondition.specialConditionId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserPolicyKeywords" parameterType="java.util.List">
+        INSERT INTO user_policy_keyword (user_policy_condition_id, keyword_id, created_at)
+        VALUES
+        <foreach collection="list" item="keyword" separator=",">
+            (#{keyword.userPolicyConditionId}, #{keyword.keywordId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserPolicyRegions" parameterType="java.util.List">
+        INSERT INTO user_policy_region (user_policy_condition_id, region_id, created_at)
+        VALUES
+        <foreach collection="list" item="region" separator=",">
+            (#{region.userPolicyConditionId}, #{region.regionId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserEmploymentStatuses" parameterType="java.util.List">
+        INSERT INTO user_employment_status (user_policy_condition_id, employment_status_id, created_at)
+        VALUES
+        <foreach collection="list" item="employmentStatus" separator=",">
+            (#{employmentStatus.userPolicyConditionId}, #{employmentStatus.employmentStatusId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserEducationLevels" parameterType="java.util.List">
+        INSERT INTO user_education_level (user_policy_condition_id, education_level_id, created_at)
+        VALUES
+        <foreach collection="list" item="educationLevel" separator=",">
+            (#{educationLevel.userPolicyConditionId}, #{educationLevel.educationLevelId}, NOW())
+        </foreach>
+    </insert>
+
+    <resultMap id="userPolicyConditionMap" type="org.scoula.userPolicy.domain.UserPolicyConditionVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="age" column="age"/>
+        <result property="marriage" column="marriage"/>
+        <result property="income" column="income"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <collection property="regions" ofType="org.scoula.userPolicy.domain.UserRegionVO"
+                    javaType="java.util.ArrayList"
+                    select="findRegionsByConditionId" column="id"/>
+        <collection property="educationLevels" ofType="org.scoula.userPolicy.domain.UserEducationLevelVO"
+                    javaType="java.util.ArrayList"
+                    select="findEducationLevelsByConditionId" column="id"/>
+        <collection property="employmentStatuses" ofType="org.scoula.userPolicy.domain.UserEmploymentStatusVO"
+                    javaType="java.util.ArrayList"
+                    select="findEmploymentStatusesByConditionId" column="id"/>
+        <collection property="majors" ofType="org.scoula.userPolicy.domain.UserMajorVO"
+                    javaType="java.util.ArrayList"
+                    select="findMajorsByConditionId" column="id"/>
+        <collection property="specialConditions" ofType="org.scoula.userPolicy.domain.UserSpecialConditionVO"
+                    javaType="java.util.ArrayList"
+                    select="findSpecialConditionsByConditionId" column="id"/>
+        <collection property="keywords" ofType="org.scoula.userPolicy.domain.UserPolicyKeywordVO"
+                    javaType="java.util.ArrayList"
+                    select="findKeywordsByConditionId" column="id"/>
+    </resultMap>
+
+    <select id="findUserPolicyConditionByUserId" resultMap="userPolicyConditionMap">
+        SELECT * FROM user_policy_condition WHERE user_id = #{userId}
+    </select>
+
+    <select id="findRegionsByConditionId" resultType="org.scoula.userPolicy.domain.UserRegionVO">
+        SELECT * FROM user_policy_region WHERE user_policy_condition_id = #{id}
+    </select>
+
+    <select id="findEducationLevelsByConditionId" resultType="org.scoula.userPolicy.domain.UserEducationLevelVO">
+        SELECT * FROM user_education_level WHERE user_policy_condition_id = #{id}
+    </select>
+
+    <select id="findEmploymentStatusesByConditionId" resultType="org.scoula.userPolicy.domain.UserEmploymentStatusVO">
+        SELECT * FROM user_employment_status WHERE user_policy_condition_id = #{id}
+    </select>
+
+    <select id="findMajorsByConditionId" resultType="org.scoula.userPolicy.domain.UserMajorVO">
+        SELECT * FROM user_major WHERE user_policy_condition_id = #{id}
+    </select>
+
+    <select id="findSpecialConditionsByConditionId" resultType="org.scoula.userPolicy.domain.UserSpecialConditionVO">
+        SELECT * FROM user_special_condition WHERE user_policy_condition_id = #{id}
+    </select>
+
+    <select id="findKeywordsByConditionId" resultType="org.scoula.userPolicy.domain.UserPolicyKeywordVO">
+        SELECT * FROM user_policy_keyword WHERE user_policy_condition_id = #{id}
+    </select>
+
+</mapper>
