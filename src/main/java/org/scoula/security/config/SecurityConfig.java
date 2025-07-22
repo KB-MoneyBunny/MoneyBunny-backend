@@ -171,6 +171,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/assets/**",      // 정적 리소스
                 "/*",              // 루트 경로의 파일들
                 "/api/member/**",   // 회원 관련 공개 API
+                "/api/userPolicy/**", // 사용자 정책 API 임시 허용
 
                 // 정책 수집 테스트용 경로 추가
                 "/admin/policy/sync",
