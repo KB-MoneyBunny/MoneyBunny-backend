@@ -78,14 +78,17 @@ public class PolicyServiceImpl implements PolicyService {
                 GptRequestDto gptRequest = new GptRequestDto(dto.getSupportContent());
                 log.info("\n📤 [GPT 프롬프트 요청]\n{}", gptRequest.toPrompt());
                 GptResponseDto gptResponseDto = gptApiClient.analyzePolicy(gptRequest);
-                log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {}\n}}",
+                log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {},\n  \"policyBenefitDescription\": \"{}\"\n}}",
                         gptResponseDto.isFinancialSupport(),
-                        gptResponseDto.getEstimatedAmount());
+                        gptResponseDto.getEstimatedAmount(),
+                        gptResponseDto.getPolicyBenefitDescription());
+
 
                 // VO 변환 및 분석 결과 포함
                 YouthPolicyVO policyVO = PolicyMapperUtil.toYouthPolicyVO(dto);
                 policyVO.setIsFinancialSupport(gptResponseDto.isFinancialSupport());
                 policyVO.setPolicyBenefitAmount(gptResponseDto.getEstimatedAmount());
+                policyVO.setPolicyBenefitDescription(gptResponseDto.getPolicyBenefitDescription());
 
                 policyMapper.insertPolicy(policyVO);
                 Long policyId = policyVO.getId();

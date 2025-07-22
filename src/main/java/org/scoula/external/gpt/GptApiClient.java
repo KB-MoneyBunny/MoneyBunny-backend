@@ -56,19 +56,20 @@ public class GptApiClient {
             JsonNode root = objectMapper.readTree(json);
             String content = root.path("choices").get(0).path("message").path("content").asText();
 
-            // 두 키를 모두 포함하는 JSON 블록만 추출
-            content = content.replaceAll("(?s).*?(\\{[^}]*\"isFinancialSupport\"[^}]*\"estimatedAmount\"[^}]*\\}).*", "$1");
+            // 세 키를 모두 포함하는 JSON 블록만 추출
+            content = content.replaceAll("(?s).*?(\\{[^}]*\"isFinancialSupport\"[^}]*\"estimatedAmount\"[^}]*\"policyBenefitDescription\"[^}]*\\}).*", "$1");
 
             // 그대로 파싱
             JsonNode resultNode = objectMapper.readTree(content);
             boolean isFinancial = resultNode.path("isFinancialSupport").asBoolean(false);
             long estimated = resultNode.path("estimatedAmount").asLong(0);
+            String description = resultNode.path("policyBenefitDescription").asText("금전적 지원 없음");
 
-            return new GptResponseDto(isFinancial, estimated);
+            return new GptResponseDto(isFinancial, estimated, description);
 
         } catch (Exception e) {
             log.warn("[GPT 분석 실패]", e);
-            return new GptResponseDto(false, 0);
+            return new GptResponseDto(false, 0, "금전적 지원 없음") ;
         }
     }
 }

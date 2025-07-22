@@ -31,6 +31,8 @@ public class YouthPolicyVO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private String policyBenefitDescription;
+
     // 정책이 포함하는 키워드 리스트
     private List<PolicyKeywordVO> keywordList;
 
