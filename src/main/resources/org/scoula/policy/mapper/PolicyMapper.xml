@@ -5,11 +5,10 @@
 
 <mapper namespace="org.scoula.policy.mapper.PolicyMapper">
 
-    <!-- 정책 개수 체크  -->
+    <!-- 정책 개수 체크 -->
     <select id="countAllPolicies" resultType="int">
         SELECT COUNT(*) FROM youth_policy
     </select>
-
 
     <!-- 정책 존재 여부 확인 -->
     <select id="existsByPolicyNo" resultType="boolean">
@@ -29,16 +28,16 @@
             policy_no, title, description, support_content,
             application_method, screening_method, submit_documents,
             policy_benefit_amount, etc_notes, apply_url, ref_url_1, ref_url_2,
-            is_financial_support, created_at, updated_at
+            is_financial_support, policy_benefit_description
         ) VALUES (
                      #{policyNo}, #{title}, #{description}, #{supportContent},
                      #{applicationMethod}, #{screeningMethod}, #{submitDocuments},
                      #{policyBenefitAmount}, #{etcNotes}, #{applyUrl}, #{refUrl1}, #{refUrl2},
-                     #{isFinancialSupport}, #{createdAt}, #{updatedAt}
+                     #{isFinancialSupport},#{policyBenefitDescription}
                  )
     </insert>
 
-        <!-- 조건 저장 -->
+    <!-- 조건 저장 -->
     <insert id="insertCondition"
             parameterType="org.scoula.policy.domain.YouthPolicyConditionVO">
         INSERT INTO youth_policy_condition (
@@ -53,7 +52,6 @@
                      #{incomeEtc}, #{additionalConditions}, #{participantTarget}
                  )
     </insert>
-
 
     <!-- 기간 저장 -->
     <insert id="insertPeriod"
@@ -87,11 +85,9 @@
     <!-- 정책-키워드 연결 저장 -->
     <insert id="insertYouthPolicyKeyword"
             parameterType="org.scoula.policy.domain.keyword.YouthPolicyKeywordVO">
-        INSERT INTO youth_policy_keyword (policy_id, keyword_id, created_at)
-        VALUES (#{policyId}, #{keywordId}, #{createdAt})
+        INSERT INTO youth_policy_keyword (policy_id, keyword_id)
+        VALUES (#{policyId}, #{keywordId})
     </insert>
-
-
 
     <!-- 지역 코드로 마스터 조회 -->
     <select id="findRegionByCode"
@@ -113,10 +109,9 @@
     <!-- 정책-지역 매핑 저장 -->
     <insert id="insertYouthPolicyRegion"
             parameterType="org.scoula.policy.domain.region.YouthPolicyRegionVO">
-        INSERT INTO youth_policy_region (policy_id, region_id, created_at)
-        VALUES (#{policyId}, #{regionId}, #{createdAt})
+        INSERT INTO youth_policy_region (policy_id, region_id)
+        VALUES (#{policyId}, #{regionId})
     </insert>
-
 
     <!-- 전공(Major) 마스터 저장 -->
     <insert id="insertPolicyMajor"
@@ -130,8 +125,8 @@
     <!-- 정책-전공 매핑 저장 -->
     <insert id="insertYouthPolicyMajor"
             parameterType="org.scoula.policy.domain.major.YouthPolicyMajorVO">
-        INSERT INTO youth_policy_major (policy_id, major_id, created_at)
-        VALUES (#{policyId}, #{majorId}, #{createdAt})
+        INSERT INTO youth_policy_major (policy_id, major_id)
+        VALUES (#{policyId}, #{majorId})
     </insert>
 
     <!-- 학력(Education Level) 마스터 저장 -->
@@ -146,8 +141,8 @@
     <!-- 정책-학력 매핑 저장 -->
     <insert id="insertYouthPolicyEducationLevel"
             parameterType="org.scoula.policy.domain.education.YouthPolicyEducationLevelVO">
-        INSERT INTO youth_policy_education_level (policy_id, education_level_id, created_at)
-        VALUES (#{policyId}, #{educationLevelId}, #{createdAt})
+        INSERT INTO youth_policy_education_level (policy_id, education_level_id)
+        VALUES (#{policyId}, #{educationLevelId})
     </insert>
 
     <!-- 취업 상태(Employment Status) 마스터 저장 -->
@@ -162,8 +157,8 @@
     <!-- 정책-취업상태 매핑 저장 -->
     <insert id="insertYouthPolicyEmploymentStatus"
             parameterType="org.scoula.policy.domain.employment.YouthPolicyEmploymentStatusVO">
-        INSERT INTO youth_policy_employment_status (policy_id, employment_status_id, created_at)
-        VALUES (#{policyId}, #{employmentStatusId}, #{createdAt})
+        INSERT INTO youth_policy_employment_status (policy_id, employment_status_id)
+        VALUES (#{policyId}, #{employmentStatusId})
     </insert>
 
     <!-- 특수 조건(Special Condition) 마스터 저장 -->
@@ -178,11 +173,11 @@
     <!-- 정책-특수조건 매핑 저장 -->
     <insert id="insertYouthPolicySpecialCondition"
             parameterType="org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO">
-        INSERT INTO youth_policy_special_condition (policy_id, special_condition_id, created_at)
-        VALUES (#{policyId}, #{specialConditionId}, #{createdAt})
+        INSERT INTO youth_policy_special_condition (policy_id, special_condition_id)
+        VALUES (#{policyId}, #{specialConditionId})
     </insert>
 
-    <!-- 전공(Major) 조회 -->
+    <!-- 전공 조회 -->
     <select id="findMajorByName"
             resultType="org.scoula.policy.domain.major.PolicyMajorVO">
         SELECT id, major
@@ -190,7 +185,7 @@
         WHERE major = #{major}
     </select>
 
-    <!-- 학력(Education Level) 조회 -->
+    <!-- 학력 조회 -->
     <select id="findEducationLevelByName"
             resultType="org.scoula.policy.domain.education.PolicyEducationLevelVO">
         SELECT id, education_level
@@ -198,7 +193,7 @@
         WHERE education_level = #{educationLevel}
     </select>
 
-    <!-- 취업 상태(Employment Status) 조회 -->
+    <!-- 취업 상태 조회 -->
     <select id="findEmploymentStatusByName"
             resultType="org.scoula.policy.domain.employment.PolicyEmploymentStatusVO">
         SELECT id, employment_status
@@ -206,7 +201,7 @@
         WHERE employment_status = #{employmentStatus}
     </select>
 
-    <!-- 특수 조건(Special Condition) 조회 -->
+    <!-- 특수 조건 조회 -->
     <select id="findSpecialConditionByName"
             resultType="org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO">
         SELECT id, special_condition

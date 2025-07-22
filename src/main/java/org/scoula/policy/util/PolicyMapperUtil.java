@@ -50,6 +50,7 @@ public class PolicyMapperUtil {
         vo.setRefUrl1(dto.getRefUrl1());
         vo.setRefUrl2(dto.getRefUrl2());
         vo.setIsFinancialSupport(null); // GPT 후처리 예정
+        vo.setPolicyBenefitDescription(null);
 
         return vo;
     }
