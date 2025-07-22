@@ -13,4 +13,6 @@ public class GptResponseDto {
 
     @JsonProperty("estimatedAmount")
     private long estimatedAmount;
+
+    private String policyBenefitDescription;
 }
