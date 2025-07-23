@@ -12,11 +12,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MemberVO {
-    private String username;              // 사용자 ID
-    private String password;              // 암호화된 비밀번호
-    private String email;                 // 이메일 주소
-    private Date regDate;                 // 등록일시
-    private Date updateDate;              // 수정일시
-
-    private List<AuthVO> authList;        // 권한 목록 (1:N 관계)
+    private Long userId;
+    private String loginId;
+    private String email;
+    private String password;
+    private Date createdAt;              // ← 변경됨 (regDate → createdAt)
+    private int point;
+//    private List<AuthVO> authList;
 }
+
