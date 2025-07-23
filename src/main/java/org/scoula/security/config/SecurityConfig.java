@@ -127,6 +127,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests() // 경로별 접근 권한 설정
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
+                .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
                 .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
     }
 
