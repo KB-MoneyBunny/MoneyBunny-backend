@@ -51,15 +51,15 @@ public class PolicyServiceImpl implements PolicyService {
         YouthPolicyApiResponse firstResponse = policyApiClient.fetchPolicies(1, PAGE_SIZE);
 
         int totalCount = firstResponse.getResult().getPagging().getTotCount();
-        int dbCount = policyMapper.countAllPolicies();
+//        int dbCount = policyMapper.countAllPolicies();   개수 달라도 비교 하자.
 
-        if (totalCount == dbCount) {
-            log.info("[정책 수집] 변경된 정책이 없어 수집 생략됨 (API: {}, DB: {})", totalCount, dbCount);
-            return;
-        }
+//        if (totalCount == dbCount) {
+//            log.info("[정책 수집] 변경된 정책이 없어 수집 생략됨 (API: {}, DB: {})", totalCount, dbCount);
+//            return;
+//        }
 
-        int totalPages = 1; // 테스트용
-//      int totalPages = (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
+//        int totalPages = 1; // 테스트용
+        int totalPages = (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
         log.info("[정책 수집] 전체 정책 수: {}, 전체 페이지 수: {}", totalCount, totalPages);
 
         for (int page = 1; page <= totalPages; page++) {
@@ -67,9 +67,9 @@ public class PolicyServiceImpl implements PolicyService {
             YouthPolicyApiResponse response = policyApiClient.fetchPolicies(page, PAGE_SIZE);
             List<PolicyDTO> dtoList = response.getResult().getYouthPolicyList();
 
-            int testCnt = 0;
+//            int testCnt = 0;  테스트용
             for (PolicyDTO dto : dtoList) {
-                if (testCnt++ >= 50) break; // 테스트 용 50개만!
+//                if (testCnt++ >= 50) break; // 테스트 용 50개만!
 
                 // 중복 정책 건너뜀
                 if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) continue;
@@ -78,14 +78,17 @@ public class PolicyServiceImpl implements PolicyService {
                 GptRequestDto gptRequest = new GptRequestDto(dto.getSupportContent());
                 log.info("\n📤 [GPT 프롬프트 요청]\n{}", gptRequest.toPrompt());
                 GptResponseDto gptResponseDto = gptApiClient.analyzePolicy(gptRequest);
-                log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {}\n}}",
+                log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {},\n  \"policyBenefitDescription\": \"{}\"\n}}",
                         gptResponseDto.isFinancialSupport(),
-                        gptResponseDto.getEstimatedAmount());
+                        gptResponseDto.getEstimatedAmount(),
+                        gptResponseDto.getPolicyBenefitDescription());
+
 
                 // VO 변환 및 분석 결과 포함
                 YouthPolicyVO policyVO = PolicyMapperUtil.toYouthPolicyVO(dto);
                 policyVO.setIsFinancialSupport(gptResponseDto.isFinancialSupport());
                 policyVO.setPolicyBenefitAmount(gptResponseDto.getEstimatedAmount());
+                policyVO.setPolicyBenefitDescription(gptResponseDto.getPolicyBenefitDescription());
 
                 policyMapper.insertPolicy(policyVO);
                 Long policyId = policyVO.getId();
