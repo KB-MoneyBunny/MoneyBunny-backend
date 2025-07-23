@@ -2,7 +2,9 @@ package org.scoula.push.controller;
 
 
 import lombok.RequiredArgsConstructor;
+import org.scoula.push.dto.PushNotificationRequest;
 import org.scoula.push.dto.SubscriptionRequest;
+import org.scoula.push.service.PushNotificationService;
 import org.scoula.push.service.SubscriptionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +16,8 @@ import javax.servlet.http.HttpServletRequest;
 public class PushController {
 
     private final SubscriptionService subscriptionService;
-//    private final UserNotificationService userNotificationService;
+    private final PushNotificationService pushNotificationService;
+
 //    private final JwtUtil jwtUtil;
 
     /**
@@ -36,6 +39,14 @@ public class PushController {
     public void unsubscribe(@RequestBody SubscriptionRequest request) {
         subscriptionService.unsubscribe(request.getToken());
     }
+
+    // 전송 테스트용도
+    @PostMapping("/send-test")
+    public String sendTestNotification() {
+        pushNotificationService.sendAllCustomNotifications();
+        return "테스트용 푸시 전송 완료";
+    }
+
 
     /**
      * 알림 클릭 시 user_notification 읽음 처리
