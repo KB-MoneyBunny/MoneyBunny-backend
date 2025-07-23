@@ -73,6 +73,42 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
+    /**
+     * HTTP 보안 설정 메서드 (웹 애플리케이션의 보안 정책을 상세하게 구성)
+     * @param http HttpSecurity 객체
+     * @throws Exception 설정 중 발생할 수 있는 예외
+     */
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+
+        http
+                .addFilterBefore(encodingFilter(), CsrfFilter.class)// 한글 인코딩 필터 설정
+                .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class) // 인증 에러 필터
+                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // JWT 필터
+                .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // API 로그인 인증 필터
+
+                // 예외 처리 설정
+                .exceptionHandling()
+                .authenticationEntryPoint(authenticationEntryPoint)  // 401 에러 처리
+                .accessDeniedHandler(accessDeniedHandler);           // 403 에러 처리
+
+
+        //  HTTP 보안 설정
+        http.httpBasic().disable()      // 기본 HTTP 인증 비활성화
+                .csrf().disable()           // CSRF 보호 비활성화 (REST API에서는 불필요)
+                .formLogin().disable()      // 폼 로그인 비활성화 (JSON 기반 API 사용)
+                .sessionManagement()        // 세션 관리 설정
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);  // 무상태 모드
+
+
+        http
+                .authorizeRequests() // 경로별 접근 권한 설정
+                .antMatchers(HttpMethod.OPTIONS).permitAll()
+                .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
+                .antMatchers("/api/member/**").permitAll()
+                .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
+    }
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         log.info("configure AuthenticationManagerBuilder");
@@ -89,30 +125,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/swagger-ui.html", "/webjars/**",
                 "/swagger-resources/**", "/v2/api-docs"
         );
-    }
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .addFilterBefore(encodingFilter(), CsrfFilter.class)
-                .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling()
-                .authenticationEntryPoint(authenticationEntryPoint)
-                .accessDeniedHandler(accessDeniedHandler);
-
-        http
-                .httpBasic().disable()
-                .csrf().disable()
-                .formLogin().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
-        http
-                .authorizeRequests()
-                .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers("/api/member/**").permitAll()
-                .anyRequest().authenticated();
     }
 
     @Bean

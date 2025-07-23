@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.codef.mapper.AccountTransactionMapper">
+
+    <insert id="insertAccountTransaction" parameterType="org.scoula.codef.domain.AccountTransactionVO">
+        INSERT INTO account_transaction
+        (account_id, amount, tx_type, transaction_date_time, balance_after, store_name, branch_name)
+        VALUES
+        (#{accountId}, #{amount}, #{txType}, #{transactionDateTime}, #{balanceAfter}, #{storeName}, #{branchName})
+    </insert>
+
+</mapper>
