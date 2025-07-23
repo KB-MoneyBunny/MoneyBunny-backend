@@ -1,55 +1,27 @@
 package org.scoula.push.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.InputStream;
 
 @Configuration
-@RequiredArgsConstructor
 public class FirebaseConfig {
 
-    @Value("${firebase.type}") private String type;
-    @Value("${firebase.project_id}") private String projectId;
-    @Value("${firebase.private_key_id}") private String privateKeyId;
-    @Value("${firebase.private_key}") private String privateKey;
-    @Value("${firebase.client_email}") private String clientEmail;
-    @Value("${firebase.client_id}") private String clientId;
-    @Value("${firebase.auth_uri}") private String authUri;
-    @Value("${firebase.token_uri}") private String tokenUri;
-    @Value("${firebase.auth_provider_x509_cert_url}") private String authProviderCertUrl;
-    @Value("${firebase.client_x509_cert_url}") private String clientCertUrl;
-
-    /**
-     * FirebaseApp 초기화 후 Bean으로 등록
-     */
     @Bean
     public FirebaseApp firebaseApp() {
         try {
-            Map<String, Object> credentials = new HashMap<>();
-            credentials.put("type", type);
-            credentials.put("project_id", projectId);
-            credentials.put("private_key_id", privateKeyId);
-            credentials.put("private_key", privateKey.replace("\\n", "\n")); // 줄바꿈 처리
-            credentials.put("client_email", clientEmail);
-            credentials.put("client_id", clientId);
-            credentials.put("auth_uri", authUri);
-            credentials.put("token_uri", tokenUri);
-            credentials.put("auth_provider_x509_cert_url", authProviderCertUrl);
-            credentials.put("client_x509_cert_url", clientCertUrl);
+            // 리소스 경로에 있는 JSON 키 불러오기
+            InputStream serviceAccount =
+                    getClass().getClassLoader().getResourceAsStream("firebase/firebase-service-account.json");
 
-            ByteArrayInputStream serviceAccount = new ByteArrayInputStream(
-                    new ObjectMapper().writeValueAsBytes(credentials)
-            );
+            if (serviceAccount == null) {
+                throw new IllegalStateException("Firebase 서비스 계정 키를 찾을 수 없습니다.");
+            }
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -66,9 +38,6 @@ public class FirebaseConfig {
         }
     }
 
-    /**
-     * FirebaseMessaging 인스턴스를 Bean으로 등록
-     */
     @Bean
     public FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
         return FirebaseMessaging.getInstance(firebaseApp);
