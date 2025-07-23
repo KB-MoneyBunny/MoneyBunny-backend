@@ -20,19 +20,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     // loadUserByUsername() : 사용자 이름(username)을 이용해 사용자 정보를 조회하는 서비스
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("사용자 정보 조회: {}", username);
+        log.info(">>> 로그인 시도: username={}", username);
 
-        // 데이터베이스에서 사용자 정보 조회
         MemberVO vo = mapper.get(username);
 
-        // 사용자가 존재하지 않는 경우 예외 발생
-        if(vo == null) {
+        if (vo == null) {
+            log.warn(">>> 로그인 실패: 존재하지 않는 사용자 - {}", username);
             throw new UsernameNotFoundException(username + "은 없는 id입니다.");
         }
 
-        log.info("조회된 사용자: {}", vo);
+        log.info(">>> 로그인 성공 대상: {}", vo.getLoginId());  // 또는 username
 
-        // CustomUser 객체로 변환하여 반환
         return new CustomUser(vo);
     }
+
+
 }

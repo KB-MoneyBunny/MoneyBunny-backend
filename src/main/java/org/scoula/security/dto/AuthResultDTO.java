@@ -3,11 +3,12 @@ package org.scoula.security.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.scoula.security.dto.UserInfoDTO;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class AuthResultDTO {
-    private String token;        // JWT 인증 토큰
-    private UserInfoDTO user;    // 사용자 기본 정보
+    private String token;
+    private UserInfoDTO user;
 }
