@@ -15,6 +15,7 @@ public class MemberJoinDTO {
   private String loginId;             // 사용자 ID (username → loginId)
   private String password;
   private String email;
+  private String name;
   private MultipartFile avatar;
 
   public MemberVO toVO() {
@@ -22,6 +23,7 @@ public class MemberJoinDTO {
             .loginId(loginId)
             .password(password)
             .email(email)
+            .name(name)
             .build();
   }
 }
