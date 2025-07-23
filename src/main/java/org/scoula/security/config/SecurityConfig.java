@@ -175,6 +175,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 // 정책 수집 테스트용 경로 추가
                 "/admin/policy/sync",
+                "/api/push/subscribe",
 
                 // Swagger 관련 URL은 보안에서 제외
                 "/swagger-ui.html", "/webjars/**",
