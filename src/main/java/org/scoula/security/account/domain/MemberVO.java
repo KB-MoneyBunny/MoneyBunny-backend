@@ -18,6 +18,7 @@ public class MemberVO {
     private String password;
     private Date createdAt;              // ← 변경됨 (regDate → createdAt)
     private int point;
+    private String name;
 //    private List<AuthVO> authList;
 }
 
