@@ -84,8 +84,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .addFilterBefore(encodingFilter(), CsrfFilter.class)// 한글 인코딩 필터 설정
                 .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class) // 인증 에러 필터
-                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // JWT 필터
-                .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // API 로그인 인증 필터
+                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 로그인 필터
+                .addFilterBefore(jwtAuthenticationFilter, JwtUsernamePasswordAuthenticationFilter.class)  // JWT 인증 필터
 
                 // 예외 처리 설정
                 .exceptionHandling()
@@ -106,6 +106,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
                 .antMatchers("/api/member/**").permitAll()
+                .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용
                 .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
     }
 
@@ -138,4 +139,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
+
+//    // Spring Security 검사를 우회할 경로 설정
+//    @Override
+//    public void configure(WebSecurity web) throws Exception {
+//        web.ignoring().antMatchers(
+//                "/assets/**",      // 정적 리소스
+//                "/*",              // 루트 경로의 파일들
+//                "/api/member/**",   // 회원 관련 공개 API
+//                "/api/userPolicy/**", // 사용자 정책 API 임시 허용
+//
+//                // 정책 수집 테스트용 경로 추가
+//                "/admin/policy/sync",
+//
+//                // Swagger 관련 URL은 보안에서 제외
+//                "/swagger-ui.html", "/webjars/**",
+//                "/swagger-resources/**", "/v2/api-docs"
+//        );
+//    }
 }
