@@ -29,6 +29,8 @@ import javax.sql.DataSource;
         "org.scoula.board.mapper",
         "org.scoula.member.mapper",  // 회원 매퍼 스캔
         "org.scoula.policy.mapper",
+        "org.scoula.userPolicy.mapper",
+        "org.scoula.policy.mapper",
         "org.scoula.codef.mapper"
 })
 @ComponentScan(basePackages = {
@@ -38,6 +40,7 @@ import javax.sql.DataSource;
         "org.scoula.external",
         "org.scoula.policy.batch",
         "org.scoula.policy.scheduler",
+        "org.scoula.userPolicy.service",
         "org.scoula.codef"
 })
 public class RootConfig {
