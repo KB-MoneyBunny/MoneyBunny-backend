@@ -34,6 +34,8 @@ tasks.withType(JavaCompile) {
 
 // 프로젝트 의존성 라이브러리 선언 (최신 버전으로 업데이트)
 dependencies {
+    // ✅ Firebase Admin SDK (FCM 전송용)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // ===== Spring Framework 관련 의존성 =====
     // Spring Core 컨테이너 - IoC/DI 기능 제공 (5.3.39 - 마지막 5.3.x 버전, 보안 패치 포함)
@@ -55,6 +57,7 @@ dependencies {
     // ===== 웹 개발 관련 의존성 (JSP, Servlet, JSTL) =====
     // Java Servlet API - 웹 애플리케이션 개발의 기본 API (안정 버전 유지)
     implementation('javax.servlet:javax.servlet-api:4.0.1')
+    testImplementation 'junit:junit:4.13.1'
     // JSP API - JSP 페이지 개발을 위한 API (컴파일 시에만 필요)
     compileOnly 'javax.servlet.jsp:jsp-api:2.1'
     // JSTL - JSP 표준 태그 라이브러리 (안정 버전 유지)
@@ -137,6 +140,20 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")         // JWT API 인터페이스
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")           // JWT 구현체
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")     // JSON 직렬화/역직렬화
+
+    // Redis 관련 의존성
+    // Redis 클라이언트: Lettuce
+    implementation 'redis.clients:jedis:4.4.3'
+
+    // Spring Data Redis
+    implementation 'org.springframework.data:spring-data-redis:2.7.5'
+
+    // Jackson (Object → JSON 변환)
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
+
+    // 메일 전송용 (JavaMailSender)
+    implementation 'org.springframework:spring-context-support:4.3.9.RELEASE'
+    implementation 'com.sun.mail:javax.mail:1.6.2'  // JavaMail API
 }
 // 테스트 실행 설정
 test {

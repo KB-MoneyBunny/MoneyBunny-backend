@@ -6,11 +6,14 @@ import org.scoula.common.util.UploadFiles;
 import org.scoula.member.dto.MemberDTO;
 import org.scoula.member.dto.MemberJoinDTO;
 import org.scoula.member.service.MemberService;
+import org.scoula.security.dto.LoginDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -26,8 +29,8 @@ public class MemberController {
   }
 
   // 회원가입 API
-  @PostMapping("")
-  public ResponseEntity<MemberDTO> join(MemberJoinDTO member) {
+  @PostMapping("/")
+  public ResponseEntity<MemberDTO> join(@RequestBody MemberJoinDTO member) {
     return ResponseEntity.ok(service.join(member));
   }
 
@@ -45,4 +48,18 @@ public class MemberController {
 
     UploadFiles.downloadImage(response, file);
   }
+
+  @PostMapping("/login")
+  public ResponseEntity<MemberDTO> login(@RequestBody LoginDTO loginDTO) {
+    Optional<MemberDTO> memberOpt = service.login(loginDTO.getUsername(), loginDTO.getPassword());
+
+    if (memberOpt.isPresent()) {
+      return ResponseEntity.ok(memberOpt.get());
+    } else {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+  }
+
+
+
 }

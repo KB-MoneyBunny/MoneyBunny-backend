@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Slf4j
-@Component
+//@Component
 public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     // 필터 생성자
@@ -25,7 +25,7 @@ public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAut
             LoginFailureHandler loginFailureHandler) {
 
         super(authenticationManager);
-        setFilterProcessesUrl("/api/auth/login");                    // POST 로그인 요청 URL
+        setFilterProcessesUrl("/api/member/login");                    // POST 로그인 요청 URL
         setAuthenticationSuccessHandler(loginSuccessHandler);        // 성공 핸들러 등록
         setAuthenticationFailureHandler(loginFailureHandler);        // 실패 핸들러 등록
     }
@@ -35,6 +35,8 @@ public class JwtUsernamePasswordAuthenticationFilter extends UsernamePasswordAut
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
+
+        log.info(">> 로그인 시도 감지됨");
 
         // 1. 요청 BODY의 JSON에서 username, password 추출
         LoginDTO login = LoginDTO.of(request);
