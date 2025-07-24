@@ -84,31 +84,191 @@
     </resultMap>
 
     <select id="findUserPolicyConditionByUserId" resultMap="userPolicyConditionMap">
-        SELECT * FROM user_policy_condition WHERE user_id = #{userId}
+        SELECT *
+        FROM user_policy_condition
+        WHERE user_id = #{userId}
     </select>
 
     <select id="findRegionsByConditionId" resultType="org.scoula.userPolicy.domain.UserRegionVO">
-        SELECT * FROM user_policy_region WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_policy_region
+        WHERE user_policy_condition_id = #{id}
     </select>
 
     <select id="findEducationLevelsByConditionId" resultType="org.scoula.userPolicy.domain.UserEducationLevelVO">
-        SELECT * FROM user_education_level WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_education_level
+        WHERE user_policy_condition_id = #{id}
     </select>
 
     <select id="findEmploymentStatusesByConditionId" resultType="org.scoula.userPolicy.domain.UserEmploymentStatusVO">
-        SELECT * FROM user_employment_status WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_employment_status
+        WHERE user_policy_condition_id = #{id}
     </select>
 
     <select id="findMajorsByConditionId" resultType="org.scoula.userPolicy.domain.UserMajorVO">
-        SELECT * FROM user_major WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_major
+        WHERE user_policy_condition_id = #{id}
     </select>
 
     <select id="findSpecialConditionsByConditionId" resultType="org.scoula.userPolicy.domain.UserSpecialConditionVO">
-        SELECT * FROM user_special_condition WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_special_condition
+        WHERE user_policy_condition_id = #{id}
     </select>
 
     <select id="findKeywordsByConditionId" resultType="org.scoula.userPolicy.domain.UserPolicyKeywordVO">
-        SELECT * FROM user_policy_keyword WHERE user_policy_condition_id = #{id}
+        SELECT *
+        FROM user_policy_keyword
+        WHERE user_policy_condition_id = #{id}
     </select>
 
+    <select id="findMatchingPolicyIds" resultType="String">
+        SELECT yp.title
+        FROM youth_policy yp
+        JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
+        WHERE
+
+        <!-- 나이 조건 -->
+        (
+        ypc.age_limit_yn = 1
+        OR (
+        (ypc.max_age IS NULL AND #{age} >= ypc.min_age)
+        OR
+        (ypc.max_age IS NOT NULL AND #{age} >= ypc.min_age AND ypc.max_age >= #{age})
+        )
+        OR #{age} = 0
+        )
+
+        <!-- 혼인 여부 조건 -->
+        AND (
+        #{marriage} = ""
+        OR ypc.marriage_status IS NULL
+        OR TRIM(ypc.marriage_status) = ''
+        OR ypc.marriage_status = '0055003'
+        OR ypc.marriage_status = #{marriage}
+        )
+
+        <!-- 소득 조건 -->
+        AND (
+        #{income} = 0
+        OR ypc.income_condition_code IS NULL
+        OR TRIM(ypc.income_condition_code) = ''
+        OR ypc.income_condition_code = '0043001'
+        OR ypc.income_condition_code = '0043003'
+        OR (
+        ypc.income_condition_code = '0043002'
+        AND (ypc.income_min IS NULL OR #{income} >= ypc.income_min)
+        AND (ypc.income_max IS NULL OR ypc.income_max >= #{income})
+        )
+        )
+
+        <!-- 지역 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1
+        FROM user_policy_region upr
+        WHERE upr.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_policy_region upr
+        JOIN policy_region upr_pr ON upr.region_id = upr_pr.id
+        JOIN youth_policy_region ypr ON upr.user_policy_condition_id = #{id} AND ypr.policy_id = yp.id
+        JOIN policy_region ypr_pr ON ypr.region_id = ypr_pr.id
+        WHERE
+        -- 정확히 지역 코드 일치
+        upr_pr.region_code = ypr_pr.region_code
+
+        -- OR: 정책 지역이 도 코드일 경우, 사용자 지역이 같은 도에 속하면 OK
+        OR (
+        RIGHT(ypr_pr.region_code, 3) = '000'
+        AND LEFT(upr_pr.region_code, 2) = LEFT(ypr_pr.region_code, 2)
+        )
+        )
+        )
+
+
+        <!-- 학력 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1 FROM user_education_level uel
+        WHERE uel.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_education_level uel
+        JOIN youth_policy_education_level ypel
+        ON uel.education_level_id = ypel.education_level_id
+        WHERE uel.user_policy_condition_id = #{id}
+        AND ypel.policy_id = yp.id
+        )
+        )
+
+        <!-- 취업 상태 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1 FROM user_employment_status ues
+        WHERE ues.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_employment_status ues
+        JOIN youth_policy_employment_status ypes
+        ON ues.employment_status_id = ypes.employment_status_id
+        WHERE ues.user_policy_condition_id = #{id}
+        AND ypes.policy_id = yp.id
+        )
+        )
+
+        <!-- 전공 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1 FROM user_major um
+        WHERE um.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_major um
+        JOIN youth_policy_major ypm
+        ON um.major_id = ypm.major_id
+        WHERE um.user_policy_condition_id = #{id}
+        AND ypm.policy_id = yp.id
+        )
+        )
+
+        <!-- 특수 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1 FROM user_special_condition usc
+        WHERE usc.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_special_condition usc
+        JOIN youth_policy_special_condition ypsc
+        ON usc.special_condition_id = ypsc.special_condition_id
+        WHERE usc.user_policy_condition_id = #{id}
+        AND ypsc.policy_id = yp.id
+        )
+        )
+
+        <!-- 키워드 조건 -->
+        AND (
+        NOT EXISTS (
+        SELECT 1 FROM user_policy_keyword upk
+        WHERE upk.user_policy_condition_id = #{id}
+        )
+        OR EXISTS (
+        SELECT 1
+        FROM user_policy_keyword upk
+        JOIN youth_policy_keyword ypk
+        ON upk.keyword_id = ypk.keyword_id
+        WHERE upk.user_policy_condition_id = #{id}
+        AND ypk.policy_id = yp.id
+        )
+        )
+    </select>
 </mapper>
