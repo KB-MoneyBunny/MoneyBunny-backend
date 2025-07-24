@@ -2,6 +2,7 @@ package org.scoula.member.service;
 
 import org.scoula.member.dto.MemberDTO;
 import org.scoula.member.dto.MemberJoinDTO;
+import org.scoula.security.account.domain.MemberVO;
 
 import java.util.Optional;
 
@@ -10,4 +11,5 @@ public interface MemberService {
   MemberDTO get(String loginId);
   MemberDTO join(MemberJoinDTO member);
   Optional<MemberDTO> login(String username, String password);
+  MemberVO findByUsername(String loginId);
 }

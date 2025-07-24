@@ -140,11 +140,13 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")     // JSON 직렬화/역직렬화
 
     // Redis 관련 의존성
-    // Redis 클라이언트: Lettuce
-    implementation 'redis.clients:jedis:4.4.3'
-
-    // Spring Data Redis
+    // Spring Data Redis(Lettuce)
     implementation 'org.springframework.data:spring-data-redis:2.7.5'
+
+    // Lettuce 커넥션 풀 필수 의존성
+    implementation 'org.apache.commons:commons-pool2:2.11.1'
+    implementation 'io.lettuce:lettuce-core:6.2.6.RELEASE'
+
 
     // Jackson (Object → JSON 변환)
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'

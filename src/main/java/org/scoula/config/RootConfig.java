@@ -38,7 +38,8 @@ import javax.sql.DataSource;
         "org.scoula.external",
         "org.scoula.policy.batch",
         "org.scoula.policy.scheduler",
-        "org.scoula.codef"
+        "org.scoula.codef",
+        "org.scoula.config" // config
 })
 public class RootConfig {
 
