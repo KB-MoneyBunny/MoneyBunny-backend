@@ -2,6 +2,7 @@ package org.scoula.userPolicy.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.member.mapper.MemberMapper;
 import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.education.PolicyEducationLevelVO;
 import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
@@ -9,6 +10,7 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.mapper.PolicyMapper;
+import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
@@ -27,12 +29,17 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
     private final UserPolicyMapper userPolicyMapper;
     private final PolicyMapper policyMapper;
+    private final MemberMapper memberMapper;
 
     @Transactional
     @Override
     public UserPolicyDTO saveUserPolicy(String username, UserPolicyDTO userPolicyDTO) {
+        MemberVO member = memberMapper.get(username);
+
+        Long userId = member.getUserId();
+
         UserPolicyConditionVO condition = new UserPolicyConditionVO();
-        condition.setUserId(Long.parseLong(username));
+        condition.setUserId(userId);
         condition.setAge(userPolicyDTO.getAge());
         condition.setMarriage(userPolicyDTO.getMarriage());
         condition.setIncome(userPolicyDTO.getIncome());
@@ -175,8 +182,11 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     }
 
     public List<String> returnUserPolicyIdList(String username) {
+        MemberVO member = memberMapper.get(username);
+
+        Long userId = member.getUserId();
         // 사용자 조건 불러오기
-        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(Long.parseLong(username));
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
 
         return userPolicyMapper.findMatchingPolicyIds(userPolicyCondition);
     }
