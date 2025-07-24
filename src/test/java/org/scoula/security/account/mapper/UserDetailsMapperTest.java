@@ -26,9 +26,9 @@ public class UserDetailsMapperTest {
         log.info("사용자 정보: {}", member);
 
         // 권한 목록 출력
-        log.info("권한 개수: {}", member.getAuthList().size());
-        for(AuthVO auth : member.getAuthList()) {
-            log.info("권한: {}", auth);
-        }
+//        log.info("권한 개수: {}", member.getAuthList().size());
+//        for(AuthVO auth : member.getAuthList()) {
+//            log.info("권한: {}", auth);
+//        }
     }
 }
