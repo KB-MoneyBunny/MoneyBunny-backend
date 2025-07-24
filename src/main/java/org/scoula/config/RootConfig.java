@@ -41,7 +41,7 @@ import javax.sql.DataSource;
         "org.scoula.policy.batch",
         "org.scoula.policy.scheduler",
         "org.scoula.codef",
-        "org.scoula.config" // config
+        "org.scoula.config", // config
         "org.scoula.userPolicy.service"
 })
 public class RootConfig {
