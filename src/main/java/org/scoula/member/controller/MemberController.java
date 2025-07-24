@@ -53,6 +53,7 @@ public class MemberController {
     UploadFiles.downloadImage(response, file);
   }
 
+  // 로그인
   @PostMapping("/login")
   public ResponseEntity<MemberDTO> login(@RequestBody LoginDTO loginDTO) {
     Optional<MemberDTO> memberOpt = service.login(loginDTO.getUsername(), loginDTO.getPassword());
@@ -64,8 +65,9 @@ public class MemberController {
     }
   }
 
-  @PostMapping("/send-code")
-  public ResponseEntity<String> sendVerificationCode(@RequestBody EmailRequestDTO dto) {
+  // 인증코드 전송(아이디 찾기)
+  @PostMapping("/send-find-password-code")
+  public ResponseEntity<String> sendVerificationCode(@RequestBody EmailPasswordResetDTO dto) {
     // 아이디로 사용자 조회
     MemberVO member = service.findByUsername(dto.getLoginId());
 
@@ -87,19 +89,27 @@ public class MemberController {
     return ResponseEntity.ok("인증 코드가 이메일로 전송되었습니다.");
   }
 
-
+  // 이메일 인증(아이디 찾기, 비밀번호 찾기 공통)
   @PostMapping("/verify")
   public ResponseEntity<?> verifyCode(@RequestBody EmailVerifyDTO request) {
-    boolean isValid = redisUtil.verifyCode(request.getEmail(), request.getCode());
-    if (isValid) {
-      // 검증 성공 후 Redis에서 코드 삭제 -> 바로 삭제해버리므로 swagger에서 테스트 후 터미널에서 하면 코드 삭제돼서 안 됨
-      redisUtil.deleteCode(request.getEmail());
-      return ResponseEntity.ok("verified");
-    } else {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("failure verification");
+    try {
+      boolean isValid = redisUtil.verifyCode(request.getEmail(), request.getCode());
+
+      if (isValid) {
+        redisUtil.markVerified(request.getEmail());
+        redisUtil.deleteCode(request.getEmail());
+        return ResponseEntity.ok("verified");
+      } else {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failure verification");
+      }
+
+    } catch (Exception e) {
+      log.error("이메일 인증 중 예외 발생", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("verification error");
     }
   }
 
+  // 비밀번호 재설정
   @PostMapping("/reset-password")
   public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO dto) {
     boolean success = service.resetPassword(dto.getLoginId(), dto.getPassword());
@@ -108,7 +118,56 @@ public class MemberController {
     } else {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("user not found");
     }
+
   }
+
+  // 아이디 반환(아이디 찾기)
+  @PostMapping("/find-id")
+  public ResponseEntity<?> findLoginId(@RequestBody EmailIDFindDTO dto) {
+    // /send-find-id-code(이메일 인증 코드 전송 for id 찾기) -> /verify (인증받기) -> 아이디찾기(여기서 아이디 반환)
+    String email = dto.getEmail();
+
+    // 이메일 인증 여부 확인
+    if (!redisUtil.isVerified(email)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body("not verified by this email for finding id");
+    }
+
+    // 이메일로 회원 조회
+    MemberVO member = service.findByEmail(email);
+    if (member == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .body("not registered account by this email");
+    }
+
+    // loginId 반환
+    return ResponseEntity.ok(member.getLoginId());
+  }
+
+  @PostMapping("/send-find-id-code")
+  public ResponseEntity<String> sendFindIdVerificationCode(@RequestBody EmailIDFindDTO dto) {
+    String email = dto.getEmail();
+
+    // 이메일로 등록된 회원 있는지 확인
+    MemberVO member = service.findByEmail(email);
+    if (member == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .body("not registered account by this email");
+    }
+
+    // 인증 코드 생성
+    String code = String.valueOf((int)(Math.random() * 900000) + 100000);
+
+    // Redis에 저장 (3분 유효)
+    redisUtil.saveCode(email, code);
+
+    // 이메일 전송
+    mailService.sendEmail(dto.getEmail(), "[머니버니] 본인 인증을 위한 인증 코드 안내 메일입니다.", "인증 코드: " + code);
+
+
+    return ResponseEntity.ok("인증 코드가 이메일로 전송되었습니다.");
+  }
+
 
 
 

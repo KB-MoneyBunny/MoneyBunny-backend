@@ -42,6 +42,9 @@
         UPDATE users SET password = #{password} WHERE login_id = #{loginId}
     </update>
 
+    <select id="findByEmail" resultMap="memberMap">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
 
 
 </mapper>

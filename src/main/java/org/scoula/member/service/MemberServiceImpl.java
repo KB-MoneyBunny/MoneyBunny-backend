@@ -98,5 +98,10 @@ public class MemberServiceImpl implements MemberService {
     return true;
   }
 
+  @Override
+  public MemberVO findByEmail(String email) {
+    return mapper.findByEmail(email);
+  }
+
 
 }

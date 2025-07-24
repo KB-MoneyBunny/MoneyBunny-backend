@@ -13,5 +13,6 @@ public interface MemberService {
   Optional<MemberDTO> login(String username, String password);
   MemberVO findByUsername(String loginId);
   boolean resetPassword(String loginId, String password);
+  MemberVO findByEmail(String email); // ID 찾기
 
 }
