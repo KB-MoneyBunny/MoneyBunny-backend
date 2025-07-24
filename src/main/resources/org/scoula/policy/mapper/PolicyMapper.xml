@@ -209,4 +209,109 @@
         WHERE special_condition = #{specialCondition}
     </select>
 
+    <!-- 정책 기간 조회 -->
+    <select id="findYouthPolicyPeriodByPolicyId"
+            resultType="org.scoula.policy.domain.YouthPolicyPeriodVO">
+    SELECT id, policy_id, apply_period, biz_start_date,
+    biz_end_date, biz_period_etc
+    FROM youth_policy_period
+    WHERE policy_id = #{policyId}
+    </select>
+
+    <!-- 정책 조회 -->
+    <select id="findYouthPolicyById" resultType="org.scoula.policy.domain.YouthPolicyVO">
+        SELECT id, policy_no, title, description, support_content,
+               application_method, screening_method, submit_documents,
+               policy_benefit_amount, etc_notes, apply_url, ref_url_1, ref_url_2,
+               is_financial_support, policy_benefit_description,views
+        FROM youth_policy
+        WHERE id = #{policyId}
+    </select>
+
+    <resultMap id="policyDetailResultMap" type="org.scoula.policy.dto.PolicyDetailDTO">
+        <id property="id" column="policy_id"/>
+        <result property="policyNo" column="policy_no"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="supportContent" column="support_content"/>
+        <result property="applicationMethod" column="application_method"/>
+        <result property="screeningMethod" column="screening_method"/>
+        <result property="submitDocuments" column="submit_documents"/>
+        <result property="policyBenefitAmount" column="policy_benefit_amount"/>
+        <result property="etcNotes" column="etc_notes"/>
+        <result property="applyUrl" column="apply_url"/>
+        <result property="refUrl1" column="ref_url_1"/>
+        <result property="refUrl2" column="ref_url_2"/>
+        <result property="isFinancialSupport" column="is_financial_support"/>
+        <result property="policyBenefitDescription" column="policy_benefit_description"/>
+        <result property="view" column="views"/>
+        <result property="minAge" column="min_age"/>
+        <result property="maxAge" column="max_age"/>
+        <result property="ageLimitYn" column="age_limit_yn"/>
+        <result property="marriageStatus" column="marriage_status"/>
+        <result property="incomeMin" column="income_min"/>
+        <result property="incomeMax" column="income_max"/>
+        <result property="incomeConditionCode" column="income_condition_code"/>
+        <result property="incomeEtc" column="income_etc"/>
+        <result property="additionalConditions" column="additional_conditions"/>
+        <result property="participantTarget" column="participant_target"/>
+        <result property="applyPeriod" column="apply_period"/>
+        <result property="bizStartDate" column="biz_start_date" jdbcType="DATE"/>
+        <result property="bizEndDate" column="biz_end_date" jdbcType="DATE"/>
+        <result property="bizPeriodEtc" column="biz_period_etc"/>
+        <collection property="regions" ofType="org.scoula.policy.domain.region.PolicyRegionVO">
+            <id property="id" column="region_id"/>
+            <result property="regionCode" column="region_code"/>
+            <result property="regionName" column="region_name"/>
+        </collection>
+        <collection property="educationLevels" ofType="org.scoula.policy.domain.education.PolicyEducationLevelVO">
+            <id property="id" column="edu_id"/>
+            <result property="educationLevel" column="education_level"/>
+        </collection>
+        <collection property="majors" ofType="org.scoula.policy.domain.major.PolicyMajorVO">
+            <id property="id" column="major_id"/>
+            <result property="major" column="major"/>
+        </collection>
+        <collection property="employmentStatuses" ofType="org.scoula.policy.domain.employment.PolicyEmploymentStatusVO">
+            <id property="id" column="emp_id"/>
+            <result property="employmentStatus" column="employment_status"/>
+        </collection>
+        <collection property="specialConditions" ofType="org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO">
+            <id property="id" column="sc_id"/>
+            <result property="specialCondition" column="special_condition"/>
+        </collection>
+    </resultMap>
+
+    <select id="findPolicyDetailById" resultMap="policyDetailResultMap">
+        SELECT
+            p.id AS policy_id, p.policy_no, p.title, p.description, p.support_content,
+            p.application_method, p.screening_method, p.submit_documents,
+            p.policy_benefit_amount, p.etc_notes, p.apply_url, p.ref_url_1, p.ref_url_2,
+            p.is_financial_support, p.policy_benefit_description, p.views,
+            c.min_age, c.max_age, c.age_limit_yn, c.marriage_status,
+            c.income_min, c.income_max, c.income_condition_code, c.income_etc,
+            c.additional_conditions, c.participant_target,
+            pp.apply_period, pp.biz_start_date, pp.biz_end_date, pp.biz_period_etc,
+            r.id AS region_id, r.region_code,
+            e.id AS edu_id, e.education_level,
+            m.id AS major_id, m.major,
+            es.id AS emp_id, es.employment_status,
+            sc.id AS sc_id, sc.special_condition
+        FROM
+            youth_policy p
+                LEFT JOIN youth_policy_condition c ON p.id = c.policy_id
+                LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+                LEFT JOIN youth_policy_region ypr ON p.id = ypr.policy_id
+                LEFT JOIN policy_region r ON ypr.region_id = r.id
+                LEFT JOIN youth_policy_education_level ypel ON p.id = ypel.policy_id
+                LEFT JOIN policy_education_level e ON ypel.education_level_id = e.id
+                LEFT JOIN youth_policy_major ypm ON p.id = ypm.policy_id
+                LEFT JOIN policy_major m ON ypm.major_id = m.id
+                LEFT JOIN youth_policy_employment_status ypes ON p.id = ypes.policy_id
+                LEFT JOIN policy_employment_status es ON ypes.employment_status_id = es.id
+                LEFT JOIN youth_policy_special_condition ypsc ON p.id = ypsc.policy_id
+                LEFT JOIN policy_special_condition sc ON ypsc.special_condition_id = sc.id
+        WHERE
+            p.id = #{policyId}
+    </select>
 </mapper>
