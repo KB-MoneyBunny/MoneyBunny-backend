@@ -1,5 +1,4 @@
-// PushNotificationRequest.java
-package org.scoula.push.dto;
+package org.scoula.push.dto.request;
 
 import lombok.Data;
 
