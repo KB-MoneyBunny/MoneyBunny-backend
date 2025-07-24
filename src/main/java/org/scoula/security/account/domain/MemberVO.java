@@ -19,6 +19,5 @@ public class MemberVO {
     private Date createdAt;              // ← 변경됨 (regDate → createdAt)
     private int point;
     private String name;
-//    private List<AuthVO> authList;
+    private List<AuthVO> authList;
 }
-
