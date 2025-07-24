@@ -15,6 +15,8 @@ import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
 
+import java.util.List;
+
 public interface PolicyMapper {
 
     /** 전체 정책 수 확인 */
@@ -110,5 +112,10 @@ public interface PolicyMapper {
     /** 정책-특수 조건 연결 저장 */
     void insertYouthPolicySpecialCondition(YouthPolicySpecialConditionVO vo);
 
-    void updateViewsByPolicyNo(@Param("policyNo") String policyNo, @Param("views") Long views);
+    // ────────────────────────────────────────
+    // 📌 정책 업데이트 관련
+    // ────────────────────────────────────────
+
+    /** 정책 조회수 업데이트 */
+    void updatePolicyViews(@Param("policyNo") String policyNo, @Param("views") Long views);
 }
