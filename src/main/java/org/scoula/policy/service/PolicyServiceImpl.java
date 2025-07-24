@@ -21,7 +21,6 @@ import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
 import org.scoula.policy.dto.PolicyDTO;
 import org.scoula.policy.dto.YouthPolicyApiResponse;
 import org.scoula.policy.mapper.PolicyMapper;
-import org.scoula.policy.util.PolicyMapperUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,14 +50,6 @@ public class PolicyServiceImpl implements PolicyService {
         YouthPolicyApiResponse firstResponse = policyApiClient.fetchPolicies(1, PAGE_SIZE);
 
         int totalCount = firstResponse.getResult().getPagging().getTotCount();
-//        int dbCount = policyMapper.countAllPolicies();   개수 달라도 비교 하자.
-
-//        if (totalCount == dbCount) {
-//            log.info("[정책 수집] 변경된 정책이 없어 수집 생략됨 (API: {}, DB: {})", totalCount, dbCount);
-//            return;
-//        }
-
-//        int totalPages = 1; // 테스트용
         int totalPages = (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
         log.info("[정책 수집] 전체 정책 수: {}, 전체 페이지 수: {}", totalCount, totalPages);
 
@@ -67,20 +58,16 @@ public class PolicyServiceImpl implements PolicyService {
             YouthPolicyApiResponse response = policyApiClient.fetchPolicies(page, PAGE_SIZE);
             List<PolicyDTO> dtoList = response.getResult().getYouthPolicyList();
 
-//            int testCnt = 0;  테스트용
             for (PolicyDTO dto : dtoList) {
-//                if (testCnt++ >= 50) break; // 테스트 용 50개만!
-
-                // 중복 정책 건너뜀
+                // 기존 정책인 경우 조회수만 업데이트
                 if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) {
-                    // 조회수만 업데이트 (1회용)
-                    Long views = dto.getViews();
-                    if (views != null) {
-                        policyMapper.updateViewsByPolicyNo(dto.getPolicyNo(), views);
-                        log.info("[조회수 업데이트] 정책번호 {} → {}", dto.getPolicyNo(), views);
-                    }
+                    log.info("[기존 정책] 정책번호 {} 조회수 업데이트: {}", dto.getPolicyNo(), dto.getViews());
+                    policyMapper.updatePolicyViews(dto.getPolicyNo(), dto.getViews());
                     continue;
                 }
+
+                // 새로운 정책 추가
+                log.info("[새 정책] 정책번호 {} 저장 시작", dto.getPolicyNo());
 
                 // GPT 분석
                 GptRequestDto gptRequest = new GptRequestDto(dto.getSupportContent());
@@ -93,7 +80,7 @@ public class PolicyServiceImpl implements PolicyService {
 
 
                 // VO 변환 및 분석 결과 포함
-                YouthPolicyVO policyVO = PolicyMapperUtil.toYouthPolicyVO(dto);
+                YouthPolicyVO policyVO = YouthPolicyVO.fromDTO(dto);
                 policyVO.setIsFinancialSupport(gptResponseDto.isFinancialSupport());
                 policyVO.setPolicyBenefitAmount(gptResponseDto.getEstimatedAmount());
                 policyVO.setPolicyBenefitDescription(gptResponseDto.getPolicyBenefitDescription());;
@@ -102,15 +89,15 @@ public class PolicyServiceImpl implements PolicyService {
                 Long policyId = policyVO.getId();
 
                 // 조건 저장
-                YouthPolicyConditionVO conditionVO = PolicyMapperUtil.toConditionVO(dto, policyId);
+                YouthPolicyConditionVO conditionVO = YouthPolicyConditionVO.fromDTO(dto, policyId);
                 policyMapper.insertCondition(conditionVO);
 
                 // 운영 기간 저장
-                YouthPolicyPeriodVO periodVO = PolicyMapperUtil.toPeriodVO(dto, policyId);
+                YouthPolicyPeriodVO periodVO = YouthPolicyPeriodVO.fromDTO(dto, policyId);
                 policyMapper.insertPeriod(periodVO);
 
                 // 키워드 저장 및 매핑
-                List<PolicyKeywordVO> keywords = PolicyMapperUtil.toKeywordList(dto.getKeywordRaw());
+                List<PolicyKeywordVO> keywords = PolicyKeywordVO.fromCommaSeparated(dto.getKeywordRaw());
                 if (keywords != null && !keywords.isEmpty()) {
                     for (PolicyKeywordVO keywordVO : keywords) {
                         PolicyKeywordVO existing = policyMapper.findKeywordByName(keywordVO.getKeyword());
@@ -133,7 +120,7 @@ public class PolicyServiceImpl implements PolicyService {
 
 
                 // 지역 코드도 키워드처럼 처리
-                List<PolicyRegionVO> regionList = PolicyMapperUtil.toRegionList(dto.getRegionCode());
+                List<PolicyRegionVO> regionList = PolicyRegionVO.fromCommaSeparated(dto.getRegionCode());
                 if (regionList != null && !regionList.isEmpty()) {
                     for (PolicyRegionVO regionVO : regionList) {
                         PolicyRegionVO existing = policyMapper.findRegionByCode(regionVO.getRegionCode());
@@ -156,7 +143,7 @@ public class PolicyServiceImpl implements PolicyService {
                 }
 
                 // 전공
-                List<PolicyMajorVO> majorList = PolicyMapperUtil.toMajorMasterList(dto.getMajor());
+                List<PolicyMajorVO> majorList = PolicyMajorVO.fromCommaSeparated(dto.getMajor());
                 if (majorList != null && !majorList.isEmpty()) {
                     for (PolicyMajorVO majorVO : majorList) {
                         PolicyMajorVO existing = policyMapper.findMajorByName(majorVO.getMajor());
@@ -179,7 +166,7 @@ public class PolicyServiceImpl implements PolicyService {
                 }
 
                 // 학력
-                List<PolicyEducationLevelVO> eduList = PolicyMapperUtil.toEducationMasterList(dto.getEducationLevel());
+                List<PolicyEducationLevelVO> eduList = PolicyEducationLevelVO.fromCommaSeparated(dto.getEducationLevel());
                 if (eduList != null && !eduList.isEmpty()) {
                     for (PolicyEducationLevelVO eduVO : eduList) {
                         PolicyEducationLevelVO existing = policyMapper.findEducationLevelByName(eduVO.getEducationLevel());
@@ -201,7 +188,7 @@ public class PolicyServiceImpl implements PolicyService {
                 }
 
                 // 취업 상태
-                List<PolicyEmploymentStatusVO> empList = PolicyMapperUtil.toEmploymentMasterList(dto.getEmploymentStatus());
+                List<PolicyEmploymentStatusVO> empList = PolicyEmploymentStatusVO.fromCommaSeparated(dto.getEmploymentStatus());
                 if (empList != null && !empList.isEmpty()) {
                     for (PolicyEmploymentStatusVO empVO : empList) {
                         PolicyEmploymentStatusVO existing = policyMapper.findEmploymentStatusByName(empVO.getEmploymentStatus());
@@ -223,7 +210,7 @@ public class PolicyServiceImpl implements PolicyService {
                 }
 
                 // 특수 조건
-                List<PolicySpecialConditionVO> scList = PolicyMapperUtil.toSpecialConditionMasterList(dto.getSpecialCondition());
+                List<PolicySpecialConditionVO> scList = PolicySpecialConditionVO.fromCommaSeparated(dto.getSpecialCondition());
                 if (scList != null && !scList.isEmpty()) {
                     for (PolicySpecialConditionVO scVO : scList) {
                         PolicySpecialConditionVO existing = policyMapper.findSpecialConditionByName(scVO.getSpecialCondition());

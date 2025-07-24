@@ -7,6 +7,7 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
+import org.scoula.policy.dto.PolicyDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,5 +46,28 @@ public class YouthPolicyVO {
     private List<PolicyEducationLevelVO> educationLevelList;
     private List<PolicyEmploymentStatusVO> employmentStatusList;
     private List<PolicySpecialConditionVO> specialConditionList;
+
+    /**
+     * PolicyDTO를 YouthPolicyVO로 변환하는 팩토리 메서드
+     */
+    public static YouthPolicyVO fromDTO(PolicyDTO dto) {
+        YouthPolicyVO vo = new YouthPolicyVO();
+        vo.setPolicyNo(dto.getPolicyNo());
+        vo.setTitle(dto.getTitle());
+        vo.setDescription(dto.getDescription());
+        vo.setSupportContent(dto.getSupportContent());
+        vo.setApplicationMethod(dto.getApplicationMethod());
+        vo.setScreeningMethod(dto.getScreeningMethod());
+        vo.setSubmitDocuments(dto.getSubmitDocuments());
+        vo.setPolicyBenefitAmount(null); // GPT 후처리 예정
+        vo.setEtcNotes(dto.getEtcNotes());
+        vo.setApplyUrl(dto.getApplyUrl());
+        vo.setRefUrl1(dto.getRefUrl1());
+        vo.setRefUrl2(dto.getRefUrl2());
+        vo.setIsFinancialSupport(null); // GPT 후처리 예정
+        vo.setPolicyBenefitDescription(null);
+        vo.setViews(dto.getViews());
+        return vo;
+    }
 }
 
