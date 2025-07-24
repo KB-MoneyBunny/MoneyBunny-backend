@@ -85,6 +85,7 @@ dependencies {
     // Jackson - JSON 직렬화/역직렬화 라이브러리 (Spring 5.3.x와 호환되는 최신 버전)
     // 2.12.7은 Spring Framework 5.3.x와 호환성이 보장되는 안정적인 최신 버전
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
 
     // ===== 테스트 관련 의존성 - 최신 버전으로 업데이트 =====
     // Spring Test - Spring 애플리케이션 테스트 지원
