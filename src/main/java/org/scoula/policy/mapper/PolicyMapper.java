@@ -109,4 +109,6 @@ public interface PolicyMapper {
 
     /** 정책-특수 조건 연결 저장 */
     void insertYouthPolicySpecialCondition(YouthPolicySpecialConditionVO vo);
+
+    void updateViewsByPolicyNo(@Param("policyNo") String policyNo, @Param("views") Long views);
 }

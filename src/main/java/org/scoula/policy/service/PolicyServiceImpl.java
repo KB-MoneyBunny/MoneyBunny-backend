@@ -72,7 +72,15 @@ public class PolicyServiceImpl implements PolicyService {
 //                if (testCnt++ >= 50) break; // 테스트 용 50개만!
 
                 // 중복 정책 건너뜀
-                if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) continue;
+                if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) {
+                    // 조회수만 업데이트 (1회용)
+                    Long views = dto.getViews();
+                    if (views != null) {
+                        policyMapper.updateViewsByPolicyNo(dto.getPolicyNo(), views);
+                        log.info("[조회수 업데이트] 정책번호 {} → {}", dto.getPolicyNo(), views);
+                    }
+                    continue;
+                }
 
                 // GPT 분석
                 GptRequestDto gptRequest = new GptRequestDto(dto.getSupportContent());
@@ -88,7 +96,7 @@ public class PolicyServiceImpl implements PolicyService {
                 YouthPolicyVO policyVO = PolicyMapperUtil.toYouthPolicyVO(dto);
                 policyVO.setIsFinancialSupport(gptResponseDto.isFinancialSupport());
                 policyVO.setPolicyBenefitAmount(gptResponseDto.getEstimatedAmount());
-                policyVO.setPolicyBenefitDescription(gptResponseDto.getPolicyBenefitDescription());
+                policyVO.setPolicyBenefitDescription(gptResponseDto.getPolicyBenefitDescription());;
 
                 policyMapper.insertPolicy(policyVO);
                 Long policyId = policyVO.getId();
