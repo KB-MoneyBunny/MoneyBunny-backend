@@ -209,4 +209,10 @@
         WHERE special_condition = #{specialCondition}
     </select>
 
+    <update id="updateViewsByPolicyNo">
+        UPDATE youth_policy
+        SET views = #{views}
+        WHERE policy_no = #{policyNo}
+    </update>
+
 </mapper>

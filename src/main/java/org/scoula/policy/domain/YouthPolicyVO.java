@@ -30,6 +30,7 @@ public class YouthPolicyVO {
     private Boolean isFinancialSupport;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long views;
 
     private String policyBenefitDescription;
 
