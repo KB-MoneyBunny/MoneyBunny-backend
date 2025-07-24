@@ -3,8 +3,11 @@ package org.scoula.member.service;
 import org.scoula.member.dto.MemberDTO;
 import org.scoula.member.dto.MemberJoinDTO;
 
+import java.util.Optional;
+
 public interface MemberService {
-  boolean checkDuplicate(String username);     // ID 중복 체크
-  MemberDTO get(String username);              // 회원 조회
-  MemberDTO join(MemberJoinDTO member);        // 회원가입
+  boolean checkDuplicate(String loginId);       // username → loginId
+  MemberDTO get(String loginId);
+  MemberDTO join(MemberJoinDTO member);
+  Optional<MemberDTO> login(String username, String password);
 }
