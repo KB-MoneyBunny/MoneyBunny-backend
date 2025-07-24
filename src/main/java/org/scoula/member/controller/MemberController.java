@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.common.util.RedisUtil;
 import org.scoula.common.util.UploadFiles;
-import org.scoula.member.dto.EmailRequestDTO;
-import org.scoula.member.dto.EmailVerifyDTO;
-import org.scoula.member.dto.MemberDTO;
-import org.scoula.member.dto.MemberJoinDTO;
+import org.scoula.member.dto.*;
 import org.scoula.member.service.MailService;
 import org.scoula.member.service.MemberService;
 import org.scoula.security.account.domain.MemberVO;
@@ -100,6 +97,16 @@ public class MemberController {
       return ResponseEntity.ok("verified");
     } else {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("failure verification");
+    }
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO dto) {
+    boolean success = service.resetPassword(dto.getLoginId(), dto.getPassword());
+    if (success) {
+      return ResponseEntity.ok("password reset");
+    } else {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("user not found");
     }
   }
 

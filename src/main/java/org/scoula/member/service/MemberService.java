@@ -12,4 +12,6 @@ public interface MemberService {
   MemberDTO join(MemberJoinDTO member);
   Optional<MemberDTO> login(String username, String password);
   MemberVO findByUsername(String loginId);
+  boolean resetPassword(String loginId, String password);
+
 }

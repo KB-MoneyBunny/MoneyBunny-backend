@@ -88,5 +88,15 @@ public class MemberServiceImpl implements MemberService {
     return mapper.findByUsername(loginId);
   }
 
+  @Override
+  public boolean resetPassword(String loginId, String password) {
+    MemberVO member = mapper.get(loginId);
+    if (member == null) return false;
+
+    String encrypted = passwordEncoder.encode(password);
+    mapper.resetPassword(loginId, encrypted);
+    return true;
+  }
+
 
 }

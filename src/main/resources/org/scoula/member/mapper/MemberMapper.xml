@@ -35,5 +35,10 @@
     </select>
 
 
+    <update id="resetPassword">
+        UPDATE users SET password = #{password} WHERE login_id = #{loginId}
+    </update>
+
+
 
 </mapper>

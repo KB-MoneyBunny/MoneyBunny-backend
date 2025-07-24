@@ -2,7 +2,7 @@ package org.scoula.member.mapper;
 
 import org.scoula.security.account.domain.AuthVO;
 import org.scoula.security.account.domain.MemberVO;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Param;
 
 public interface MemberMapper {
   MemberVO get(String username);                    // 회원 조회 (권한 포함)
@@ -12,5 +12,6 @@ public interface MemberMapper {
 //  MemberVO findByLoginId(String loginId);   // 로그인ID로 회원 조회
   MemberVO findByLoginIdAndEmail(@Param("loginId") String loginId,
                                  @Param("email") String email);  // 이메일 인증용
+  boolean resetPassword(@Param("loginId") String loginId, @Param("password") String password); // 비밀번호 재설정
 
 }
