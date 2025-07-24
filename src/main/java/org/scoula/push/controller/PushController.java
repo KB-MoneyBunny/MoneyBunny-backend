@@ -6,6 +6,8 @@ import org.scoula.push.dto.PushNotificationRequest;
 import org.scoula.push.dto.SubscriptionRequest;
 import org.scoula.push.service.PushNotificationService;
 import org.scoula.push.service.SubscriptionService;
+import org.scoula.security.account.domain.CustomUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
