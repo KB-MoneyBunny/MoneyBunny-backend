@@ -15,7 +15,9 @@ import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,7 +54,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!regions.isEmpty()) {
                 userPolicyMapper.saveUserPolicyRegions(regions);
@@ -74,7 +76,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!educationLevels.isEmpty()) {
                 userPolicyMapper.saveUserEducationLevels(educationLevels);
@@ -96,7 +98,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!statuses.isEmpty()) {
                 userPolicyMapper.saveUserEmploymentStatuses(statuses);
@@ -118,7 +120,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!majors.isEmpty()) {
                 userPolicyMapper.saveUserMajors(majors);
@@ -140,7 +142,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!specialConditions.isEmpty()) {
                 userPolicyMapper.saveUserSpecialConditions(specialConditions);
@@ -162,7 +164,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             if (!keywords.isEmpty()) {
                 userPolicyMapper.saveUserPolicyKeywords(keywords);
@@ -172,8 +174,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return userPolicyDTO;
     }
 
-    @Override
-    public List<String> getCustomizedPolicyIds(String username) {
-        return policyMapper.getAllPolicyIds();
+    public List<String> returnUserPolicyIdList(String username) {
+        // 사용자 조건 불러오기
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(Long.parseLong(username));
+
+        return userPolicyMapper.findMatchingPolicyIds(userPolicyCondition);
     }
 }

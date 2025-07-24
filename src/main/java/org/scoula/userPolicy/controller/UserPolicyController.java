@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/userPolicy")
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class UserPolicyController {
     private final UserPolicyService userPolicyService;
 
     /**
-     * 새 게시글 작성
+     * 정책 조건 생성 API
      * POST: http://localhost:8080/api/userPolicy
      * @return ResponseEntity
      *         - 200 OK: 유저 정책 조건 생성 성공 시 생성된 유저 정책 조건 데이터 반환
@@ -46,7 +48,7 @@ public class UserPolicyController {
     })
     @PostMapping("")
     public ResponseEntity<Void> saveUserPolicy(/*@AuthenticationPrincipal String username,*/ @RequestBody UserPolicyDTO userPolicyDTO) {
-        userPolicyService.saveUserPolicy("3",userPolicyDTO);
+        userPolicyService.saveUserPolicy("4",userPolicyDTO);
         return ResponseEntity.ok().build();
     }
     //    public ResponseEntity<UserPolicyDTO> saveUserPolicy(@AuthenticationPrincipal String username, @RequestBody UserPolicyDTO userPolicyDTO) {
@@ -55,9 +57,9 @@ public class UserPolicyController {
 //    }
 
     @GetMapping("")
-    public ResponseEntity<UserPolicyDTO> getUserPolicy(@AuthenticationPrincipal String username) {
-        UserPolicyDTO userPolicy = userPolicyService.getUserPolicy(username);
-        return ResponseEntity.ok(userPolicy);
+    public ResponseEntity<List<String>> getUserPolicy(/*@AuthenticationPrincipal String username*/) {
+        List<String> userPolicyIdList = userPolicyService.returnUserPolicyIdList("3");
+        return ResponseEntity.ok(userPolicyIdList);
     }
 
 }

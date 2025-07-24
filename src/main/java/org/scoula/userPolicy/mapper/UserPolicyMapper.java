@@ -14,4 +14,6 @@ public interface UserPolicyMapper {
     void saveUserEducationLevels(List<UserEducationLevelVO> educationLevels);
 
     UserPolicyConditionVO findUserPolicyConditionByUserId(Long userId);
+
+    List<String> findMatchingPolicyIds(UserPolicyConditionVO userPolicyCondition);
 }
