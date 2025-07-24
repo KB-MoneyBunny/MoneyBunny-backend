@@ -44,5 +44,7 @@ public class YouthPolicyVO {
     private List<PolicyEducationLevelVO> educationLevelList;
     private List<PolicyEmploymentStatusVO> employmentStatusList;
     private List<PolicySpecialConditionVO> specialConditionList;
+
+    private Long view;
 }
 
