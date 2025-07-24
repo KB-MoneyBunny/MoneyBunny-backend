@@ -34,6 +34,8 @@ tasks.withType(JavaCompile) {
 
 // 프로젝트 의존성 라이브러리 선언 (최신 버전으로 업데이트)
 dependencies {
+    // ✅ Firebase Admin SDK (FCM 전송용)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // ===== Spring Framework 관련 의존성 =====
     // Spring Core 컨테이너 - IoC/DI 기능 제공 (5.3.39 - 마지막 5.3.x 버전, 보안 패치 포함)
