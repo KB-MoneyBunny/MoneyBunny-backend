@@ -7,10 +7,12 @@ import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.board.dto.BoardDTO;
+import org.scoula.security.account.domain.CustomUser;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,8 +49,9 @@ public class UserPolicyController {
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @PostMapping("")
-    public ResponseEntity<Void> saveUserPolicy(/*@AuthenticationPrincipal String username,*/ @RequestBody UserPolicyDTO userPolicyDTO) {
-        userPolicyService.saveUserPolicy("4",userPolicyDTO);
+    public ResponseEntity<Void> saveUserPolicy(@AuthenticationPrincipal CustomUser customUser, @RequestBody UserPolicyDTO userPolicyDTO) {
+        String username = customUser.getUsername();
+        userPolicyService.saveUserPolicy(username,userPolicyDTO);
         return ResponseEntity.ok().build();
     }
     //    public ResponseEntity<UserPolicyDTO> saveUserPolicy(@AuthenticationPrincipal String username, @RequestBody UserPolicyDTO userPolicyDTO) {
@@ -57,8 +60,9 @@ public class UserPolicyController {
 //    }
 
     @GetMapping("")
-    public ResponseEntity<List<String>> getUserPolicy(/*@AuthenticationPrincipal String username*/) {
-        List<String> userPolicyIdList = userPolicyService.returnUserPolicyIdList("3");
+    public ResponseEntity<List<String>> getUserPolicy(@AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        List<String> userPolicyIdList = userPolicyService.returnUserPolicyIdList(username);
         return ResponseEntity.ok(userPolicyIdList);
     }
 

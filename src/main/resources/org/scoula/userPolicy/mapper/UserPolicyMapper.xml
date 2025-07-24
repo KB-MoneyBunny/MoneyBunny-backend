@@ -129,10 +129,10 @@
         SELECT yp.title
         FROM youth_policy yp
         JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
-        WHERE
+        WHERE is_financial_support = 1
 
         <!-- 나이 조건 -->
-        (
+        AND (
         ypc.age_limit_yn = 1
         OR (
         (ypc.max_age IS NULL AND #{age} >= ypc.min_age)
