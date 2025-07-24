@@ -10,7 +10,6 @@ import org.scoula.security.handler.CustomAccessDeniedHandler;
 import org.scoula.security.handler.CustomAuthenticationEntryPoint;
 import org.scoula.security.handler.LoginFailureHandler;
 import org.scoula.security.handler.LoginSuccessHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -85,8 +84,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .addFilterBefore(encodingFilter(), CsrfFilter.class)// 한글 인코딩 필터 설정
                 .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class) // 인증 에러 필터
-                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // JWT 필터
-                .addFilterBefore(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)  // API 로그인 인증 필터
+                .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 로그인 필터
+                .addFilterBefore(jwtAuthenticationFilter, JwtUsernamePasswordAuthenticationFilter.class)  // JWT 인증 필터
 
                 // 예외 처리 설정
                 .exceptionHandling()
@@ -107,6 +106,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
                 .antMatchers("/api/member/**").permitAll()
+                .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용
                 .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
     }
 
@@ -132,23 +132,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowCredentials(true);           // 인증 정보 포함 허용
-        config.addAllowedOriginPattern("*");        // 모든 도메인 허용
-        config.addAllowedHeader("*");               // 모든 헤더 허용
-        config.addAllowedMethod("*");               // 모든 HTTP 메서드 허용
-
-        source.registerCorsConfiguration("/**", config);  // 모든 경로에 적용
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 
-    // Spring Security 검사를 우회할 경로 설정
+//    // Spring Security 검사를 우회할 경로 설정
 //    @Override
 //    public void configure(WebSecurity web) throws Exception {
 //        web.ignoring().antMatchers(
 //                "/assets/**",      // 정적 리소스
 //                "/*",              // 루트 경로의 파일들
 //                "/api/member/**",   // 회원 관련 공개 API
+//                "/api/userPolicy/**", // 사용자 정책 API 임시 허용
 //
 //                // 정책 수집 테스트용 경로 추가
 //                "/admin/policy/sync",
