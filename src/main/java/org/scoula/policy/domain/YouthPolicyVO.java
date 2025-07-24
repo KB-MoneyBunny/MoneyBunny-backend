@@ -47,6 +47,8 @@ public class YouthPolicyVO {
     private List<PolicyEmploymentStatusVO> employmentStatusList;
     private List<PolicySpecialConditionVO> specialConditionList;
 
+    private Long view;
+
     /**
      * PolicyDTO를 YouthPolicyVO로 변환하는 팩토리 메서드
      */
