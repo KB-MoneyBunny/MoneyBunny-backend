@@ -57,19 +57,19 @@ public class MemberServiceImpl implements MemberService {
   public MemberDTO join(MemberJoinDTO dto) {
     MemberVO member = dto.toVO();
 
-    // 1. 비밀번호 암호화
+    // 비밀번호 암호화
     member.setPassword(passwordEncoder.encode(member.getPassword()));
 
-    // 2. 기본 권한 설정
+    // 기본 권한 설정
 //    member.setAuth("ROLE_MEMBER");
 
-    // 3. 회원 저장
+    // 회원 저장
     mapper.insert(member);
 
-    // 4. 아바타 저장
+    // 아바타 저장
     saveAvatar(dto.getAvatar(), member.getLoginId());
 
-    // 5. 저장된 회원 정보 반환
+    // 저장된 회원 정보 반환
     return get(member.getLoginId());
   }
 
@@ -83,5 +83,25 @@ public class MemberServiceImpl implements MemberService {
 
     return Optional.empty();  // 비밀번호 불일치 또는 사용자 없음
   }
+
+  public MemberVO findByUsername(String loginId) {
+    return mapper.findByUsername(loginId);
+  }
+
+  @Override
+  public boolean resetPassword(String loginId, String password) {
+    MemberVO member = mapper.get(loginId);
+    if (member == null) return false;
+
+    String encrypted = passwordEncoder.encode(password);
+    mapper.resetPassword(loginId, encrypted);
+    return true;
+  }
+
+  @Override
+  public MemberVO findByEmail(String email) {
+    return mapper.findByEmail(email);
+  }
+
 
 }

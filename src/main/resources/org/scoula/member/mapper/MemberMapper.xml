@@ -26,4 +26,25 @@
         VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0)
     </insert>
 
+    <select id="findByUsername" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users WHERE login_id = #{username}
+    </select>
+
+
+    <select id="findByLoginIdAndEmail" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users
+        WHERE login_id = #{loginId}
+          AND email = #{email}
+    </select>
+
+
+    <update id="resetPassword">
+        UPDATE users SET password = #{password} WHERE login_id = #{loginId}
+    </update>
+
+    <select id="findByEmail" resultMap="memberMap">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
+
+
 </mapper>
