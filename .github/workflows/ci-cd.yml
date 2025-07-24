@@ -34,7 +34,14 @@ jobs:
         env:
           APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
         run: echo "$APPLICATION_DEV" | base64 --decode > src/main/resources/application-dev.properties
-
+        
+      - name: Create Firebase JSON
+        env:
+          FIREBASE_JSON: ${{ secrets.FIREBASE_JSON }}
+        run: |
+          mkdir -p src/main/resources/firebase
+          echo "$FIREBASE_JSON" | base64 --decode > src/main/resources/firebase/firebase-service-account.json
+          
       - name: Fix gradlew line endings
         run: |
           sudo apt-get install -y dos2unix
