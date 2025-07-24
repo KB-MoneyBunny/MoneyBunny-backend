@@ -19,6 +19,7 @@ import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
 import org.scoula.policy.dto.PolicyDTO;
+import org.scoula.policy.dto.PolicyDetailDTO;
 import org.scoula.policy.dto.YouthPolicyApiResponse;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policy.util.PolicyMapperUtil;
@@ -241,5 +242,10 @@ public class PolicyServiceImpl implements PolicyService {
         }
 
         log.info("[정책 수집] 전체 완료");
+    }
+
+    @Override
+    public PolicyDetailDTO getPolicyById(String policyId) {
+        return policyMapper.findPolicyDetailById(Long.parseLong(policyId));
     }
 }
