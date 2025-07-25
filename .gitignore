@@ -85,6 +85,7 @@ bin/
 *.env
 .env.*
 src/main/resources/application-dev.properties
+src/main/resources/firebase/firebase-service-account.json
 
 ####################################
 # 10. 기타 무시할 파일
