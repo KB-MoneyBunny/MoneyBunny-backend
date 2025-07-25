@@ -23,6 +23,7 @@ public class CardTransactionVO {
     private String storeType;
     private String cancelStatus;
     private Long cancelAmount;
+    private String storeName1;
 
     // Getter & Setter 생략
 }

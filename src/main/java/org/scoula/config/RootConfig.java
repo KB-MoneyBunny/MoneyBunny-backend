@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
 
@@ -39,13 +40,14 @@ import javax.sql.DataSource;
         "org.scoula.member.service",
         "org.scoula.policy.service",
         "org.scoula.external",
-        "org.scoula.policy.batch",
-        "org.scoula.policy.scheduler",
+        "org.scoula.scheduler", // 스케줄러 패키지 추가
+        "org.scoula.config", // config
         "org.scoula.userPolicy.service",
         "org.scoula.codef",
         "org.scoula.push.service", // push 서비스 스캔 추가
         "org.scoula.push.config" // push config 스캔 추가
 })
+@EnableScheduling // 스케줄링 기능 활성화
 public class RootConfig {
 
     // 현재는 기본 설정만 있는 상태
