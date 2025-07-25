@@ -17,4 +17,5 @@ public class CodefApiException extends RuntimeException {
     public String getErrorMessage() {
         return errorMessage;
     }
+
 }
