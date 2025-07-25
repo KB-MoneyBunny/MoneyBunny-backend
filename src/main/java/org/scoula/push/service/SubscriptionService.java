@@ -37,4 +37,12 @@ public class SubscriptionService {
     public void unsubscribe(String token) {
         subscriptionMapper.updateIsActive(token, false);
     }
+
+    /**
+     * 사용자의 현재 구독 상태 조회
+     */
+    public boolean isSubscribed(Long userId) {
+        // TODO: 사용자의 현재 구독 상태 반환
+        return subscriptionMapper.isUserSubscribed(userId);
+    }
 }
