@@ -33,6 +33,7 @@ public class JwtProcessor {
      * @param subject 사용자 식별자 (보통 username)
      * @return 생성된 JWT 토큰 문자열
      */
+    // AccessToken
     public String generateToken(String subject) {
         return Jwts.builder()
                 .setSubject(subject)                    // 사용자 식별자
@@ -40,6 +41,18 @@ public class JwtProcessor {
                 .setExpiration(new Date(new Date().getTime() + TOKEN_VALID_MILLISECOND))  // 만료 시간
                 .signWith(key)                         // 서명
                 .compact();                            // 문자열 생성
+    }
+
+    // RefreshToken
+    public String generateRefreshToken(String subject) {
+        // e.g. 유효 기간: 7일
+        long refreshTokenValidTime = 1000L * 60 * 60 * 24 * 7;
+        return Jwts.builder()
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + refreshTokenValidTime))
+                .signWith(key)
+                .compact();
     }
 
     /**
