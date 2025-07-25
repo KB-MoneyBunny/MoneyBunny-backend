@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.codef.mapper.UserCardMapper">
+
+    <insert id="insertUserCard" parameterType="org.scoula.codef.domain.UserCardVO">
+        INSERT INTO user_card
+        (user_id, issuer_code, card_name, card_masked_number, card_type, card_image)
+        VALUES
+            (#{userId}, #{issuerCode}, #{cardName}, #{cardMaskedNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}, #{cardType}, #{cardImage})
+    </insert>
+
+    <select id="findIdByUserIdAndCardNumber" resultType="long">
+        SELECT * FROM user_card
+        WHERE user_id = #{userId}
+          AND card_masked_number = #{cardMaskedNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
+    </select>
+
+    <select id="existsCard" resultType="int">
+        SELECT COUNT(1)
+        FROM user_card
+        WHERE user_id = #{userId} AND card_masked_number = #{cardMaskedNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
+    </select>
+
+    <select id="findUserCards" resultType="org.scoula.codef.domain.UserCardVO">
+        SELECT *
+        FROM user_card
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>
