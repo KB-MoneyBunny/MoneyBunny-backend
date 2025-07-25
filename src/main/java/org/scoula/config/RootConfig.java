@@ -41,6 +41,7 @@ import javax.sql.DataSource;
         "org.scoula.policy.service",
         "org.scoula.external",
         "org.scoula.scheduler", // 스케줄러 패키지 추가
+        "org.scoula.config", // config
         "org.scoula.userPolicy.service",
         "org.scoula.codef",
         "org.scoula.push.service", // push 서비스 스캔 추가
