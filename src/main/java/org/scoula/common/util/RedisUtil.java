@@ -15,6 +15,7 @@ public class RedisUtil {
         this.redisTemplate = redisTemplate;
     }
 
+    //   인증코드
     public void saveCode(String email, String code) {
         log.info("Redis에 인증코드 저장: {} => {}", email, code);
         try {
@@ -46,5 +47,22 @@ public class RedisUtil {
         String result = redisTemplate.opsForValue().get(key);
         return "true".equals(result);
     }
+
+    // RefreshToken
+    // Refresh Token 저장
+    public void saveRefreshToken(String username, String refreshToken, Duration ttl) {
+        redisTemplate.opsForValue().set("refresh:" + username, refreshToken, ttl);
+    }
+
+    // Refresh Token 조회
+    public String getRefreshToken(String username) {
+        return redisTemplate.opsForValue().get("refresh:" + username);
+    }
+
+    // Refresh Token 삭제 (로그아웃 등)
+    public void deleteRefreshToken(String username) {
+        redisTemplate.delete("refresh:" + username);
+    }
+
 
 }
