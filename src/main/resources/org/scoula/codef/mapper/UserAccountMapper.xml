@@ -9,19 +9,19 @@
         SELECT COUNT(1)
         FROM user_account
         WHERE user_id = #{userId}
-        AND account_number = #{accountNumber}
+        AND account_number = #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
     </select>
 
 
     <select id="findIdByUserIdAndAccountNumber" resultType="long">
-        SELECT id FROM user_account WHERE user_id = #{userId} AND account_number = #{accountNumber}
+        SELECT id FROM user_account WHERE user_id = #{userId} AND account_number = #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
     </select>
 
     <insert id="insertUserAccount" parameterType="org.scoula.codef.domain.UserAccountVO">
         INSERT INTO user_account
         (user_id, account_number, account_name, account_type, balance, bank_code)
         VALUES
-            (#{userId}, #{accountNumber}, #{accountName}, #{accountType}, #{balance}, #{bankCode})
+            (#{userId}, #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}, #{accountName}, #{accountType}, #{balance}, #{bankCode})
     </insert>
 
 
