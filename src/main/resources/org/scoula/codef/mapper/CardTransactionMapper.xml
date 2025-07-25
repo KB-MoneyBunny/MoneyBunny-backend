@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.codef.mapper.CardTransactionMapper">
+
+    <insert id="insertCardTransaction" parameterType="org.scoula.codef.domain.CardTransactionVO">
+        INSERT INTO card_transaction
+        (card_id, category_id, approval_no, amount, payment_type, installment_month, transaction_date,
+         store_name, store_name1, store_type, cancel_status, cancel_amount)
+        VALUES
+            (#{cardId}, #{categoryId}, #{approvalNo}, #{amount}, #{paymentType}, #{installmentMonth}, #{transactionDate},
+             #{storeName}, #{storeName1}, #{storeType}, #{cancelStatus}, #{cancelAmount})
+    </insert>
+
+    <select id="findCardTransactions" resultType="org.scoula.codef.domain.CardTransactionVO">
+        SELECT *
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+        ORDER BY transaction_date DESC
+    </select>
+
+    <select id="findUnclassifiedTransactions" resultType="org.scoula.codef.domain.CardTransactionVO">
+        SELECT *
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+          AND category_id = #{unclassifiedCategoryId}
+        ORDER BY transaction_date DESC
+    </select>
+
+    <update id="updateTransactionCategory">
+        UPDATE card_transaction
+        SET category_id = #{categoryId}
+        WHERE id = #{txId}
+    </update>
+
+</mapper>
