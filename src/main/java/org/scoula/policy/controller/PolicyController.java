@@ -19,4 +19,5 @@ public class PolicyController {
         policyService.fetchAndSaveAllPolicies();
         return "정책 수집 및 저장 완료!";
     }
+
 }
