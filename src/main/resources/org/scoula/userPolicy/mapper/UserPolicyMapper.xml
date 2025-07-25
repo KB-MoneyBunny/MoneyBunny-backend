@@ -125,8 +125,8 @@
         WHERE user_policy_condition_id = #{id}
     </select>
 
-    <select id="findMatchingPolicyIds" resultType="String">
-        SELECT yp.title
+    <select id="findMatchingPolicyIds" resultType="Long">
+        SELECT ypc.policy_id
         FROM youth_policy yp
         JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
         WHERE is_financial_support = 1
@@ -271,4 +271,9 @@
         )
         )
     </select>
+
+    <insert id="saveUserPolicyScore" parameterType="org.scoula.userPolicy.domain.UserPolicyScoreVO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_policy_score (user_id, policy_id, score, created_at)
+        VALUES (#{userID}, #{policyId}, #{score}, NOW())
+    </insert>
 </mapper>
