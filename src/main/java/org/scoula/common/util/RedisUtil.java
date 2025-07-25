@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class RedisUtil {
@@ -26,9 +27,24 @@ public class RedisUtil {
     public boolean verifyCode(String email, String code) {
         String storedCode = redisTemplate.opsForValue().get(email);
         return storedCode != null && storedCode.equals(code);
-    }
 
+
+    }
+    // 인증 코드 삭제
     public void deleteCode(String email) {
         redisTemplate.delete(email);
     }
+
+    // 인증 성공 시 플래그 (유효 시간: 3분)
+    public void markVerified(String email) {
+        redisTemplate.opsForValue().set("verified:" + email, "true", 3, TimeUnit.MINUTES);
+    }
+
+    // 인증 여부 확인
+    public boolean isVerified(String email) {
+        String key = "verified:" + email;
+        String result = redisTemplate.opsForValue().get(key);
+        return "true".equals(result);
+    }
+
 }

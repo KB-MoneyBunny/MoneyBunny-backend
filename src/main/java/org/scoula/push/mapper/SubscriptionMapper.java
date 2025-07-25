@@ -16,6 +16,9 @@ public interface SubscriptionMapper {
     // 구독 활성화/비활성화 상태 업데이트
     void updateIsActive(@Param("token") String token, @Param("isActive") boolean isActive);
 
-    // SubscriptionMapper.java
+    // 모든 활성 구독자 조회
     List<Subscription> findAllActive();
+
+    // 사용자의 구독 상태 확인
+    boolean isUserSubscribed(@Param("userId") Long userId);
 }

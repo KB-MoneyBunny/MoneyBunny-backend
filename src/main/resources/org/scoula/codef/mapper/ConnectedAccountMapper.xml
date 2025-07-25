@@ -5,8 +5,15 @@
 
 <mapper namespace="org.scoula.codef.mapper.ConnectedAccountMapper">
 
+    <resultMap id="ConnectedAccountMap" type="org.scoula.codef.domain.ConnectedAccountVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="connectedId" column="connected_id"
+                typeHandler="org.scoula.codef.util.AesEncryptTypeHandler"/>
+    </resultMap>
+
     <!-- connectedId 조회 -->
-    <select id="findConnectedIdByUserId" resultType="string">
+    <select id="findConnectedIdByUserId" resultMap="ConnectedAccountMap">
         SELECT connected_id
         FROM connected_accounts
         WHERE user_id = #{userId}
@@ -23,7 +30,7 @@
     <!-- connectedId 저장 (중복 방지용) -->
     <insert id="insertConnectedAccount">
         INSERT INTO connected_accounts (user_id, connected_id)
-        VALUES (#{userId}, #{connectedId})
+        VALUES (#{userId}, #{connectedId, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler})
             ON DUPLICATE KEY UPDATE connected_id = VALUES(connected_id)
     </insert>
 

@@ -49,6 +49,9 @@ public class PolicyDTO {
     @JsonProperty("lastMdfcnDt")
     private String modifiedDate;
 
+    @JsonProperty("inqCnt")
+    private Long views;
+
     // === 조건 정보 (youth_policy_condition) ===
     @JsonProperty("sprtTrgtMinAge")
     private String minAge;
