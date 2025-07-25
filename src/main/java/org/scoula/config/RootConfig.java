@@ -29,7 +29,10 @@ import javax.sql.DataSource;
         "org.scoula.board.mapper",
         "org.scoula.member.mapper",  // 회원 매퍼 스캔
         "org.scoula.policy.mapper",
-        "org.scoula.codef.mapper"
+        "org.scoula.userPolicy.mapper",
+        "org.scoula.policy.mapper",
+        "org.scoula.codef.mapper",
+        "org.scoula.push.mapper" // push 매퍼 스캔 추가
 })
 @ComponentScan(basePackages = {
         "org.scoula.board.service",
@@ -38,7 +41,11 @@ import javax.sql.DataSource;
         "org.scoula.external",
         "org.scoula.policy.batch",
         "org.scoula.policy.scheduler",
-        "org.scoula.codef"
+        "org.scoula.config", // config
+        "org.scoula.userPolicy.service",
+        "org.scoula.codef",
+        "org.scoula.push.service", // push 서비스 스캔 추가
+        "org.scoula.push.config" // push config 스캔 추가
 })
 public class RootConfig {
 

@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 import java.util.Collection;
+import java.util.List;
 
 
 @Getter
@@ -26,9 +27,8 @@ public class CustomUser extends User {
 
     // MemberVO를 받는 생성자 - 실제로 주로 사용
     public CustomUser(MemberVO vo) {
-        super(vo.getUsername(),           // 사용자 ID
-                vo.getPassword(),         // 암호화된 비밀번호
-                vo.getAuthList());        // 권한 목록 (List<AuthVO>)
-        this.member = vo;                 // 추가 사용자 정보 저장
+        super(vo.getLoginId(), vo.getPassword(), List.of());  // 권한 없음
+        this.member = vo;
     }
+
 }
