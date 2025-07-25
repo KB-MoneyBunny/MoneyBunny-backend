@@ -155,6 +155,8 @@ dependencies {
     // 메일 전송용 (JavaMailSender)
     implementation 'org.springframework:spring-context-support:4.3.9.RELEASE'
     implementation 'com.sun.mail:javax.mail:1.6.2'  // JavaMail API
+
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE'
 }
 // 테스트 실행 설정
 test {
