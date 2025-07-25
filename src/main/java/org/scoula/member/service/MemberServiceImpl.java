@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.scoula.member.dto.MemberDTO;
 import org.scoula.member.dto.MemberJoinDTO;
 import org.scoula.member.mapper.MemberMapper;
-import org.scoula.security.account.domain.AuthVO;
 import org.scoula.security.account.domain.MemberVO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,16 +20,15 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
-  final PasswordEncoder passwordEncoder;  // 비밀번호 암호화
-  final MemberMapper mapper;              // 데이터 접근
 
+  private final PasswordEncoder passwordEncoder;
+  private final MemberMapper mapper;
 
-  // 아이디 중복 체크
+  // ID 중복 체크
   @Override
   public boolean checkDuplicate(String username) {
     MemberVO member = mapper.findByUsername(username);
-    //return member != null ? true : false;  // true: 중복(사용불가), false: 사용가능
-    return member!= null;
+    return member != null;
   }
 
   // 회원 정보 조회
@@ -41,41 +39,69 @@ public class MemberServiceImpl implements MemberService {
     return MemberDTO.of(member);
   }
 
-  // 아바타 파일 저장
-  private void saveAvatar(MultipartFile avatar, String username) {
-    if(avatar != null && !avatar.isEmpty()) {
-      File dest = new File("c:/upload/avatar", username + ".png");
+  // 아바타 저장
+  private void saveAvatar(MultipartFile avatar, String loginId) {
+    if (avatar != null && !avatar.isEmpty()) {
+      File dest = new File("c:/upload/avatar", loginId + ".png");
       try {
-        avatar.transferTo(dest);  // 파일 저장
+        avatar.transferTo(dest);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
   }
 
-  // 회원 가입(선언적 트랜잭션 처리)
-  @Transactional  // 트랜잭션 처리 보장
+  // 회원 가입
+  @Transactional
   @Override
   public MemberDTO join(MemberJoinDTO dto) {
     MemberVO member = dto.toVO();
 
-    // 1. 비밀번호 암호화
+    // 비밀번호 암호화
     member.setPassword(passwordEncoder.encode(member.getPassword()));
 
-    // 2. 회원정보 저장
+    // 기본 권한 설정
+//    member.setAuth("ROLE_MEMBER");
+
+    // 회원 저장
     mapper.insert(member);
 
-    // 3. 권한정보 저장
-    AuthVO auth = new AuthVO();
-    auth.setUsername(member.getUsername());
-    auth.setAuth("ROLE_MEMBER");  // 기본 권한 설정
-    mapper.insertAuth(auth);
+    // 아바타 저장
+    saveAvatar(dto.getAvatar(), member.getLoginId());
 
-    // 4. 아바타 파일 저장
-    saveAvatar(dto.getAvatar(), member.getUsername());
-
-    // 5. 저장된 회원정보 반환
-    return get(member.getUsername());
+    // 저장된 회원 정보 반환
+    return get(member.getLoginId());
   }
+
+  @Override
+  public Optional<MemberDTO> login(String username, String password) {
+    MemberVO member = mapper.get(username);
+
+    if (member != null && passwordEncoder.matches(password, member.getPassword())) {
+      return Optional.of(MemberDTO.of(member));
+    }
+
+    return Optional.empty();  // 비밀번호 불일치 또는 사용자 없음
+  }
+
+  public MemberVO findByUsername(String loginId) {
+    return mapper.findByUsername(loginId);
+  }
+
+  @Override
+  public boolean resetPassword(String loginId, String password) {
+    MemberVO member = mapper.get(loginId);
+    if (member == null) return false;
+
+    String encrypted = passwordEncoder.encode(password);
+    mapper.resetPassword(loginId, encrypted);
+    return true;
+  }
+
+  @Override
+  public MemberVO findByEmail(String email) {
+    return mapper.findByEmail(email);
+  }
+
 
 }

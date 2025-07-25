@@ -15,4 +15,14 @@
         <package name="org.scoula.board.domain"/>
     </typeAliases>
 
+    <mappers>
+        <mapper resource="org/scoula/board/mapper/BoardMapper.xml"/>
+        <mapper resource="org/scoula/member/mapper/MemberMapper.xml"/>
+        <mapper resource="org/scoula/policy/mapper/PolicyMapper.xml"/>
+        <mapper resource="org/scoula/codef/mapper/AccountTransactionMapper.xml"/>
+        <mapper resource="org/scoula/codef/mapper/ConnectedAccountMapper.xml"/>
+        <mapper resource="org/scoula/codef/mapper/UserAccountMapper.xml"/>
+        <mapper resource="org/scoula/push/mapper/SubscriptionMapper.xml"/>
+        <mapper resource="org/scoula/security/account/mapper/UserDetailsMapper.xml"/>
+    </mappers>
 </configuration>
