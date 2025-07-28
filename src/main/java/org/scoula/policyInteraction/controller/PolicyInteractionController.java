@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
-import org.scoula.policyInteraction.dto.ApplicationRequestDto;
-import org.scoula.policyInteraction.dto.BookmarkRequestDto;
 import org.scoula.policyInteraction.service.PolicyInteractionService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
@@ -31,22 +29,21 @@ public class PolicyInteractionController {
 
     @PostMapping("/bookmark")
     @ApiOperation(value = "정책 북마크 추가", notes = "인증된 사용자가 정책을 북마크에 추가합니다")
-    public ResponseEntity<String> addBookmark(
+    public ResponseEntity<Void> addBookmark(
             @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody BookmarkRequestDto dto) {
+            @RequestParam Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
-        dto.setUserId(userId);
         
-        boolean success = policyInteractionService.addBookmark(dto);
+        boolean success = policyInteractionService.addBookmark(userId, policyId);
         return success ?
-                ResponseEntity.ok("북마크가 추가되었습니다.") :
-                ResponseEntity.badRequest().body("이미 북마크된 정책입니다.");
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
     }
 
     @DeleteMapping("/bookmark")
     @ApiOperation(value = "정책 북마크 삭제", notes = "인증된 사용자가 정책 북마크를 삭제합니다")
-    public ResponseEntity<String> removeBookmark(
+    public ResponseEntity<Void> removeBookmark(
             @AuthenticationPrincipal CustomUser customUser,
             @RequestParam Long policyId) {
         
@@ -54,8 +51,8 @@ public class PolicyInteractionController {
         boolean success = policyInteractionService.removeBookmark(userId, policyId);
         
         return success ?
-                ResponseEntity.ok("북마크가 삭제되었습니다.") :
-                ResponseEntity.badRequest().body("북마크를 찾을 수 없습니다.");
+                ResponseEntity.ok().build() :
+                ResponseEntity.notFound().build();
     }
 
     @GetMapping("/bookmark/check")
@@ -85,17 +82,16 @@ public class PolicyInteractionController {
 
     @PostMapping("/application")
     @ApiOperation(value = "정책 신청 등록", notes = "인증된 사용자가 정책에 신청합니다")
-    public ResponseEntity<String> addApplication(
+    public ResponseEntity<Void> addApplication(
             @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody ApplicationRequestDto dto) {
+            @RequestParam Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
-        dto.setUserId(userId);
         
-        boolean success = policyInteractionService.addApplication(dto);
+        boolean success = policyInteractionService.addApplication(userId, policyId);
         return success ?
-                ResponseEntity.ok("정책 신청이 등록되었습니다.") :
-                ResponseEntity.badRequest().body("이미 신청한 정책입니다.");
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/application/check")
