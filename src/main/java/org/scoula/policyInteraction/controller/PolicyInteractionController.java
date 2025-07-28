@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/policy-interaction")
 @RequiredArgsConstructor
-@Api(tags = "정책 상호작용 API")
+@Api(tags = "유저 정책 북마크 및 신청 API")
 public class PolicyInteractionController {
 
     private final PolicyInteractionService policyInteractionService;
