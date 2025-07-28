@@ -14,6 +14,7 @@ import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
+import org.scoula.policy.dto.PolicyDetailDTO;
 
 import java.util.List;
 
@@ -111,6 +112,12 @@ public interface PolicyMapper {
 
     /** 정책-특수 조건 연결 저장 */
     void insertYouthPolicySpecialCondition(YouthPolicySpecialConditionVO vo);
+
+    YouthPolicyPeriodVO findYouthPolicyPeriodByPolicyId(Long policyId);
+
+    YouthPolicyVO findYouthPolicyById(Long policyId);
+
+    PolicyDetailDTO findPolicyDetailById(Long policyId);
 
     // ────────────────────────────────────────
     // 📌 정책 업데이트 관련

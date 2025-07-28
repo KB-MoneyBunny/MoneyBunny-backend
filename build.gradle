@@ -34,6 +34,12 @@ tasks.withType(JavaCompile) {
 
 // 프로젝트 의존성 라이브러리 선언 (최신 버전으로 업데이트)
 dependencies {
+    // ===== Redis 관련 의존성 =====
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE' // Redis 클라이언트: Lettuce
+
+    // ===== Firebase 관련 의존성 =====
+    // Firebase Admin SDK (FCM 전송용)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
     // ✅ Firebase Admin SDK (FCM 전송용)
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
@@ -92,6 +98,7 @@ dependencies {
     // Jackson - JSON 직렬화/역직렬화 라이브러리 (Spring 5.3.x와 호환되는 최신 버전)
     // 2.12.7은 Spring Framework 5.3.x와 호환성이 보장되는 안정적인 최신 버전
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
 
     // ===== 테스트 관련 의존성 - 최신 버전으로 업데이트 =====
     // Spring Test - Spring 애플리케이션 테스트 지원
@@ -165,6 +172,8 @@ dependencies {
     // 메일 전송용 (JavaMailSender)
     implementation 'org.springframework:spring-context-support:4.3.9.RELEASE'
     implementation 'com.sun.mail:javax.mail:1.6.2'  // JavaMail API
+
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE'
 }
 // 테스트 실행 설정
 test {

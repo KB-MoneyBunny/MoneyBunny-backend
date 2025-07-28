@@ -17,7 +17,7 @@ import java.util.Date;
 public class JwtProcessor {
 
     // 테스트용 5분 - 만료 확인용
-    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 5;
+    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 60 * 24 * 30; // RefreshToken 구현 전까지만 한 달로 유지!
 
     // 개발용 고정 Secret Key
     private String secretKey = "KB_IT`s_Yours_Life_6기_JWT수업_secretKey";

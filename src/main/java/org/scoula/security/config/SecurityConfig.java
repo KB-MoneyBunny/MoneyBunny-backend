@@ -106,6 +106,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
                 .antMatchers("/api/member/**").permitAll()
+                .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
                 .antMatchers("/api/push/**").authenticated()
                 .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용
                 .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
