@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
-import org.scoula.policyInteraction.dto.ApplicationRequestDto;
-import org.scoula.policyInteraction.dto.BookmarkRequestDto;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,17 +24,17 @@ public class PolicyInteractionService {
     
     /** 북마크 추가 */
     @Transactional
-    public boolean addBookmark(BookmarkRequestDto dto) {
+    public boolean addBookmark(Long userId, Long policyId) {
         // 이미 북마크 되어있는지 확인
-        YouthPolicyBookmarkVO existing = policyInteractionMapper.selectBookmark(dto.getUserId(), dto.getPolicyId());
+        YouthPolicyBookmarkVO existing = policyInteractionMapper.selectBookmark(userId, policyId);
         if (existing != null) {
-            log.info("이미 북마크된 정책입니다. userId: {}, policyId: {}", dto.getUserId(), dto.getPolicyId());
+            log.info("이미 북마크된 정책입니다. userId: {}, policyId: {}", userId, policyId);
             return false;
         }
         
         YouthPolicyBookmarkVO bookmark = YouthPolicyBookmarkVO.builder()
-                .userId(dto.getUserId())
-                .policyId(dto.getPolicyId())
+                .userId(userId)
+                .policyId(policyId)
                 .build();
                 
         int result = policyInteractionMapper.insertBookmark(bookmark);
@@ -67,18 +65,18 @@ public class PolicyInteractionService {
     
     /** 정책 신청 등록 */
     @Transactional
-    public boolean addApplication(ApplicationRequestDto dto) {
+    public boolean addApplication(Long userId, Long policyId) {
         // 이미 신청했는지 확인
-        UserPolicyApplicationVO existing = policyInteractionMapper.selectApplication(dto.getUserId(), dto.getPolicyId());
+        UserPolicyApplicationVO existing = policyInteractionMapper.selectApplication(userId, policyId);
         if (existing != null) {
-            log.info("이미 신청한 정책입니다. userId: {}, policyId: {}", dto.getUserId(), dto.getPolicyId());
+            log.info("이미 신청한 정책입니다. userId: {}, policyId: {}", userId, policyId);
             return false;
         }
         
         UserPolicyApplicationVO application = UserPolicyApplicationVO.builder()
-                .userId(dto.getUserId())
-                .policyId(dto.getPolicyId())
-                .applicationUrl(dto.getApplicationUrl())
+                .userId(userId)
+                .policyId(policyId)
+                .applicationUrl(null)  // 선택적 필드로 null 처리
                 .build();
                 
         int result = policyInteractionMapper.insertApplication(application);

@@ -1,9 +1,11 @@
 package org.scoula.push.controller;
 
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.scoula.push.domain.UserNotification;
 import org.scoula.push.dto.request.SubscriptionRequest;
 import org.scoula.push.dto.response.SubscriptionStatusResponse;
+import org.scoula.push.service.PushNotificationService;
 import org.scoula.push.service.SubscriptionService;
 import org.scoula.push.service.UserNotificationService;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ public class PushController {
 
     private final UserNotificationService userNotificationService;
     private final SubscriptionService subscriptionService;
+    private final PushNotificationService pushNotificationService;
 
     // ===============================
     // 알림 관련 API
@@ -122,5 +125,12 @@ public class PushController {
             @RequestParam(required = false) String endDate) {
         String stats = userNotificationService.getNotificationStats(startDate, endDate);
         return ResponseEntity.ok(stats);
+    }
+
+    @PostMapping("/send-test")
+    @ApiOperation(value = "전체 사용자에게 푸시 알림 테스트", notes = "현재 DB에 등록된 모든 사용자에게 테스트 알림을 전송합니다.")
+    public ResponseEntity<String> sendTestPush() {
+        pushNotificationService.sendAllCustomNotifications();
+        return ResponseEntity.ok("테스트 푸시 알림을 전송했습니다.");
     }
 }
