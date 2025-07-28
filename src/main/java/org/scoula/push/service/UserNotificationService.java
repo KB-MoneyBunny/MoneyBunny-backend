@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.scoula.push.domain.NotificationType;
 import org.scoula.push.domain.Subscription;
 import org.scoula.push.domain.UserNotification;
+import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.mapper.SubscriptionMapper;
 import org.scoula.push.mapper.UserNotificationMapper;
 import org.springframework.stereotype.Service;
@@ -53,25 +54,21 @@ public class UserNotificationService {
     /**
      * 특정 사용자의 미읽은 알림 목록을 조회합니다
      */
-    public List<UserNotification> getUnreadNotifications(Long userId) {
-        return userNotificationMapper.findUnreadByUserId(userId);
+    public List<NotificationResponse> getUnreadNotifications(Long userId) {
+        List<UserNotification> notifications = userNotificationMapper.findUnreadByUserId(userId);
+        return notifications.stream()
+                .map(NotificationResponse::from)
+                .toList();
     }
 
     /**
      * 특정 사용자의 모든 알림 조회
      */
-    public List<UserNotification> getNotifications(Long userId) {
-        return userNotificationMapper.findByUserId(userId);
-    }
-
-    /**
-     * 알림 타입별 조회 (정책 알림/소비패턴 피드백)
-     */
-    public List<UserNotification> getNotificationsByType(Long userId, String type) {
-        if (type == null || type.isEmpty()) {
-            return userNotificationMapper.findByUserId(userId);
-        }
-        return userNotificationMapper.findByUserIdAndType(userId, type);
+    public List<NotificationResponse> getNotifications(Long userId) {
+        List<UserNotification> notifications = userNotificationMapper.findByUserId(userId);
+        return notifications.stream()
+                .map(NotificationResponse::from)
+                .toList();
     }
 
     /**
@@ -144,28 +141,8 @@ public class UserNotificationService {
         }
     }
 
-    // ==================== 관리자용 메서드들 ====================
-
-    /**
-     * 알림 발송 통계 조회
-     */
-    public String getNotificationStats(String startDate, String endDate) {
-        // TODO: 기간별 알림 발송 통계 조회
-        return "통계 데이터 준비 중";
-    }
 
     // ==================== 스케줄러에서 호출할 메서드들 ====================
-
-    /**
-     * 북마크한 정책의 오픈/마감 알림 발송 (스케줄러용)
-     */
-    @Transactional
-    public void triggerBookmarkedPolicyNotifications(Long policyId) {
-        // TODO: 해당 정책을 북마크한 모든 사용자 조회
-        // TODO: 정책 상태 확인 (오픈/마감)
-        // TODO: 맞춤형 정책 알림 생성 및 발송
-        log.info("[스케줄러] 북마크 정책 알림 발송 - 정책 ID: {}", policyId);
-    }
 
     /**
      * 개인 소비패턴 기반 피드백 알림 발송 (스케줄러용)
