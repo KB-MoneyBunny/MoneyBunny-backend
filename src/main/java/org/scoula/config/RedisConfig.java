@@ -3,6 +3,7 @@ package org.scoula.config;
 import org.scoula.common.util.RedisUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -12,31 +13,31 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.Properties;
 
 @Configuration
+@PropertySource("classpath:application-dev.properties")
 public class RedisConfig {
 
     // Redis 서버 연결 설정 (Upstash 사용)
-//    @Value("${spring.redis.host}")
-//    private String redisHost;
-//
-//    @Value("${spring.redis.port}")
-//    private int redisPort;
-//
-//    @Value("${spring.redis.password}")
-//    private String redisPassword;
-//
-//    @Value("${spring.redis.ssl.enabled}")
-//    private boolean redisSslEnabled;
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
+
+    @Value("${spring.redis.password}")
+    private String redisPassword;
+
+    @Value("${spring.redis.ssl.enabled}")
+    private boolean redisSslEnabled;
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
 
-        config.setHostName("mighty-roughy-58895.upstash.io");
-        config.setPort(6379);
-        config.setPassword(RedisPassword.of("AeYPAAIjcDExM2UxYWFkZjFkYmQ0ZmY0YWNhMWI5ZTVmZmUzYmQ5ZHAxMA" ));
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+        config.setPassword(RedisPassword.of(redisPassword));
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .useSsl() // SSL 사용 설정

@@ -1,11 +1,9 @@
 package org.scoula.security.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -21,12 +19,18 @@ public class JwtProcessor {
     static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 2; // RefreshToken 구현 전까지만 한 달로 유지!
 
     // 개발용 고정 Secret Key
-    private String secretKey = "KB_IT`s_Yours_Life_6기_JWT수업_secretKey";
-    private Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+//    private String secretKey = "KB_IT`s_Yours_Life_6기_JWT수업_secretKey";
+//    private Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
     // 운영시 사용 - 서버 재시작마다 키 갱신됨
-    // private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+//     private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
+    private final Key key;
+
+    // 생성자를 통해 키 초기화
+    public JwtProcessor(@Value("${jwt.secret}") String secretKey) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
 
     /* ***** 토큰 생성 메서드 ***** */
     /**
@@ -134,6 +138,27 @@ public class JwtProcessor {
         } catch (Exception e) {
             log.error("JWT 검증 실패: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * RefreshToken 또는 AccessToken의 만료 여부 확인
+     * @param token JWT 문자열
+     * @return true: 만료됨, false: 아직 유효
+     */
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expiration = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getExpiration();
+
+            return expiration.before(new Date());
+        } catch (JwtException e) {
+            log.error("토큰 만료 확인 중 오류: {}", e.getMessage());
+            return true; // 토큰이 파싱 안 되면 무효
         }
     }
 
