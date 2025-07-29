@@ -32,16 +32,22 @@
         WHERE user_id = #{userId} AND policy_id = #{policyId}
     </select>
 
-    <!-- 사용자 전체 북마크 목록 조회 -->
-    <select id="selectBookmarksByUserId" resultType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
-        SELECT
-            id,
-            user_id AS userId,
-            policy_id AS policyId,
-            created_at AS createdAt
-        FROM youth_policy_bookmark
-        WHERE user_id = #{userId}
-        ORDER BY created_at DESC
+    <!-- 사용자 전체 북마크 목록 조회 (정책 정보 포함) -->
+    <select id="selectBookmarksByUserId" resultType="org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO">
+        SELECT 
+            b.id as bookmarkId,
+            b.created_at as bookmarkedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM youth_policy_bookmark b
+        INNER JOIN youth_policy p ON b.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE b.user_id = #{userId}
+        ORDER BY b.created_at DESC
     </select>
 
     <!-- 모든 북마크 목록 조회 (알림 발송용) -->
@@ -78,18 +84,22 @@
         WHERE user_id = #{userId} AND policy_id = #{policyId}
     </select>
 
-    <!-- 사용자 전체 신청 목록 조회 -->
-    <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.domain.UserPolicyApplicationVO">
-        SELECT
-            id,
-            user_id AS userId,
-            policy_id AS policyId,
-            application_url AS applicationUrl,
-            created_at AS createdAt,
-            updated_at AS updatedAt
-        FROM user_policy_application
-        WHERE user_id = #{userId}
-        ORDER BY updated_at DESC
+    <!-- 사용자 전체 신청 목록 조회 (정책 정보 포함) -->
+    <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+        SELECT 
+            a.id as applicationId,
+            a.created_at as appliedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM user_policy_application a
+        INNER JOIN youth_policy p ON a.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE a.user_id = #{userId}
+        ORDER BY a.created_at DESC
     </select>
 
 </mapper>

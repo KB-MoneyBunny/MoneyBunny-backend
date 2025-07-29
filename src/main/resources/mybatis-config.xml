@@ -22,5 +22,6 @@
         <mapper resource="org/scoula/codef/mapper/UserAccountMapper.xml"/>
         <mapper resource="org/scoula/push/mapper/SubscriptionMapper.xml"/>
         <mapper resource="org/scoula/security/account/mapper/UserDetailsMapper.xml"/>
+        <mapper resource="org/scoula/policyInteraction/mapper/PolicyInteractionMapper.xml"/>
     </mappers>
 </configuration>
