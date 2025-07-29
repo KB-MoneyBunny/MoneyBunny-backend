@@ -6,15 +6,21 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.common.util.RedisUtil;
 import org.scoula.policy.dto.PolicyDetailDTO;
 import org.scoula.policy.service.PolicyService;
+import org.scoula.policyInteraction.service.PolicyInteractionService;
+import org.scoula.security.account.domain.CustomUser;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
-@RequestMapping("/admin/policy")
+@RequestMapping("/policy")
 @RequiredArgsConstructor
 @Slf4j                             // 로깅 기능
 @Api(
@@ -25,6 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class PolicyController {
 
     private final PolicyService policyService;
+    private final PolicyInteractionService policyInteractionService;
+    private final RedisUtil redisUtil;
 
     /**
      * 정책 수집 및 저장 API
@@ -53,7 +61,7 @@ public class PolicyController {
      * 정책 ID로 정책 조회 API
      * 이 API는 정책 ID를 기반으로 특정 정책을 조회하는 기능을 제공합니다.
      * 정책 ID는 URL 경로 변수로 전달되며, 해당 ID에 해당하는 정책 정보를 반환합니다.
-     * GET: http://localhost:8080/admin/policy/{policyId}
+     * GET: http://localhost:8080/policy/{policyId}
      * @return ResponseEntity
      *        - 200 OK: 정책 조회 성공시 PolicyDetailDTO 객체 반환
      *        - 400 Bad Request: 잘못된 요청 데이터 (예: 존재하지 않는 정책 ID 등)
@@ -68,5 +76,65 @@ public class PolicyController {
     @GetMapping("/{policyId}")
     public PolicyDetailDTO getPolicyById(@PathVariable String policyId) {
         return policyService.getPolicyById(policyId);
+    }
+
+    /**
+     * 사용자용 정책 상세 조회 API (조회수 증가 + 벡터 갱신)
+     * 로그인 사용자의 경우 Redis에 조회 기록 저장 및 첫 조회 시 벡터 갱신 (가중치 0.1)
+     * GET: http://localhost:8080/policy/detail/{policyId}
+     * @param policyId 조회할 정책 ID
+     * @param customUser 로그인한 사용자 정보 (선택적)
+     * @return ResponseEntity<PolicyDetailDTO>
+     */
+    @ApiOperation(value = "사용자용 정책 상세 조회", notes = "정책 상세 정보를 조회하며, 사용자 조회 기록을 Redis에 저장하고 벡터를 갱신합니다")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = PolicyDetailDTO.class),
+            @ApiResponse(code = 404, message = "정책을 찾을 수 없습니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("/detail/{policyId}")
+    public ResponseEntity<PolicyDetailDTO> getPolicyDetail(
+            @PathVariable String policyId,
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        
+        try {
+            // 1. 정책 상세 정보 조회
+            PolicyDetailDTO policyDetail = policyService.getPolicyById(policyId);
+            if (policyDetail == null) {
+                log.warn("정책을 찾을 수 없음 - policyId: {}", policyId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 2. 로그인한 사용자 처리
+            if (customUser != null) {
+                Long userId = customUser.getMember().getUserId();
+                Long policyIdLong = Long.parseLong(policyId);
+                
+                // 2-1. 사용자-정책별 조회수 증가
+                Long viewCount = redisUtil.incrementUserPolicyView(userId, policyIdLong);
+                
+                // 2-2. 사용자 조회 목록에 추가
+                redisUtil.addToUserViewList(userId, policyIdLong);
+                
+                // 2-3. 첫 조회라면 벡터 갱신 (가중치 0.1)
+                if (viewCount == 1) {
+                    policyInteractionService.updateUserVectorOnView(userId, policyIdLong);
+                    log.info("[사용자 벡터] 첫 조회 벡터 갱신 - userId: {}, policyId: {}", userId, policyId);
+                } else {
+                    log.debug("[사용자 조회] 재조회 ({}회) - userId: {}, policyId: {}", viewCount, userId, policyId);
+                }
+            } else {
+                log.debug("[비로그인 사용자] 정책 조회 - policyId: {}", policyId);
+            }
+            
+            return ResponseEntity.ok(policyDetail);
+            
+        } catch (NumberFormatException e) {
+            log.error("잘못된 정책 ID 형식 - policyId: {}", policyId);
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("정책 상세 조회 실패 - policyId: {}, 오류: {}", policyId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
