@@ -34,6 +34,12 @@ tasks.withType(JavaCompile) {
 
 // 프로젝트 의존성 라이브러리 선언 (최신 버전으로 업데이트)
 dependencies {
+    // ===== Redis 관련 의존성 =====
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE' // Redis 클라이언트: Lettuce
+
+    // ===== Firebase 관련 의존성 =====
+    // Firebase Admin SDK (FCM 전송용)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
     // ✅ Firebase Admin SDK (FCM 전송용)
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
