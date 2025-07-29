@@ -1,4 +1,4 @@
-package org.scoula.member.service;
+package org.scoula.security.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
