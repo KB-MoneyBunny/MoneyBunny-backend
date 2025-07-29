@@ -75,14 +75,7 @@ dependencies {
     // Log4j2 Core - 로깅 구현체 (성능 및 보안 개선)
     implementation "org.apache.logging.log4j:log4j-core:${log4j2Version}"
     // SLF4J와 Log4j2 연결 - Spring에서 사용하는 SLF4J를 Log4j2로 연결
-    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
-
-    // 버전 충돌로 인한 추가
-    // SLF4J API (명시적으로 추가)
-    implementation "org.slf4j:slf4j-api:1.7.36"
-
-    // SLF4J 바인딩 → Log4j2
-    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
+    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4j2Version}"
 
     // ===== XML 처리 관련 =====
     // Xerces XML 파서 - XML 내 한글 문자 처리 개선 (안정 버전 유지)
@@ -164,7 +157,7 @@ dependencies {
 
     // Lettuce 커넥션 풀 필수 의존성
     implementation 'org.apache.commons:commons-pool2:2.11.1'
-    implementation 'io.lettuce:lettuce-core:6.2.6.RELEASE'
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE'
 
     // Jackson (Object → JSON 변환)
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
