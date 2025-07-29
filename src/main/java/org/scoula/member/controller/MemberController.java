@@ -86,7 +86,7 @@ public class MemberController {
     // 이메일 발송
     mailService.sendEmail(dto.getEmail(), "[머니버니] 본인 인증을 위한 인증 코드 안내 메일입니다.", "인증 코드: " + code);
 
-    return ResponseEntity.ok("인증 코드가 이메일로 전송되었습니다.");
+    return ResponseEntity.ok("Sent code to email");
   }
 
   // 이메일 인증(아이디 찾기, 비밀번호 찾기 공통)
@@ -158,6 +158,8 @@ public class MemberController {
     // 인증 코드 생성
     String code = String.valueOf((int)(Math.random() * 900000) + 100000);
 
+    System.out.println("redisUtil = " + redisUtil);
+
     // Redis에 저장 (3분 유효)
     redisUtil.saveCode(email, code);
 
@@ -165,7 +167,7 @@ public class MemberController {
     mailService.sendEmail(dto.getEmail(), "[머니버니] 본인 인증을 위한 인증 코드 안내 메일입니다.", "인증 코드: " + code);
 
 
-    return ResponseEntity.ok("인증 코드가 이메일로 전송되었습니다.");
+    return ResponseEntity.ok("Sent code to email");
   }
 
 

@@ -58,7 +58,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         // Redis에 Refresh Token 저장 (e.g. 7일)
         redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofDays(7));
-
+//        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofMinutes(3)); // test용
         // 응답 DTO 구성
         AuthResultDTO result = AuthResultDTO.builder()
                 .accessToken(accessToken)
