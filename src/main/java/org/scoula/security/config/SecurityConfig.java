@@ -69,7 +69,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter() throws Exception {
         JwtUsernamePasswordAuthenticationFilter filter =
                 new JwtUsernamePasswordAuthenticationFilter(authenticationManager(), loginSuccessHandler, loginFailureHandler);
-        filter.setFilterProcessesUrl("/api/member/login");
+        filter.setFilterProcessesUrl("/api/auth/login");
         return filter;
     }
 

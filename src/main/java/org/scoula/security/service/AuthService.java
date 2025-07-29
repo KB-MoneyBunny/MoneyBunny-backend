@@ -19,4 +19,7 @@ public interface AuthService {
 
     // 이메일로 회원 조회
     MemberVO findByEmail(String email);
+
+    // ID 중복 체크
+    MemberVO findByUsername(String loginId);
 }

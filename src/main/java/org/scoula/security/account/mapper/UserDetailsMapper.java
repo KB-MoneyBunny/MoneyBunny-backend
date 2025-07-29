@@ -17,4 +17,6 @@ public interface UserDetailsMapper {
                                    @Param("email") String email);  // 이메일 인증용
     boolean resetPassword(@Param("loginId") String loginId, @Param("password") String password); // 비밀번호 재설정
     MemberVO findByEmail(@Param("email") String email);
+    MemberVO findByUsername(String username);         // ID 중복 체크용 조회
+
 }

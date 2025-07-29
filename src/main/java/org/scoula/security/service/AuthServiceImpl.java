@@ -74,4 +74,11 @@ public class AuthServiceImpl implements AuthService {
         return userDetailsMapper.findByEmail(email);
     }
 
+
+    // 아이디 중복 체크
+    @Override
+    public MemberVO findByUsername(String loginId) {
+        return userDetailsMapper.findByUsername(loginId);
+    }
+
 }
