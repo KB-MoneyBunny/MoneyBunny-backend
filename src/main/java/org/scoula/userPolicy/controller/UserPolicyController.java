@@ -7,7 +7,6 @@ import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.security.account.domain.CustomUser;
-import org.scoula.userPolicy.domain.UserPolicyConditionVO;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +32,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserPolicyController {
 
     private final UserPolicyService userPolicyService;
+
+    /**
+     * 사용자 정책 조건 조회 API
+     * GET: http://localhost:8080/api/userPolicy
+     * @return ResponseEntity
+     *         - 200 OK: 사용자 정책 조건 조회 성공시 UserPolicyDTO 반환
+     *         - 404 Not Found: 해당 사용자의 정책 조건을 찾을 수 없음
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "사용자 정책 조건 조회", notes = "사용자의 정책 조건을 조회하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = UserPolicyDTO.class),
+            @ApiResponse(code = 404, message = "리소스를 찾을 수 없습니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("")
+    public ResponseEntity<UserPolicyDTO> getUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        UserPolicyDTO userPolicyDTO = userPolicyService.getUserPolicyCondition(username);
+        if (userPolicyDTO == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userPolicyDTO);
+    }
 
     /**
      * 사용자 정책 조건 저장 API
