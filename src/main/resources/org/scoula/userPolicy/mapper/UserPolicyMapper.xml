@@ -299,4 +299,41 @@
             (#{policyList.userId}, #{policyList.policyId}, NOW())
         </foreach>
     </insert>
+
+    <update id="updateUserPolicyCondition">
+        UPDATE user_policy_condition
+        SET age = #{age},
+            marriage = #{marriage},
+            income = #{income},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUserMajorsByConditionId">
+        DELETE FROM user_major WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserSpecialConditionsByConditionId">
+        DELETE FROM user_special_condition WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserPolicyKeywordsByConditionId">
+        DELETE FROM user_policy_keyword WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserPolicyRegionsByConditionId">
+        DELETE FROM user_policy_region WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserEmploymentStatusesByConditionId">
+        DELETE FROM user_employment_status WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserEducationLevelsByConditionId">
+        DELETE FROM user_education_level WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserFilteredPoliciesByUserId">
+        DELETE FROM user_filtered_policies WHERE user_id = #{userId}
+    </delete>
 </mapper>
