@@ -12,6 +12,7 @@ import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import springfox.documentation.annotations.ApiIgnore;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,7 +49,7 @@ public class UserPolicyController {
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @PostMapping("")
-    public ResponseEntity<Void> saveUserPolicyCondition(@AuthenticationPrincipal CustomUser customUser, @RequestBody UserPolicyDTO userPolicyDTO) {
+    public ResponseEntity<Void> saveUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody UserPolicyDTO userPolicyDTO) {
         String username = customUser.getUsername();
         userPolicyService.saveUserPolicyCondition(username,userPolicyDTO);
         return ResponseEntity.ok().build();
@@ -69,7 +70,7 @@ public class UserPolicyController {
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @GetMapping("/saveScore")
-    public ResponseEntity<Void> saveUserPolicyScore(@AuthenticationPrincipal CustomUser customUser) {
+    public ResponseEntity<Void> saveUserPolicyScore(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         String username = customUser.getUsername();
         userPolicyService.saveUserPolicyScore(username);
         return ResponseEntity.ok().build();
