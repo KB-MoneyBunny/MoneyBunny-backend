@@ -12,11 +12,9 @@
     <typeAliases>
         <!-- 도메인 객체 별칭 설정 -->
         <package name="org.scoula.security.account.domain"/>
-        <package name="org.scoula.board.domain"/>
     </typeAliases>
 
     <mappers>
-        <mapper resource="org/scoula/board/mapper/BoardMapper.xml"/>
         <mapper resource="org/scoula/member/mapper/MemberMapper.xml"/>
         <mapper resource="org/scoula/policy/mapper/PolicyMapper.xml"/>
         <mapper resource="org/scoula/codef/mapper/AccountTransactionMapper.xml"/>

@@ -17,7 +17,6 @@ import org.springframework.web.servlet.view.JstlView;
 @ComponentScan(basePackages = {
         "org.scoula.exception",
         "org.scoula.controller",
-        "org.scoula.board.controller",
         "org.scoula.member.controller",
         "org.scoula.policy.controller",
         "org.scoula.userPolicy.controller",
