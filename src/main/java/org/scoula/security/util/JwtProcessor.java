@@ -14,16 +14,7 @@ import java.util.Date;
 @Component // SecurityConfig에서 @ComponenetScan 수행
 public class JwtProcessor {
 
-    // 테스트용 5분 - 만료 확인용
-//    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 60 * 24 * 30; // RefreshToken 구현 전까지만 한 달로 유지!
-    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 2; // RefreshToken 구현 전까지만 한 달로 유지!
-
-    // 개발용 고정 Secret Key
-//    private String secretKey = "KB_IT`s_Yours_Life_6기_JWT수업_secretKey";
-//    private Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-
-    // 운영시 사용 - 서버 재시작마다 키 갱신됨
-//     private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 60 * 24 * 30; // RefreshToken 구현 전까지만 한 달로 유지!
 
     private final Key key;
 
