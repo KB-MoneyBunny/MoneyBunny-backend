@@ -26,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -186,21 +187,12 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
+        saveUserFilteredPolicies(userId);
         return userPolicyDTO;
     }
 
-    @Transactional
-    @Override
-    public void saveUserPolicyScore(String username) {
-        // 사용자 정보 조회
-        MemberVO member = memberMapper.get(username);
-        if (member == null) {
-            log.error("사용자를 찾을 수 없습니다: {}", username);
-            return;
-        }
-
+    public void saveUserFilteredPolicies(Long userId) {
         // 사용자 정책 조건 조회
-        Long userId = member.getUserId();
         UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
         if (userPolicyCondition == null) {
             log.error("사용자 정책 조건을 찾을 수 없습니다: userId={}", userId);
@@ -213,32 +205,26 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
             return;
         }
-
-        // 사용자의 각 정책별 점수 계산 및 저장
+        List<UserFilteredPoliciesVO> filteredPolicies= new ArrayList<>();
+        // 필터링된 정책 점수 저장
         for (Long policyId : matchingPolicyIds) {
-            BigDecimal score = calculateScoreForPolicy(policyId);
-            System.out.println("점수"+score);
-            System.out.println(policyId);
-
-//            UserPolicyScoreVO scoreVO = UserPolicyScoreVO.builder()
-//                    .userId(userId)
-//                    .policyId(policyId)
-//                    .score(score)
-//                    .build();
-//            userPolicyMapper.saveUserPolicyScore(scoreVO);
+            UserFilteredPoliciesVO userFilteredPolicy = UserFilteredPoliciesVO.builder()
+                    .userId(userId)
+                    .policyId(policyId)
+                    .build();
+            filteredPolicies.add(userFilteredPolicy);
         }
+        userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
 
-    // 최소 최대 점수가 0~10으로 설정되어 있습니다.
-    // 점수 계산 로직은 남은 정책 기간에 따라 선형 보간을 사용합니다.
-    // 남은 기간이 많을수록 점수가 낮아지고, 남은 기간이 적을수록 점수가 높아집니다.
-    // 최대 10점에서 최소 0점까지 선형적으로 감소합니다.
-    // 남은 기간이 365일 이상이면 최소 점수인 0점을 반환합니다.
-    // 남은 기간이 0일 이하이면 0점을 반환합니다.
-    private static final BigDecimal MAX_SCORE = new BigDecimal("10"); // 최대 점수
-    private static final BigDecimal MIN_SCORE = new BigDecimal("0"); // 최소 점수
-    private static final int SCORE_RANGE_DAYS = 365; // 점수 계산 대상 일 수
 
+
+
+
+    // 정책 점수 계산에 필요한 상수 정의(추가 논의 필요)
+    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("10000000"); // 혜택 금액 최대치: 1천만 원
+    private static final BigDecimal MAX_VIEW_THRESHOLD = new BigDecimal("10000"); // 조회수 최대치: 1만 회
+    private static final long SCORE_RANGE_DAYS = 180L; // 마감일 기준 최대 범위: 180일
 
     /**
      * 정책에 대한 최종 점수를 계산하는 메소드.
@@ -246,113 +232,79 @@ public class UserPolicyServiceImpl implements UserPolicyService {
      * @param policyId 정책 ID
      * @return 계산된 최종 점수
      */
-    private BigDecimal calculateScoreForPolicy(Long policyId) {
+    private double calculateScoreForPolicy(Long policyId) {
         YouthPolicyPeriodVO policyPeriod = policyMapper.findYouthPolicyPeriodByPolicyId(policyId);
         YouthPolicyVO policyVO = policyMapper.findYouthPolicyById(policyId); // 다른 가중치 계산에 필요할 수 있음
-        ;
-        // 1. 마감일 기반 점수 계산
-        BigDecimal deadlineScore = calculateDeadlineScore(policyPeriod);
 
-        // 2. 혜택 금액 기반 점수 계산
-        System.out.println("정책 혜택 금액: " + policyVO.getPolicyBenefitAmount());
-        BigDecimal benefitAmountScore = calculateBenefitAmountScore(policyVO.getPolicyBenefitAmount());
+        double deadlineNorm = normalizeDeadlineScore(policyPeriod);
+        double amountNorm = normalizeBenefitAmount(policyVO.getPolicyBenefitAmount());
+        double viewNorm = normalizeViewCount(policyVO.getViews());
+        System.out.println("정책 ID: " + policyId);
+        System.out.println("마감일: " + policyPeriod.getApplyPeriod());
+        System.out.println("마감일 점수: " + deadlineNorm);
+        System.out.println("혜택 금액: " + policyVO.getPolicyBenefitAmount());
+        System.out.println("혜택 금액 점수: " + amountNorm);
+        System.out.println("조회수: " + policyVO.getViews());
+        System.out.println("조회수 점수: " + viewNorm);
 
-        // 3. 조회수 기반 점수 계산
-        System.out.println("정책 조회수: " + policyVO.getView());
-        BigDecimal viewCountScore = calculateViewScore(policyVO.getView());
 
-        // 최종 점수 = 각 가중치 점수의 합
-
-        return deadlineScore.add(benefitAmountScore).add(viewCountScore); // 현재는 마감일 점수만 반환
+        return deadlineNorm+amountNorm+viewNorm; // 현재는 마감일 점수만 반환
     }
 
     /**
-     * 정책의 마감일까지 남은 기간을 기반으로 점수를 계산하는 메소드.
+     * 마감일 점수를 정규화하는 메소드.
+     * 마감일까지 남은 일수에 따라 점수를 0.0에서 1.0 사이로 변환합니다.
      * @param policyPeriod 정책 기간 정보
-     * @return 마감일 기반 점수
+     * @return 정규화된 마감일 점수
      */
-    private BigDecimal calculateDeadlineScore(YouthPolicyPeriodVO policyPeriod) {
-        if (policyPeriod == null || policyPeriod.getBizEndDate() == null) {
-            return MIN_SCORE;
-        }
+    private double normalizeDeadlineScore(YouthPolicyPeriodVO policyPeriod) {
+        if (policyPeriod == null || policyPeriod.getApplyPeriod() == null) return 0.0;
 
-        String applyPeriod = policyPeriod.getApplyPeriod();
-        String[] dates = applyPeriod.split("~");
-        if (dates.length != 2) {
-            return MIN_SCORE; // 예상한 형식이 아닐 경우 최소 점수
-        }
-        String endDateStr = dates[1].trim();
-        System.out.println("마감 기간: " + endDateStr);
-        LocalDate endDate;
+        String[] dates = policyPeriod.getApplyPeriod().split("~");
+        if (dates.length != 2) return 0.0;
+
         try {
+            String endDateStr = dates[1].trim();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-            endDate = LocalDate.parse(endDateStr, formatter); // 기본 ISO 포맷 (yyyy-MM-dd)
-            System.out.println("파싱된 마감 날짜: " + endDate);
+            LocalDate endDate = LocalDate.parse(endDateStr, formatter);
+            long daysUntilEnd = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
+
+            if (daysUntilEnd <= 0) return 0.0;
+            if (daysUntilEnd >= SCORE_RANGE_DAYS) return 0.0;
+
+            return 1.0 - ((double) daysUntilEnd / SCORE_RANGE_DAYS);
         } catch (DateTimeParseException e) {
-            log.warn("지원 기간 파싱 실패: {}", applyPeriod);
-            return MIN_SCORE;
+            return 0.0;
         }
-
-        long daysUntilEnd = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
-
-        if (daysUntilEnd <= 0) {
-            return BigDecimal.ZERO;
-        }
-
-        if (daysUntilEnd >= SCORE_RANGE_DAYS) {
-            return MIN_SCORE; // 너무 멀면 최소 점수
-        }
-
-        // 선형 보간: 남은 일수 적을수록 높은 점수
-        BigDecimal delta = MAX_SCORE.subtract(MIN_SCORE);
-        BigDecimal score = MAX_SCORE.subtract(
-                delta.multiply(BigDecimal.valueOf(daysUntilEnd))
-                        .divide(BigDecimal.valueOf(SCORE_RANGE_DAYS), 4, RoundingMode.HALF_UP)
-        );
-
-        return score.setScale(2, RoundingMode.HALF_UP);
     }
 
-
-    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("10000000"); // 1천만 원
-
-    private BigDecimal calculateBenefitAmountScore(Long policyBenefitAmount) {
-        if (policyBenefitAmount == null || policyBenefitAmount <= 0) {
-            return MIN_SCORE;
-        }
+    /**
+     * 정책의 혜택 금액을 정규화하는 메소드.
+     * 혜택 금액이 1천만 원 이상이면 1.0, 그 이하이면 0.0에서 1.0 사이로 변환합니다.
+     * @param policyBenefitAmount 정책의 혜택 금액
+     * @return 정규화된 혜택 금액 점수
+     */
+    private double normalizeBenefitAmount(Long policyBenefitAmount) {
+        if (policyBenefitAmount == null || policyBenefitAmount <= 0) return 0.0;
 
         BigDecimal amount = BigDecimal.valueOf(policyBenefitAmount);
+        if (amount.compareTo(MAX_AMOUNT_THRESHOLD) >= 0) return 1.0;
 
-        if (amount.compareTo(MAX_AMOUNT_THRESHOLD) >= 0) {
-            return MAX_SCORE;
-        }
-
-        // 선형 보간 계산
-        BigDecimal ratio = amount
-                .divide(MAX_AMOUNT_THRESHOLD, 4, RoundingMode.HALF_UP);
-
-        BigDecimal score = MIN_SCORE.add(
-                MAX_SCORE.subtract(MIN_SCORE).multiply(ratio)
-        );
-
-        return score.setScale(2, RoundingMode.HALF_UP);
+        return amount.divide(MAX_AMOUNT_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
     }
 
-    private BigDecimal calculateViewScore(Long viewCount) {
-        if (viewCount == null || viewCount <= 0) {
-            return MIN_SCORE;
-        }
+    /**
+     * 정책의 조회수를 정규화하는 메소드.
+     * 조회수가 1만 회 이상이면 1.0, 그 이하이면 0.0에서 1.0 사이로 변환합니다.
+     * @param viewCount 정책의 조회수
+     * @return 정규화된 조회수 점수
+     */
+    private double normalizeViewCount(Long viewCount) {
+        if (viewCount == null || viewCount <= 0) return 0.0;
 
-        // 조회수에 따라 점수를 계산
-        // 예시: 조회수가 많을수록 점수가 높아짐
-        BigDecimal viewScore = new BigDecimal(viewCount)
-                .divide(new BigDecimal("1000"), 4, RoundingMode.HALF_UP); // 1000회당 1점
+        BigDecimal views = BigDecimal.valueOf(viewCount);
+        if (views.compareTo(MAX_VIEW_THRESHOLD) >= 0) return 1.0;
 
-        // 최대 점수는 10점으로 제한
-        if (viewScore.compareTo(MAX_SCORE) > 0) {
-            return MAX_SCORE;
-        }
-
-        return viewScore.setScale(2, RoundingMode.HALF_UP);
+        return views.divide(MAX_VIEW_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
     }
 }

@@ -11,7 +11,6 @@ import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import springfox.documentation.annotations.ApiIgnore;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/userPolicy")
@@ -54,26 +52,4 @@ public class UserPolicyController {
         userPolicyService.saveUserPolicyCondition(username,userPolicyDTO);
         return ResponseEntity.ok().build();
     }
-
-    /**
-     * 사용자 정책 점수 저장 API
-     * GET: http://localhost:8080/api/userPolicy/saveScore
-     * @return ResponseEntity
-     *         - 200 OK: 사용자 정책 점수 저장 성공
-     *         - 400 Bad Request: 잘못된 요청 데이터 (예: 사용자 정보 누락 등)
-     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
-     */
-    @ApiOperation(value = "사용자 정책 점수 저장", notes = "사용자의 정책 점수를 저장하는 API")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다."),
-            @ApiResponse(code = 400, message = "잘못된 요청입니다."),
-            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
-    })
-    @GetMapping("/saveScore")
-    public ResponseEntity<Void> saveUserPolicyScore(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
-        String username = customUser.getUsername();
-        userPolicyService.saveUserPolicyScore(username);
-        return ResponseEntity.ok().build();
-    }
-
 }
