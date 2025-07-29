@@ -22,6 +22,6 @@ public interface UserPolicyMapper {
     // 사용자 정책 조건에 맞는 정책 ID 목록을 조회
     List<Long> findMatchingPolicyIds(UserPolicyConditionVO userPolicyCondition);
 
-    // 사용자 정책 점수를 저장
-    BigDecimal saveUserPolicyScore(UserPolicyScoreVO userPolicyScore);
+    // 필터링된 정책 목록을 저장
+    void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
 }
