@@ -14,6 +14,7 @@ import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class PushController {
     @ApiOperation(value = "전체 알림 목록 조회", 
                   notes = "현재 사용자의 모든 알림을 최신순으로 조회합니다. 읽음/미읽음 상태와 알림 타입(POLICY/FEEDBACK)이 포함됩니다.")
     public ResponseEntity<List<NotificationResponse>> getNotifications(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         List<NotificationResponse> notifications = userNotificationService.getNotifications(userId);
         return ResponseEntity.ok(notifications);
@@ -58,7 +59,7 @@ public class PushController {
     @ApiOperation(value = "미읽은 알림 목록 조회", 
                   notes = "읽지 않은 알림만 필터링하여 조회합니다. 새로운 알림 확인 시 사용합니다.")
     public ResponseEntity<List<NotificationResponse>> getUnreadNotifications(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         List<NotificationResponse> notifications = userNotificationService.getUnreadNotifications(userId);
         return ResponseEntity.ok(notifications);
@@ -71,7 +72,7 @@ public class PushController {
     @ApiOperation(value = "미읽은 알림 개수 조회", 
                   notes = "읽지 않은 알림의 총 개수를 반환합니다. 앱 아이콘 뱃지나 알림 카운터 표시에 사용합니다.")
     public ResponseEntity<Integer> getUnreadCount(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         int count = userNotificationService.getUnreadCount(userId);
         return ResponseEntity.ok(count);
@@ -127,7 +128,7 @@ public class PushController {
     @ApiOperation(value = "푸시 알림 구독 상태 확인", 
                   notes = "현재 사용자의 푸시 알림 구독 여부를 확인합니다. 활성 토큰이 있으면 true, 없으면 false를 반환합니다.")
     public ResponseEntity<SubscriptionStatusResponse> getSubscriptionStatus(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         boolean isSubscribed = subscriptionService.isSubscribed(userId);
         return ResponseEntity.ok(SubscriptionStatusResponse.of(isSubscribed));
