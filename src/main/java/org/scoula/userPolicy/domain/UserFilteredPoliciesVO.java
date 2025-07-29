@@ -10,8 +10,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserPolicyScoreVO {
+public class UserFilteredPoliciesVO {
     private Long userId;
     private Long policyId;
-    private BigDecimal score;
 }
