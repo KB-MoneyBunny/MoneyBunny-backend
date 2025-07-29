@@ -217,6 +217,167 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
 
+    @Transactional
+    @Override
+    public UserPolicyDTO updateUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO) {
+        MemberVO member = memberMapper.get(username);
+        Long userId = member.getUserId();
+
+        UserPolicyConditionVO existingCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (existingCondition == null) {
+            log.error("수정할 사용자 정책 조건을 찾을 수 없습니다: userId={}", userId);
+            return null; // Or throw an exception
+        }
+        Long userPolicyConditionId = existingCondition.getId();
+
+        // 1. Delete existing related data
+        userPolicyMapper.deleteUserMajorsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserSpecialConditionsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserPolicyKeywordsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserPolicyRegionsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserEmploymentStatusesByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserEducationLevelsByConditionId(userPolicyConditionId);
+
+        // 2. Update basic condition info
+        existingCondition.setAge(userPolicyDTO.getAge());
+        existingCondition.setMarriage(userPolicyDTO.getMarriage());
+        existingCondition.setIncome(userPolicyDTO.getIncome());
+        userPolicyMapper.updateUserPolicyCondition(existingCondition);
+
+        // 3. Insert new data based on DTO (same logic as save)
+        if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
+            List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
+                    .map(code -> {
+                        PolicyRegionVO policyRegion = policyMapper.findRegionByCode(code);
+                        if (policyRegion != null) {
+                            UserRegionVO vo = new UserRegionVO();
+                            vo.setRegionId(policyRegion.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Region code {} not found", code);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!regions.isEmpty()) {
+                userPolicyMapper.saveUserPolicyRegions(regions);
+            }
+        }
+
+        if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
+            List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
+                    .map(name -> {
+                        PolicyEducationLevelVO policy = policyMapper.findEducationLevelByName(name);
+                        if (policy != null) {
+                            UserEducationLevelVO vo = new UserEducationLevelVO();
+                            vo.setEducationLevelId(policy.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Education level {} not found", name);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!educationLevels.isEmpty()) {
+                userPolicyMapper.saveUserEducationLevels(educationLevels);
+            }
+        }
+
+        if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
+            List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
+                    .map(name -> {
+                        PolicyEmploymentStatusVO policy = policyMapper.findEmploymentStatusByName(name);
+                        if (policy != null) {
+                            UserEmploymentStatusVO vo = new UserEmploymentStatusVO();
+                            vo.setEmploymentStatusId(policy.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Employment status {} not found", name);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!statuses.isEmpty()) {
+                userPolicyMapper.saveUserEmploymentStatuses(statuses);
+            }
+        }
+
+        if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
+            List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
+                    .map(name -> {
+                        PolicyMajorVO policy = policyMapper.findMajorByName(name);
+                        if (policy != null) {
+                            UserMajorVO vo = new UserMajorVO();
+                            vo.setMajorId(policy.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Major {} not found", name);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!majors.isEmpty()) {
+                userPolicyMapper.saveUserMajors(majors);
+            }
+        }
+
+        if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
+            List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
+                    .map(name -> {
+                        PolicySpecialConditionVO policy = policyMapper.findSpecialConditionByName(name);
+                        if (policy != null) {
+                            UserSpecialConditionVO vo = new UserSpecialConditionVO();
+                            vo.setSpecialConditionId(policy.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Special condition {} not found", name);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!specialConditions.isEmpty()) {
+                userPolicyMapper.saveUserSpecialConditions(specialConditions);
+            }
+        }
+
+        if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
+            List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
+                    .map(name -> {
+                        PolicyKeywordVO policy = policyMapper.findKeywordByName(name);
+                        if (policy != null) {
+                            UserPolicyKeywordVO vo = new UserPolicyKeywordVO();
+                            vo.setKeywordId(policy.getId());
+                            vo.setUserPolicyConditionId(userPolicyConditionId);
+                            return vo;
+                        } else {
+                            log.warn("Keyword {} not found", name);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!keywords.isEmpty()) {
+                userPolicyMapper.saveUserPolicyKeywords(keywords);
+            }
+        }
+
+        // 4. Update filtered policy list
+        userPolicyMapper.deleteUserFilteredPoliciesByUserId(userId);
+        saveUserFilteredPolicies(userId);
+
+        return userPolicyDTO;
+    }
+
 
 
 
