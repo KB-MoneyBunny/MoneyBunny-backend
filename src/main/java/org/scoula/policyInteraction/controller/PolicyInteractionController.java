@@ -13,6 +13,7 @@ import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class PolicyInteractionController {
     @PostMapping("/bookmark")
     @ApiOperation(value = "정책 북마크 추가", notes = "특정 정책을 북마크에 저장합니다. 성공 시 200 OK, 중복/오류 시 400 Bad Request를 반환합니다.")
     public ResponseEntity<Void> addBookmark(
-            @AuthenticationPrincipal CustomUser customUser,
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestParam Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
@@ -46,7 +47,7 @@ public class PolicyInteractionController {
     @DeleteMapping("/bookmark")
     @ApiOperation(value = "정책 북마크 삭제", notes = "북마크된 정책을 삭제합니다. 성공 시 200 OK, 존재하지 않는 북마크인 경우 404 Not Found를 반환합니다.")
     public ResponseEntity<Void> removeBookmark(
-            @AuthenticationPrincipal CustomUser customUser,
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestParam Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
@@ -60,7 +61,7 @@ public class PolicyInteractionController {
     @GetMapping("/bookmark/list")
     @ApiOperation(value = "사용자 북마크 목록 조회", notes = "현재 사용자가 북마크한 모든 정책 목록을 정책 정보와 함께 조회합니다. 북마크가 없는 경우 빈 배열을 반환합니다.")
     public ResponseEntity<List<BookmarkWithPolicyDTO>> getUserBookmarks(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         
         Long userId = customUser.getMember().getUserId();
         List<BookmarkWithPolicyDTO> bookmarks = policyInteractionService.getUserBookmarks(userId);
@@ -74,7 +75,7 @@ public class PolicyInteractionController {
     @PostMapping("/application")
     @ApiOperation(value = "정책 신청 등록", notes = "특정 정책에 신청 기록을 남깁니다. 성공 시 200 OK, 중복 신청/오류 시 400 Bad Request를 반환합니다.")
     public ResponseEntity<Void> addApplication(
-            @AuthenticationPrincipal CustomUser customUser,
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestParam Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
@@ -88,7 +89,7 @@ public class PolicyInteractionController {
     @GetMapping("/application/list")
     @ApiOperation(value = "사용자 신청 목록 조회", notes = "현재 사용자가 신청한 모든 정책 목록을 정책 정보와 함께 조회합니다. 신청 기록이 없는 경우 빈 배열을 반환합니다.")
     public ResponseEntity<List<ApplicationWithPolicyDTO>> getUserApplications(
-            @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         
         Long userId = customUser.getMember().getUserId();
         List<ApplicationWithPolicyDTO> applications = policyInteractionService.getUserApplications(userId);
