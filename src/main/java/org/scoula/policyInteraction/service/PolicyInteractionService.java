@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
+import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,14 +50,8 @@ public class PolicyInteractionService {
         return result > 0;
     }
     
-    /** 북마크 여부 확인 */
-    public boolean isBookmarked(Long userId, Long policyId) {
-        YouthPolicyBookmarkVO bookmark = policyInteractionMapper.selectBookmark(userId, policyId);
-        return bookmark != null;
-    }
-    
-    /** 사용자의 북마크 목록 조회 */
-    public List<YouthPolicyBookmarkVO> getUserBookmarks(Long userId) {
+    /** 사용자의 북마크 목록 조회 (정책 정보 포함) */
+    public List<BookmarkWithPolicyDTO> getUserBookmarks(Long userId) {
         return policyInteractionMapper.selectBookmarksByUserId(userId);
     }
     
@@ -83,14 +79,8 @@ public class PolicyInteractionService {
         return result > 0;
     }
     
-    /** 신청 여부 확인 */
-    public boolean isApplied(Long userId, Long policyId) {
-        UserPolicyApplicationVO application = policyInteractionMapper.selectApplication(userId, policyId);
-        return application != null;
-    }
-    
-    /** 사용자의 신청 목록 조회 */
-    public List<UserPolicyApplicationVO> getUserApplications(Long userId) {
+    /** 사용자의 신청 목록 조회 (정책 정보 포함) */
+    public List<ApplicationWithPolicyDTO> getUserApplications(Long userId) {
         return policyInteractionMapper.selectApplicationsByUserId(userId);
     }
 }
