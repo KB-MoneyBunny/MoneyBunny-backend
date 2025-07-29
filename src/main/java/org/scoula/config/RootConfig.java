@@ -27,16 +27,15 @@ import javax.sql.DataSource;
         @PropertySource("classpath:application-${spring.profiles.active}.properties") // 환경별 설정
 })
 @MapperScan(basePackages = {
-        "org.scoula.board.mapper",
         "org.scoula.member.mapper",  // 회원 매퍼 스캔
         "org.scoula.policy.mapper",
         "org.scoula.userPolicy.mapper",
         "org.scoula.policy.mapper",
         "org.scoula.codef.mapper",
-        "org.scoula.push.mapper" // push 매퍼 스캔 추가
+        "org.scoula.push.mapper", // push 매퍼 스캔 추가
+        "org.scoula.policyInteraction.mapper" // 정책 상호작용 매퍼 스캔 추가
 })
 @ComponentScan(basePackages = {
-        "org.scoula.board.service",
         "org.scoula.member.service",
         "org.scoula.policy.service",
         "org.scoula.external",
@@ -45,7 +44,8 @@ import javax.sql.DataSource;
         "org.scoula.userPolicy.service",
         "org.scoula.codef",
         "org.scoula.push.service", // push 서비스 스캔 추가
-        "org.scoula.push.config" // push config 스캔 추가
+        "org.scoula.push.config", // push config 스캔 추가
+        "org.scoula.policyInteraction.service" // 정책 상호작용 서비스 스캔 추가
 })
 @EnableScheduling // 스케줄링 기능 활성화
 public class RootConfig {
