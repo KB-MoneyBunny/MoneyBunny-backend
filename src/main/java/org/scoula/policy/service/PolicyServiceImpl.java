@@ -26,7 +26,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -43,6 +49,11 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Autowired
     private GptApiClient gptApiClient;
+
+//  정책 벡터 설정 관련 변수
+    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("1000000");
+    private static final BigDecimal MAX_VIEW_THRESHOLD = new BigDecimal("1000");
+    private static final long SCORE_RANGE_DAYS = 100L;
 
     @Override
     @Transactional
@@ -64,6 +75,9 @@ public class PolicyServiceImpl implements PolicyService {
                 if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) {
                     log.info("[기존 정책] 정책번호 {} 조회수 업데이트: {}", dto.getPolicyNo(), dto.getViews());
                     policyMapper.updatePolicyViews(dto.getPolicyNo(), dto.getViews());
+                    // 💪 기존 정책의 조회수 변경 → 벡터 재계산
+                    Long policyId = policyMapper.findPolicyIdByPolicyNo(dto.getPolicyNo());
+                    calculateAndSavePolicyVector(policyId);
                     continue;
                 }
 
@@ -232,11 +246,86 @@ public class PolicyServiceImpl implements PolicyService {
                     }
                 }
 
-
+                calculateAndSavePolicyVector(policyId);
+                log.info("[새 정책] 정책번호 {} 저장 완료", dto.getPolicyNo());
             }
         }
 
         log.info("[정책 수집] 전체 완료");
+    }
+
+    // 💪 정책 벡터 계산 + DB 저장
+    private void calculateAndSavePolicyVector(Long policyId) {
+        log.info("[정책 벡터] 계산 시작 - 정책 ID: {}", policyId);
+        
+        YouthPolicyPeriodVO policyPeriod = policyMapper.findYouthPolicyPeriodByPolicyId(policyId);
+        YouthPolicyVO policy = policyMapper.findYouthPolicyById(policyId);
+
+        if (policy == null) {
+            log.error("[정책 벡터] 정책을 찾을 수 없음 - 정책 ID: {}", policyId);
+            return;
+        }
+
+        double benefitScore = normalizeBenefitAmount(policy.getPolicyBenefitAmount());
+        double deadlineScore = normalizeDeadlineScore(policyPeriod);
+        double viewScore = normalizeViewCount(policy.getViews());
+
+        log.info("[정책 벡터] 점수 계산 완료 - 혜택점수: {}, 마감일점수: {}, 조회수점수: {}", 
+                benefitScore, deadlineScore, viewScore);
+
+        PolicyVectorVO vector = PolicyVectorVO.builder()
+                .policyId(policyId)
+                .vecBenefitAmount(BigDecimal.valueOf(benefitScore))
+                .vecDeadline(BigDecimal.valueOf(deadlineScore))
+                .vecViews(BigDecimal.valueOf(viewScore))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        try {
+            PolicyVectorVO existing = policyMapper.findByPolicyId(policyId);
+            if (existing == null) {
+                policyMapper.insertPolicyVector(vector);
+                log.info("[정책 벡터] 신규 저장 완료 - 정책 ID: {}", policyId);
+            } else {
+                policyMapper.updatePolicyVector(vector);
+                log.info("[정책 벡터] 업데이트 완료 - 정책 ID: {}", policyId);
+            }
+        } catch (Exception e) {
+            log.error("[정책 벡터] DB 저장 실패 - 정책 ID: {}, 오류: {}", policyId, e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private double normalizeBenefitAmount(Long policyBenefitAmount) {
+        if (policyBenefitAmount == null || policyBenefitAmount <= 0) return 0.0;
+        BigDecimal amount = BigDecimal.valueOf(policyBenefitAmount);
+        if (amount.compareTo(MAX_AMOUNT_THRESHOLD) >= 0) return 1.0;
+        return amount.divide(MAX_AMOUNT_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private double normalizeDeadlineScore(YouthPolicyPeriodVO policyPeriod) {
+        if (policyPeriod == null || policyPeriod.getApplyPeriod() == null) return 0.0;
+        String[] dates = policyPeriod.getApplyPeriod().split("~");
+        if (dates.length != 2) return 0.0;
+
+        try {
+            String endDateStr = dates[1].trim();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            LocalDate endDate = LocalDate.parse(endDateStr, formatter);
+            long daysUntilEnd = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
+
+            if (daysUntilEnd <= 0 || daysUntilEnd >= SCORE_RANGE_DAYS) return 0.0;
+            return 1.0 - ((double) daysUntilEnd / SCORE_RANGE_DAYS);
+        } catch (DateTimeParseException e) {
+            return 0.0;
+        }
+    }
+
+    private double normalizeViewCount(Long viewCount) {
+        if (viewCount == null || viewCount <= 0) return 0.0;
+        BigDecimal views = BigDecimal.valueOf(viewCount);
+        if (views.compareTo(MAX_VIEW_THRESHOLD) >= 0) return 1.0;
+        return views.divide(MAX_VIEW_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
     }
 
     @Override
