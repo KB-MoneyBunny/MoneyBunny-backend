@@ -187,21 +187,12 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
+        saveUserFilteredPolicies(userId);
         return userPolicyDTO;
     }
 
-    @Transactional
-    @Override
-    public void saveUserFilteredPolicies(String username) {
-        // 사용자 정보 조회
-        MemberVO member = memberMapper.get(username);
-        if (member == null) {
-            log.error("사용자를 찾을 수 없습니다: {}", username);
-            return;
-        }
-
+    public void saveUserFilteredPolicies(Long userId) {
         // 사용자 정책 조건 조회
-        Long userId = member.getUserId();
         UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
         if (userPolicyCondition == null) {
             log.error("사용자 정책 조건을 찾을 수 없습니다: userId={}", userId);
