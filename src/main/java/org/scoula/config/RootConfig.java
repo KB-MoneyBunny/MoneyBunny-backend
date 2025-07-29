@@ -27,7 +27,6 @@ import javax.sql.DataSource;
         @PropertySource("classpath:application-${spring.profiles.active}.properties") // 환경별 설정
 })
 @MapperScan(basePackages = {
-        "org.scoula.board.mapper",
         "org.scoula.member.mapper",  // 회원 매퍼 스캔
         "org.scoula.policy.mapper",
         "org.scoula.userPolicy.mapper",
@@ -37,7 +36,6 @@ import javax.sql.DataSource;
         "org.scoula.policyInteraction.mapper" // 정책 상호작용 매퍼 스캔 추가
 })
 @ComponentScan(basePackages = {
-        "org.scoula.board.service",
         "org.scoula.member.service",
         "org.scoula.policy.service",
         "org.scoula.external",
