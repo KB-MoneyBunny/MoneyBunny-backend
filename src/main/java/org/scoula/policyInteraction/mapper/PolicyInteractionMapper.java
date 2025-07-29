@@ -4,6 +4,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
+import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
 
 import java.util.List;
 
@@ -26,8 +28,8 @@ public interface PolicyInteractionMapper {
     /** 특정 정책에 대한 사용자의 북마크 단건 조회 */
     YouthPolicyBookmarkVO selectBookmark(@Param("userId") Long userId, @Param("policyId") Long policyId);
 
-    /** 사용자의 전체 북마크 목록 조회 */
-    List<YouthPolicyBookmarkVO> selectBookmarksByUserId(@Param("userId") Long userId);
+    /** 사용자의 전체 북마크 목록 조회 (정책 정보 포함) */
+    List<BookmarkWithPolicyDTO> selectBookmarksByUserId(@Param("userId") Long userId);
 
     /** 모든 북마크 목록 조회 (알림 발송용) */
     List<YouthPolicyBookmarkVO> getAllBookmarks();
@@ -39,9 +41,11 @@ public interface PolicyInteractionMapper {
     /** 정책 신청 등록 */
     int insertApplication(UserPolicyApplicationVO application);
 
-    /** 특정 정책에 대한 사용자의 신청 단건 조회 */
+    /**
+     * 특정 정책에 대한 사용자의 신청 단건 조회
+     */
     UserPolicyApplicationVO selectApplication(@Param("userId") Long userId, @Param("policyId") Long policyId);
 
-    /** 사용자의 전체 신청 목록 조회 */
-    List<UserPolicyApplicationVO> selectApplicationsByUserId(@Param("userId") Long userId);
+    /** 사용자의 전체 신청 목록 조회 (정책 정보 포함) */
+    List<ApplicationWithPolicyDTO> selectApplicationsByUserId(@Param("userId") Long userId);
 }

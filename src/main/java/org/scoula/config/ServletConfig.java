@@ -18,6 +18,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.exception",
         "org.scoula.controller",
         "org.scoula.member.controller",
+        "org.scoula.security.controller",
         "org.scoula.policy.controller",
         "org.scoula.userPolicy.controller",
         "org.scoula.policy.controller",
