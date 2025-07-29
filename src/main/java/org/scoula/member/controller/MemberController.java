@@ -1,5 +1,7 @@
 package org.scoula.member.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.common.util.RedisUtil;
@@ -17,25 +19,37 @@ import java.io.File;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/member")
+@Api(tags = "회원 정보 API", description = "회원가입, 중복확인, 아바타 이미지 관련 API")
 public class MemberController {
-  final MemberService service;
 
-  private final RedisUtil redisUtil;
-  private final MailService mailService;
-  // ID 중복 체크 API
+  private final MemberService service;
+
+  // ID 중복 체크
+  @ApiOperation(
+          value = "ID 중복 체크",
+          notes = "회원가입 시 사용자의 ID(로그인ID)가 이미 존재하는지 확인합니다."
+  )
   @GetMapping("/checkusername/{username}")
   public ResponseEntity<Boolean> checkUsername(@PathVariable String username) {
     return ResponseEntity.ok().body(service.checkDuplicate(username));
   }
 
-  // 회원가입 API
+  // 회원가입
+  @ApiOperation(
+          value = "회원가입",
+          notes = "신규 사용자의 회원가입을 처리합니다. 사용자 정보와 비밀번호를 포함한 데이터를 전송해야 합니다."
+  )
   @PostMapping("/join")
   public ResponseEntity<MemberDTO> join(@RequestBody MemberJoinDTO member) {
     return ResponseEntity.ok(service.join(member));
   }
 
 
-  // 아바타 이미지 다운로드 API
+  // 아바타 이미지 다운로드
+  @ApiOperation(
+          value = "아바타 이미지 다운로드",
+          notes = "사용자의 아바타 이미지를 다운로드합니다. 등록된 이미지가 없는 경우 기본 이미지를 제공합니다."
+  )
   @GetMapping("/{username}/avatar")
   public void getAvatar(@PathVariable String username, HttpServletResponse response) {
     String avatarPath = "c:/upload/avatar/" + username + ".png";
@@ -48,7 +62,5 @@ public class MemberController {
 
     UploadFiles.downloadImage(response, file);
   }
-
-
 
 }

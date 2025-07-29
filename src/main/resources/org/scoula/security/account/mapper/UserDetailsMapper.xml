@@ -24,9 +24,9 @@
         WHERE m.login_id = #{loginId}
     </select>
 
-<!--    <select id="findByUsername" resultType="org.scoula.security.account.domain.MemberVO">-->
-<!--        SELECT * FROM users WHERE login_id = #{username}-->
-<!--    </select>-->
+    <select id="findByUsername" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users WHERE login_id = #{username}
+    </select>
 
 
     <select id="findByLoginIdAndEmail" resultType="org.scoula.security.account.domain.MemberVO">

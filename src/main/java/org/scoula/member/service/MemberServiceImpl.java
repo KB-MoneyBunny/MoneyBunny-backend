@@ -40,6 +40,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   // 아바타 저장
+
   private void saveAvatar(MultipartFile avatar, String loginId) {
     if (avatar != null && !avatar.isEmpty()) {
       File dest = new File("c:/upload/avatar", loginId + ".png");
@@ -51,6 +52,7 @@ public class MemberServiceImpl implements MemberService {
     }
   }
 
+  @Override
   public MemberVO findByUsername(String loginId) {
     return mapper.findByUsername(loginId);
   }
