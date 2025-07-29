@@ -34,6 +34,13 @@ public class SubscriptionService {
     /**
      * 구독 해제 처리
      */
+    public void unsubscribe(Long userId, String token) {
+        subscriptionMapper.updateIsActive(token, false);
+    }
+    
+    /**
+     * 구독 해제 처리 (토큰만으로)
+     */
     public void unsubscribe(String token) {
         subscriptionMapper.updateIsActive(token, false);
     }
