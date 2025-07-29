@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface UserPolicyService {
     UserPolicyDTO saveUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO);
-    void saveUserPolicyScore(String username);
+    void saveUserFilteredPolicies(String username);
 }
