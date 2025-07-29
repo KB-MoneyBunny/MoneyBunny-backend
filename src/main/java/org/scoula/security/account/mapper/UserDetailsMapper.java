@@ -9,4 +9,6 @@ public interface UserDetailsMapper {
      * @return 사용자 정보 및 권한 목록
      */
     public MemberVO get(String username);
+
+    MemberVO getWithAuthByLoginId(String loginId);
 }
