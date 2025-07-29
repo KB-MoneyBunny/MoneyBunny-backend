@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
+import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
 import org.scoula.policyInteraction.service.PolicyInteractionService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
@@ -55,24 +57,13 @@ public class PolicyInteractionController {
                 ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/bookmark/check")
-    @ApiOperation(value = "북마크 여부 확인", notes = "특정 정책이 북마크되어 있는지 확인합니다. 북마크된 경우 true, 아닌 경우 false를 반환합니다.")
-    public ResponseEntity<Boolean> checkBookmark(
-            @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam Long policyId) {
-        
-        Long userId = customUser.getMember().getUserId();
-        boolean isBookmarked = policyInteractionService.isBookmarked(userId, policyId);
-        return ResponseEntity.ok(isBookmarked);
-    }
-
     @GetMapping("/bookmark/list")
-    @ApiOperation(value = "사용자 북마크 목록 조회", notes = "현재 사용자가 북마크한 모든 정책 목록을 조회합니다. 북마크가 없는 경우 빈 배열을 반환합니다.")
-    public ResponseEntity<List<YouthPolicyBookmarkVO>> getUserBookmarks(
+    @ApiOperation(value = "사용자 북마크 목록 조회", notes = "현재 사용자가 북마크한 모든 정책 목록을 정책 정보와 함께 조회합니다. 북마크가 없는 경우 빈 배열을 반환합니다.")
+    public ResponseEntity<List<BookmarkWithPolicyDTO>> getUserBookmarks(
             @AuthenticationPrincipal CustomUser customUser) {
         
         Long userId = customUser.getMember().getUserId();
-        List<YouthPolicyBookmarkVO> bookmarks = policyInteractionService.getUserBookmarks(userId);
+        List<BookmarkWithPolicyDTO> bookmarks = policyInteractionService.getUserBookmarks(userId);
         return ResponseEntity.ok(bookmarks);
     }
 
@@ -94,24 +85,13 @@ public class PolicyInteractionController {
                 ResponseEntity.badRequest().build();
     }
 
-    @GetMapping("/application/check")
-    @ApiOperation(value = "신청 여부 확인", notes = "특정 정책에 신청했는지 확인합니다. 신청한 경우 true, 아닌 경우 false를 반환합니다.")
-    public ResponseEntity<Boolean> checkApplication(
-            @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam Long policyId) {
-        
-        Long userId = customUser.getMember().getUserId();
-        boolean isApplied = policyInteractionService.isApplied(userId, policyId);
-        return ResponseEntity.ok(isApplied);
-    }
-
     @GetMapping("/application/list")
-    @ApiOperation(value = "사용자 신청 목록 조회", notes = "현재 사용자가 신청한 모든 정책 목록을 조회합니다. 신청 기록이 없는 경우 빈 배열을 반환합니다.")
-    public ResponseEntity<List<UserPolicyApplicationVO>> getUserApplications(
+    @ApiOperation(value = "사용자 신청 목록 조회", notes = "현재 사용자가 신청한 모든 정책 목록을 정책 정보와 함께 조회합니다. 신청 기록이 없는 경우 빈 배열을 반환합니다.")
+    public ResponseEntity<List<ApplicationWithPolicyDTO>> getUserApplications(
             @AuthenticationPrincipal CustomUser customUser) {
         
         Long userId = customUser.getMember().getUserId();
-        List<UserPolicyApplicationVO> applications = policyInteractionService.getUserApplications(userId);
+        List<ApplicationWithPolicyDTO> applications = policyInteractionService.getUserApplications(userId);
         return ResponseEntity.ok(applications);
     }
 }
