@@ -383,9 +383,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
 
     // 정책 점수 계산에 필요한 상수 정의(추가 논의 필요)
-    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("10000000"); // 혜택 금액 최대치: 1천만 원
-    private static final BigDecimal MAX_VIEW_THRESHOLD = new BigDecimal("10000"); // 조회수 최대치: 1만 회
-    private static final long SCORE_RANGE_DAYS = 180L; // 마감일 기준 최대 범위: 180일
+    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("1000000"); // 혜택 금액 최대치: 백만 원
+    private static final BigDecimal MAX_VIEW_THRESHOLD = new BigDecimal("1000"); // 조회수 최대치: 1000 회
+    private static final long SCORE_RANGE_DAYS = 100L; // 마감일 기준 최대 범위: 100일
 
     /**
      * 정책에 대한 최종 점수를 계산하는 메소드.

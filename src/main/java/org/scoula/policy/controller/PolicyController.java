@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j                             // 로깅 기능
 @Api(
-        tags = "정책 관리",                    // 그룹 이름 (필수)
+        tags = "정책 관리 API",                    // 그룹 이름 (필수)
         description = "정책 CRUD API",        // 상세 설명
         value = "PolicyController"              // 컨트롤러 식별자
 )
