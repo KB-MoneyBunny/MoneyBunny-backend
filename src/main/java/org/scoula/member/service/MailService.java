@@ -24,7 +24,7 @@ public class MailService {
             helper.setText(body, false);
             mailSender.send(message);
         } catch (Exception e) {
-            log.error("메일 전송 실패", e);
+            log.error("Sending mail failed", e);
         }
     }
 
