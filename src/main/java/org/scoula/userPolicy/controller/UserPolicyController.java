@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scoula.board.dto.BoardDTO;
 import org.scoula.security.account.domain.CustomUser;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.service.UserPolicyService;

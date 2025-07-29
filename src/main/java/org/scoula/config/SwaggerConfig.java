@@ -77,8 +77,14 @@ public class SwaggerConfig {
      */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("My API 문서")
-                .description("JWT 인증이 적용된 Swagger UI입니다.")
+                .title("💰 MoneyBunny API 문서")
+                .description("MZ세대의 자산관리를 위한 맞춤형 금융·정책 정보 플랫폼 MoneyBunny의 API 문서입니다.\n\n" +
+                           "🎯 주요 기능:\n" +
+                           "• 청년 정책 정보 제공 및 맞춤 추천\n" +
+                           "• 금융 데이터 연동 (CODEF API)\n" +
+                           "• 북마크 정책 및 피드백 푸시 알림 (FCM)\n" +
+                           "• JWT 기반 인증 시스템\n\n" +
+                           "📌 인증 방법: Bearer Token (JWT)")
                 .version("1.0.0")
                 .build();
     }
