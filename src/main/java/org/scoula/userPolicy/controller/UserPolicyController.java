@@ -51,26 +51,4 @@ public class UserPolicyController {
         userPolicyService.saveUserPolicyCondition(username,userPolicyDTO);
         return ResponseEntity.ok().build();
     }
-
-    /**
-     * 사용자 정책 점수 저장 API
-     * GET: http://localhost:8080/api/userPolicy/saveFilteredPolicies
-     * @return ResponseEntity
-     *         - 200 OK: 필터링된 정책 목록 저장 성공시 빈 응답 반환
-     *         - 400 Bad Request: 잘못된 요청 데이터 (예: 사용자 정보 누락 등)
-     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
-     */
-    @ApiOperation(value = "사용자 정책 점수 저장", notes = "사용자의 정책 점수를 저장하는 API")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다."),
-            @ApiResponse(code = 400, message = "잘못된 요청입니다."),
-            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
-    })
-    @GetMapping("/saveFilteredPolicies")
-    public ResponseEntity<Void> saveUserPolicyScore(@AuthenticationPrincipal CustomUser customUser) {
-        String username = customUser.getUsername();
-        userPolicyService.saveUserFilteredPolicies(username);
-        return ResponseEntity.ok().build();
-    }
-
 }

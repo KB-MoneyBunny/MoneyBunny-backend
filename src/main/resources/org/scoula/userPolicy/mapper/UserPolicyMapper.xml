@@ -293,10 +293,10 @@
     </select>
 
     <insert id="saveUserFilteredPolicies" parameterType="java.util.List">
-        INSERT INTO user_policy_score (user_id, policy_id, created_at)
+        INSERT INTO user_filtered_policies (user_id, policy_id, created_at)
         VALUES
         <foreach collection="list" item="policyList" separator=",">
-            (#{policyList.userID}, #{policyList.policyId}, NOW())
+            (#{policyList.userId}, #{policyList.policyId}, NOW())
         </foreach>
     </insert>
 </mapper>
