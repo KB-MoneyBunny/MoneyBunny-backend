@@ -65,5 +65,21 @@ public class AuthController {
         return ResponseEntity.ok("Logout success");
     }
 
+    // 토큰 유효 여부 확인
+    @PostMapping("/check-refresh-token")
+    public ResponseEntity<String> checkRefreshToken(@RequestHeader("Authorization") String token) {
+        // Bearer 토큰이면 "Bearer " 제거
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        if (jwtProcessor.isTokenExpired(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Refresh token is expired. Please log in again.");
+        }
+
+        return ResponseEntity.ok("Refresh token is still valid.");
+    }
+
 }
 
