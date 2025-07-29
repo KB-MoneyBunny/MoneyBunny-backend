@@ -12,6 +12,7 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.mapper.PolicyMapper;
+import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
@@ -26,7 +27,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,6 +39,87 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     private final UserPolicyMapper userPolicyMapper;
     private final PolicyMapper policyMapper;
     private final MemberMapper memberMapper;
+    private final PolicyDataHolder policyDataHolder;
+
+    @Transactional
+    @Override
+    public UserPolicyDTO getUserPolicyCondition(String username) {
+
+
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null; // Or throw an exception
+        }
+
+        Long userId = member.getUserId();
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return null; // Or throw an exception
+        }
+
+        UserPolicyDTO userPolicyDTO = new UserPolicyDTO();
+        userPolicyDTO.setAge(userPolicyCondition.getAge());
+        userPolicyDTO.setMarriage(userPolicyCondition.getMarriage());
+        userPolicyDTO.setIncome(userPolicyCondition.getIncome());
+
+        // 1. regions
+        List<UserRegionVO> regions = userPolicyCondition.getRegions();
+        if (regions != null && !regions.isEmpty()) {
+            List<String> regionCodes = regions.stream()
+                    .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setRegions(regionCodes);
+        }
+
+        // 2. educationLevels
+        List<UserEducationLevelVO> educationLevels = userPolicyCondition.getEducationLevels();
+        if (educationLevels != null && !educationLevels.isEmpty()) {
+            List<String> levelNames = educationLevels.stream()
+                    .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setEducationLevels(levelNames);
+        }
+
+        // 3. employmentStatuses
+        List<UserEmploymentStatusVO> employmentStatuses = userPolicyCondition.getEmploymentStatuses();
+        if (employmentStatuses != null && !employmentStatuses.isEmpty()) {
+            List<String> statusNames = employmentStatuses.stream()
+                    .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setEmploymentStatuses(statusNames);
+        }
+
+        // 4. majors
+        List<UserMajorVO> majors = userPolicyCondition.getMajors();
+        if (majors != null && !majors.isEmpty()) {
+            List<String> majorNames = majors.stream()
+                    .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setMajors(majorNames);
+        }
+
+        // 5. specialConditions
+        List<UserSpecialConditionVO> specialConditions = userPolicyCondition.getSpecialConditions();
+        if (specialConditions != null && !specialConditions.isEmpty()) {
+            List<String> conditionNames = specialConditions.stream()
+                    .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setSpecialConditions(conditionNames);
+        }
+
+        // 6. keywords
+        List<UserPolicyKeywordVO> keywords = userPolicyCondition.getKeywords();
+        if (keywords != null && !keywords.isEmpty()) {
+            List<String> keywordNames = keywords.stream()
+                    .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setKeywords(keywordNames);
+        }
+
+        return userPolicyDTO;
+    }
 
     @Transactional
     @Override
@@ -58,15 +139,15 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         // 1. regions - from List<String> regionCodes
         if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
             List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
-                    .map(code -> {
-                        PolicyRegionVO policyRegion = policyMapper.findRegionByCode(code);
-                        if (policyRegion != null) {
+                    .map(name -> {
+                        Long regionId = policyDataHolder.getRegionId(name);
+                        if (regionId != null) {
                             UserRegionVO vo = new UserRegionVO();
-                            vo.setRegionId(policyRegion.getId());
+                            vo.setRegionId(regionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
-                            log.warn("Region code {} not found", code);
+                            log.warn("Region name {} not found", name);
                             return null;
                         }
                     })
@@ -81,10 +162,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
             List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
                     .map(name -> {
-                        PolicyEducationLevelVO policy = policyMapper.findEducationLevelByName(name);
-                        if (policy != null) {
+                        Long educationLevelId = policyDataHolder.getEducationLevelId(name);
+                        if (educationLevelId != null) {
                             UserEducationLevelVO vo = new UserEducationLevelVO();
-                            vo.setEducationLevelId(policy.getId());
+                            vo.setEducationLevelId(educationLevelId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -103,10 +184,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
             List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
                     .map(name -> {
-                        PolicyEmploymentStatusVO policy = policyMapper.findEmploymentStatusByName(name);
-                        if (policy != null) {
+                        Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
+                        if (employmentStatusId != null) {
                             UserEmploymentStatusVO vo = new UserEmploymentStatusVO();
-                            vo.setEmploymentStatusId(policy.getId());
+                            vo.setEmploymentStatusId(employmentStatusId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -125,10 +206,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
             List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
                     .map(name -> {
-                        PolicyMajorVO policy = policyMapper.findMajorByName(name);
-                        if (policy != null) {
+                        Long majorId = policyDataHolder.getMajorId(name);
+                        if (majorId != null) {
                             UserMajorVO vo = new UserMajorVO();
-                            vo.setMajorId(policy.getId());
+                            vo.setMajorId(majorId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -147,10 +228,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
             List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
                     .map(name -> {
-                        PolicySpecialConditionVO policy = policyMapper.findSpecialConditionByName(name);
-                        if (policy != null) {
+                        Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
+                        if (specialConditionId != null) {
                             UserSpecialConditionVO vo = new UserSpecialConditionVO();
-                            vo.setSpecialConditionId(policy.getId());
+                            vo.setSpecialConditionId(specialConditionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -169,10 +250,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
             List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
                     .map(name -> {
-                        PolicyKeywordVO policy = policyMapper.findKeywordByName(name);
-                        if (policy != null) {
+                        Long keywordId = policyDataHolder.getKeywordId(name);
+                        if (keywordId != null) {
                             UserPolicyKeywordVO vo = new UserPolicyKeywordVO();
-                            vo.setKeywordId(policy.getId());
+                            vo.setKeywordId(keywordId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -247,15 +328,15 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         // 3. Insert new data based on DTO (same logic as save)
         if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
             List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
-                    .map(code -> {
-                        PolicyRegionVO policyRegion = policyMapper.findRegionByCode(code);
-                        if (policyRegion != null) {
+                    .map(name -> {
+                        Long regionId = policyDataHolder.getRegionId(name);
+                        if (regionId != null) {
                             UserRegionVO vo = new UserRegionVO();
-                            vo.setRegionId(policyRegion.getId());
+                            vo.setRegionId(regionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
-                            log.warn("Region code {} not found", code);
+                            log.warn("Region name {} not found", name);
                             return null;
                         }
                     })
@@ -269,10 +350,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
             List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
                     .map(name -> {
-                        PolicyEducationLevelVO policy = policyMapper.findEducationLevelByName(name);
-                        if (policy != null) {
+                        Long educationLevelId = policyDataHolder.getEducationLevelId(name);
+                        if (educationLevelId != null) {
                             UserEducationLevelVO vo = new UserEducationLevelVO();
-                            vo.setEducationLevelId(policy.getId());
+                            vo.setEducationLevelId(educationLevelId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -290,10 +371,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
             List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
                     .map(name -> {
-                        PolicyEmploymentStatusVO policy = policyMapper.findEmploymentStatusByName(name);
-                        if (policy != null) {
+                        Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
+                        if (employmentStatusId != null) {
                             UserEmploymentStatusVO vo = new UserEmploymentStatusVO();
-                            vo.setEmploymentStatusId(policy.getId());
+                            vo.setEmploymentStatusId(employmentStatusId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -311,10 +392,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
             List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
                     .map(name -> {
-                        PolicyMajorVO policy = policyMapper.findMajorByName(name);
-                        if (policy != null) {
+                        Long majorId = policyDataHolder.getMajorId(name);
+                        if (majorId != null) {
                             UserMajorVO vo = new UserMajorVO();
-                            vo.setMajorId(policy.getId());
+                            vo.setMajorId(majorId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -332,10 +413,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
             List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
                     .map(name -> {
-                        PolicySpecialConditionVO policy = policyMapper.findSpecialConditionByName(name);
-                        if (policy != null) {
+                        Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
+                        if (specialConditionId != null) {
                             UserSpecialConditionVO vo = new UserSpecialConditionVO();
-                            vo.setSpecialConditionId(policy.getId());
+                            vo.setSpecialConditionId(specialConditionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -353,10 +434,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
             List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
                     .map(name -> {
-                        PolicyKeywordVO policy = policyMapper.findKeywordByName(name);
-                        if (policy != null) {
+                        Long keywordId = policyDataHolder.getKeywordId(name);
+                        if (keywordId != null) {
                             UserPolicyKeywordVO vo = new UserPolicyKeywordVO();
-                            vo.setKeywordId(policy.getId());
+                            vo.setKeywordId(keywordId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
