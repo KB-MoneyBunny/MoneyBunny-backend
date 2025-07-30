@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException(username + "은 없는 id입니다.");
         }
 
-        log.info(">>> 로그인 성공 대상: {}", vo.getLoginId());  // 또는 username
+//        log.info(">>> 로그인 대상: {}", vo.getLoginId());  // 또는 username, but pw 틀렸을 경우에도 로그 출력됨!
 
         return new CustomUser(vo);
     }

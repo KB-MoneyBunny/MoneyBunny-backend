@@ -1,4 +1,4 @@
-package org.scoula.member.dto;
+package org.scoula.security.dto;
 
 import lombok.Data;
 
