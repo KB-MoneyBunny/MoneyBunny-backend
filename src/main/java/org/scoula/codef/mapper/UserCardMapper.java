@@ -15,6 +15,5 @@ public interface UserCardMapper {
     // 3. 중복 카드 존재 여부
     int existsCard(@Param("userId") Long userId, @Param("cardMaskedNumber") String cardMaskedNumber);
 
-    // (선택) 카드 리스트 전체 조회
-    List<UserCardVO> findUserCards(Long userId);
+    List<UserCardVO> findByUserId(Long userId);
 }

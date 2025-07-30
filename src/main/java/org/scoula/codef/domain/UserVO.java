@@ -22,7 +22,6 @@ public class UserVO {
     private java.util.Date createAt;
     private Integer point;
 
-    // 1:N 관계 필드 추가
     private List<UserCardVO> cards;
     private List<UserAccountVO> accounts;
 }
