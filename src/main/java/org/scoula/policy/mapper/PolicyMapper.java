@@ -15,9 +15,11 @@ import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
 import org.scoula.policy.dto.PolicyDetailDTO;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface PolicyMapper {
 
     /** 전체 정책 수 확인 */
@@ -143,4 +145,13 @@ public interface PolicyMapper {
 
     /** 정책 조회수 업데이트 */
     void updatePolicyViews(@Param("policyNo") String policyNo, @Param("views") Long views);
+
+
+    void insertPolicyVector(PolicyVectorVO vector);
+
+    void updatePolicyVector(PolicyVectorVO vector);
+
+    PolicyVectorVO findByPolicyId(Long policyId);
+
+    Long findPolicyIdByPolicyNo(String policyNo);
 }
