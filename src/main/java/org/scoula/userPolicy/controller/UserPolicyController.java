@@ -6,7 +6,10 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.security.account.domain.CustomUser;
+import org.scoula.userPolicy.dto.SearchRequestDTO;
+import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 
 @RestController
@@ -100,4 +105,28 @@ public class UserPolicyController {
         userPolicyService.updateUserPolicyCondition(username, userPolicyDTO);
         return ResponseEntity.ok().build();
     }
+
+
+    /**
+     * 사용자 정책 조건에 맞는 정책 검색 API
+     * POST: http://localhost:8080/api/userPolicy/search
+     * @return ResponseEntity
+     *         - 200 OK: 정책 검색 성공시 SearchResultDTO 리스트 반환
+     *         - 400 Bad Request: 잘못된 요청 데이터 (검색 조건 누락 등)
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "사용자 정책 조건에 맞는 정책 검색", notes = "사용자 정책 조건에 맞는 정책을 검색하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = SearchResultDTO.class, responseContainer = "List"),
+            @ApiResponse(code = 400, message = "잘못된 요청입니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @PostMapping("/search")
+    public ResponseEntity<List<SearchResultDTO>> searchFilteredPolicy(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody SearchRequestDTO searchRequestDTO) {
+        String username = customUser.getUsername();
+        List<SearchResultDTO> searchResultDTO=userPolicyService.searchFilteredPolicy(username, searchRequestDTO);
+        return ResponseEntity.ok(searchResultDTO);
+    }
+
+
 }
