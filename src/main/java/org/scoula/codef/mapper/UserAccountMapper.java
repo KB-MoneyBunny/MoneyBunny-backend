@@ -4,6 +4,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.codef.domain.UserAccountVO;
 
+import java.util.List;
+
 public interface UserAccountMapper {
     // 계좌 존재 여부 확인 (중복방지)
     int existsAccount(@Param("userId") Long userId, @Param("accountNumber") String accountNumber);
@@ -12,4 +14,6 @@ public interface UserAccountMapper {
     int insertUserAccount(UserAccountVO vo);
 
     Long findIdByUserIdAndAccountNumber(@Param("userId") Long userId, @Param("accountNumber") String accountNumber);
+
+    List<UserAccountVO> findByUserId(Long userId);
 }
