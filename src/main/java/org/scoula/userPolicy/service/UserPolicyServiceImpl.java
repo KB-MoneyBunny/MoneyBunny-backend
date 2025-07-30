@@ -434,15 +434,61 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     }
 
     public void saveUserFilteredPolicies(Long userId) {
-        // 사용자 정책 조건 조회
+
         UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
         if (userPolicyCondition == null) {
-            log.error("사용자 정책 조건을 찾을 수 없습니다: userId={}", userId);
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
             return;
         }
 
+        // 사용자 정책 조건을 기반으로 검색 요청 DTO 생성
+        SearchRequestDTO searchRequestDTO = new SearchRequestDTO();
+        searchRequestDTO.setAge(userPolicyCondition.getAge());
+        searchRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        searchRequestDTO.setIncome(userPolicyCondition.getIncome());
+        searchRequestDTO.setRegions(userPolicyCondition.getRegions().stream()
+                .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEducationLevels(userPolicyCondition.getEducationLevels().stream()
+                .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEmploymentStatuses(userPolicyCondition.getEmploymentStatuses().stream()
+                .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setMajors(userPolicyCondition.getMajors().stream()
+                .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setSpecialConditions(userPolicyCondition.getSpecialConditions().stream()
+                .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setKeywords(userPolicyCondition.getKeywords().stream()
+                .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                .collect(Collectors.toList()));
+
+        // 빈 문자열을 제거하는 유틸 메서드
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장 로직 추가
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> extendedRegions = new HashSet<>(originalRegions);
+        for (String region : originalRegions) {
+            if (region.length() >= 2) {
+                String generalizedRegion = region.substring(0, 2) + "000";
+                extendedRegions.add(generalizedRegion);
+            }
+        }
+        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+
+        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
         // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = userPolicyMapper.findMatchingPolicyIds(userPolicyCondition);
+        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).collect(Collectors.toList());
+
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
             return;
@@ -459,7 +505,67 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
+    @Override
+    public List<SearchResultDTO> searchMatchingPolicy(String username) {
 
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null; // Or throw an exception
+        }
+        Long userId = member.getUserId();
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return null; // Or throw an exception
+        }
+        SearchRequestDTO searchRequestDTO = new SearchRequestDTO();
+        searchRequestDTO.setAge(userPolicyCondition.getAge());
+        searchRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        searchRequestDTO.setIncome(userPolicyCondition.getIncome());
+        searchRequestDTO.setRegions(userPolicyCondition.getRegions().stream()
+                .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEducationLevels(userPolicyCondition.getEducationLevels().stream()
+                .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEmploymentStatuses(userPolicyCondition.getEmploymentStatuses().stream()
+                .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setMajors(userPolicyCondition.getMajors().stream()
+                .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setSpecialConditions(userPolicyCondition.getSpecialConditions().stream()
+                .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setKeywords(userPolicyCondition.getKeywords().stream()
+                .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                .collect(Collectors.toList()));
+
+        // 빈 문자열을 제거하는 유틸 메서드
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장 로직 추가
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> extendedRegions = new HashSet<>(originalRegions);
+        for (String region : originalRegions) {
+            if (region.length() >= 2) {
+                String generalizedRegion = region.substring(0, 2) + "000";
+                extendedRegions.add(generalizedRegion);
+            }
+        }
+        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+        return searchResultDTO;
+    }
+
+    @Override
     public List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO){
 
         MemberVO member = memberMapper.get(username);

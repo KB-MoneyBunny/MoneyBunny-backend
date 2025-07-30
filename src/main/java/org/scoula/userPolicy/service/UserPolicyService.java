@@ -14,5 +14,7 @@ public interface UserPolicyService {
 
     UserPolicyDTO updateUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO);
 
+    List<SearchResultDTO> searchMatchingPolicy(String username);
+
     List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO);
 }

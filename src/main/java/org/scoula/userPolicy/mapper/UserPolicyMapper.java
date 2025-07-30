@@ -22,9 +22,6 @@ public interface UserPolicyMapper {
     // 사용자 정책 조건을 조회
     UserPolicyConditionVO findUserPolicyConditionByUserId(Long userId);
 
-    // 사용자 정책 조건에 맞는 정책 ID 목록을 조회
-    List<Long> findMatchingPolicyIds(UserPolicyConditionVO userPolicyCondition);
-
     List<SearchResultDTO> findFilteredPolicies(SearchRequestDTO searchRequestDTO);
 
     // 필터링된 정책 목록을 저장
