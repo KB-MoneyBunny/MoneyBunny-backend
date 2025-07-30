@@ -15,6 +15,47 @@ public class RedisUtil {
         this.redisTemplate = redisTemplate;
     }
 
+
+
+    // ======= (1) 범용 캐시 메서드 =======
+    // 토큰·임의값 등 TTL 지정 저장 (TimeUnit 단위 지원)
+    public void set(String key, String value, long timeout, TimeUnit unit) {
+        if (timeout > 0) {
+            redisTemplate.opsForValue().set(key, value, timeout, unit);
+        } else {
+            redisTemplate.opsForValue().set(key, value);
+        }
+    }
+
+    // TTL 미지정(영구저장)
+    public void set(String key, String value) {
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    public String get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    public void delete(String key) {
+        redisTemplate.delete(key);
+    }
+
+    public boolean hasKey(String key) {
+        Boolean result = redisTemplate.hasKey(key);
+        return result != null && result;
+    }
+
+    // TTL(초) 단위로 반환 (없으면 -2)
+    public long getExpire(String key) {
+        Long expire = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+        return expire == null ? -2 : expire;
+    }
+
+
+
+
+    // ======= (2) 이메일 인증 코드 전용 =======
+    // 인증코드 저장 (3분)
     public void saveCode(String email, String code) {
         log.info("Redis에 인증코드 저장: {} => {}", email, code);
         try {
