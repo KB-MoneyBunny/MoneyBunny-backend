@@ -1,12 +1,28 @@
 package org.scoula.codef.util;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.InputStream;
 import java.util.Base64;
+import java.util.Properties;
+
 
 public class AesUtil {
-    private static final String KEY = "MySecretKey12345"; // 반드시 16/24/32자 (길이 주의!)
+    public static String KEY;
     private static final String ALGORITHM = "AES";
+
+    static {
+        try (InputStream in = AesUtil.class.getClassLoader().getResourceAsStream("application-dev.properties")) {
+            Properties prop = new Properties();
+            prop.load(in);
+            KEY = prop.getProperty("aes.key");
+            if (KEY == null) throw new RuntimeException("aes.key가 properties에 없음!");
+        } catch (Exception e) {
+            throw new RuntimeException("AesUtil KEY 초기화 실패!", e);
+        }
+    }
 
     public static String encrypt(String plainText) {
         try {
