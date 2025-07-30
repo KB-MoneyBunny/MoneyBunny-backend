@@ -5,12 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.scoula.member.mapper.MemberMapper;
 import org.scoula.policy.domain.YouthPolicyPeriodVO;
 import org.scoula.policy.domain.YouthPolicyVO;
-import org.scoula.policy.domain.region.PolicyRegionVO;
-import org.scoula.policy.domain.education.PolicyEducationLevelVO;
-import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
-import org.scoula.policy.domain.keyword.PolicyKeywordVO;
-import org.scoula.policy.domain.major.PolicyMajorVO;
-import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
@@ -41,7 +35,12 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     private final MemberMapper memberMapper;
     private final PolicyDataHolder policyDataHolder;
 
-    @Transactional
+
+    /**
+     * 사용자 정책 조건을 조회합니다.
+     * @param username 사용자 이름
+     * @return 사용자 정책 DTO
+     */
     @Override
     public UserPolicyDTO getUserPolicyCondition(String username) {
 
@@ -121,6 +120,12 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return userPolicyDTO;
     }
 
+    /**
+     * 사용자 정책 조건을 저장합니다.
+     * @param username 사용자 이름
+     * @param userPolicyDTO 사용자 정책 DTO
+     * @return 저장된 사용자 정책 DTO
+     */
     @Transactional
     @Override
     public UserPolicyDTO saveUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO) {
@@ -272,6 +277,12 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return userPolicyDTO;
     }
 
+    /**
+     * 사용자 정책 조건을 수정합니다.
+     * @param username 사용자 이름
+     * @param userPolicyDTO 수정할 정책 조건 DTO
+     * @return 수정된 정책 조건 DTO
+     */
     @Transactional
     @Override
     public UserPolicyDTO updateUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO) {
@@ -433,6 +444,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return userPolicyDTO;
     }
 
+    /**
+     * 사용자 정책 조건에 맞는 정책을 필터링하여 저장합니다.
+     * @param userId 사용자 ID
+     */
     public void saveUserFilteredPolicies(Long userId) {
 
         UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
@@ -505,6 +520,13 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
+
+    /**
+     * 사용자 정책 조건에 맞는 정책을 조회합니다.
+     *
+     * @param username 사용자 이름
+     * @return 정책 목록
+     */
     @Override
     public List<SearchResultDTO> searchMatchingPolicy(String username) {
 
@@ -565,6 +587,13 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return searchResultDTO;
     }
 
+    /**
+     * 사용자 선택한 조건과 작성한 검색어에 따라 필터링된 정책 목록을 조회합니다.
+     *
+     * @param username 사용자 이름
+     * @param searchRequestDTO 검색 요청 DTO
+     * @return 필터링된 정책 목록
+     */
     @Override
     public List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO){
 
@@ -613,7 +642,11 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return searchResultDTO;
     }
 
-    // 빈 문자열 제거용 메서드
+    /**
+     * 주어진 리스트에서 빈 문자열을 제거하는 유틸리티 메소드.
+     * @param list 문자열 리스트
+     * @return 빈 문자열이 제거된 리스트
+     */
     private List<String> removeEmptyStrings(List<String> list) {
         if (list == null) return null;
         return list.stream()

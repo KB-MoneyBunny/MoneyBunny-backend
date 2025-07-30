@@ -294,13 +294,18 @@
                 )
             </if>
         )
-        <if test="searchText != null and searchText.length() > 0">
+        <if test="searchTexts != null and searchTexts.size() > 0">
             AND (
+            <foreach collection="searchTexts" item="searchText" separator="OR">
+                (
                 yp.title LIKE CONCAT('%', #{searchText}, '%')
                 OR yp.description LIKE CONCAT('%', #{searchText}, '%')
                 OR yp.support_content LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </foreach>
             )
         </if>
+
     </select>
 
     <insert id="saveUserFilteredPolicies" parameterType="java.util.List">
