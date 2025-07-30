@@ -13,25 +13,32 @@
              #{storeName}, #{storeName1}, #{storeType}, #{cancelStatus}, #{cancelAmount})
     </insert>
 
-    <select id="findCardTransactions" resultType="org.scoula.codef.domain.CardTransactionVO">
-        SELECT *
+    <!-- 여러 건 한꺼번에 insert (배치) -->
+    <insert id="insertCardTransactions" parameterType="java.util.List">
+        INSERT INTO card_transaction
+        (card_id, category_id, approval_no, amount, payment_type, installment_month, transaction_date,
+        store_name, store_name1, store_type, cancel_status, cancel_amount)
+        VALUES
+        <foreach collection="list" item="tx" separator=",">
+            (#{tx.cardId}, #{tx.categoryId}, #{tx.approvalNo}, #{tx.amount}, #{tx.paymentType}, #{tx.installmentMonth}, #{tx.transactionDate},
+            #{tx.storeName}, #{tx.storeName1}, #{tx.storeType}, #{tx.cancelStatus}, #{tx.cancelAmount})
+        </foreach>
+    </insert>
+
+
+    <select id="findLastTransactionDateByCardId" parameterType="long" resultType="string">
+        SELECT DATE_FORMAT(MAX(transaction_date), '%Y%m%d')
         FROM card_transaction
         WHERE card_id = #{cardId}
-        ORDER BY transaction_date DESC
     </select>
 
-    <select id="findUnclassifiedTransactions" resultType="org.scoula.codef.domain.CardTransactionVO">
-        SELECT *
+    <select id="findAllTxKeyByCardIdFromDate" parameterType="map" resultType="string">
+        SELECT CONCAT(approval_no, '|', card_id) AS approvalKey
         FROM card_transaction
         WHERE card_id = #{cardId}
-          AND category_id = #{unclassifiedCategoryId}
-        ORDER BY transaction_date DESC
+          AND approval_no IS NOT NULL AND approval_no != ''
+      AND transaction_date >= STR_TO_DATE(#{startDate}, '%Y%m%d')
     </select>
 
-    <update id="updateTransactionCategory">
-        UPDATE card_transaction
-        SET category_id = #{categoryId}
-        WHERE id = #{txId}
-    </update>
 
 </mapper>
