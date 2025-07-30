@@ -1,6 +1,7 @@
 package org.scoula.userPolicy.mapper;
 
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
@@ -22,7 +23,8 @@ public interface UserPolicyMapper {
     // 사용자 정책 조건을 조회
     UserPolicyConditionVO findUserPolicyConditionByUserId(Long userId);
 
-    List<SearchResultDTO> findFilteredPolicies(SearchRequestDTO searchRequestDTO);
+    // 벡터 정보를 포함한 정책 조회 (N+1 문제 해결용)
+    List<PolicyWithVectorDTO> findFilteredPoliciesWithVectors(SearchRequestDTO searchRequestDTO);
 
     // 필터링된 정책 목록을 저장
     void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
