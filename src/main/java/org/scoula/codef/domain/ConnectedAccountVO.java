@@ -15,5 +15,4 @@ public class ConnectedAccountVO {
     private Long userId;
     private String connectedId;
 
-    // Getter & Setter 생략
 }
