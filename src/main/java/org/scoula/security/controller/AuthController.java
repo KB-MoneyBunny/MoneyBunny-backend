@@ -30,7 +30,7 @@ public class AuthController {
     private final AuthServiceImpl authService;
     private final MailService mailService;
 
-    // 로그인 및 로
+    // 로그인 및 로그아웃
 
     // 로그인
     @ApiOperation(value = "로그인", notes = "사용자 로그인 후 Access Token과 Refresh Token을 반환합니다.")
