@@ -15,11 +15,9 @@ public class AccountTransactionVO {
     private Long id;
     private Long accountId;
     private Long amount;
-    private String txType;  // 'income', 'expense', 'saving'
+    private String txType;
     private java.util.Date transactionDateTime;
     private Long balanceAfter;
     private String storeName;
     private String branchName;
-
-    // Getter & Setter 생략
 }
