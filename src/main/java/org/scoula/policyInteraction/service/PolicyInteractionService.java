@@ -10,6 +10,7 @@ import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
+import org.scoula.policyInteraction.util.UserVectorUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -125,7 +126,7 @@ public class PolicyInteractionService {
             // 2. 사용자 벡터 조회 또는 초기화
             UserVectorVO userVector = policyInteractionMapper.findByUserId(userId);
             if (userVector == null) {
-                userVector = createInitialUserVector(userId);
+                userVector = UserVectorUtil.createInitialUserVector(userId);
                 log.info("[사용자 벡터] 초기 벡터 생성 - userId: {}", userId);
             }
             
@@ -134,10 +135,7 @@ public class PolicyInteractionService {
             double t = weight * 0.1; // 학습률 0.1 적용
             applyLinearInterpolation(userVector, policyVector, t);
             
-            // 4. 벡터 정규화
-            normalizeVector(userVector);
-            
-            // 5. DB 저장
+            // 4. DB 저장
             if (userVector.getId() == null) {
                 policyInteractionMapper.insertUserVector(userVector);
                 log.info("[사용자 벡터] 신규 생성 완료 - userId: {}", userId);
@@ -188,64 +186,4 @@ public class PolicyInteractionService {
             t, newBenefit, newDeadline, newViews);
     }
     
-    /**
-     * 초기 사용자 벡터 생성 (균등 분포)
-     * @param userId 사용자 ID
-     * @return 초기화된 사용자 벡터 (0.3333, 0.3333, 0.3334)
-     */
-    private UserVectorVO createInitialUserVector(Long userId) {
-        return UserVectorVO.builder()
-            .userId(userId)
-            .vecBenefitAmount(new BigDecimal("0.3333"))
-            .vecDeadline(new BigDecimal("0.3333"))
-            .vecViews(new BigDecimal("0.3334"))  // 반올림 오차 보정
-            .build();
-    }
-    
-    /**
-     * 벡터 정규화 (합이 1이 되도록, 최소값 0.1 보장)
-     * @param vector 정규화할 사용자 벡터
-     */
-    private void normalizeVector(UserVectorVO vector) {
-        BigDecimal minValue = new BigDecimal("0.1");
-        
-        // 최소값 보장
-        vector.setVecBenefitAmount(vector.getVecBenefitAmount().max(minValue));
-        vector.setVecDeadline(vector.getVecDeadline().max(minValue));
-        vector.setVecViews(vector.getVecViews().max(minValue));
-        
-        // 합 계산
-        BigDecimal sum = vector.getVecBenefitAmount()
-            .add(vector.getVecDeadline())
-            .add(vector.getVecViews());
-        
-        // 정규화 (합이 1이 되도록)
-        if (sum.compareTo(BigDecimal.ONE) != 0) {
-            vector.setVecBenefitAmount(
-                vector.getVecBenefitAmount()
-                    .divide(sum, 4, RoundingMode.HALF_UP)
-            );
-            vector.setVecDeadline(
-                vector.getVecDeadline()
-                    .divide(sum, 4, RoundingMode.HALF_UP)
-            );
-            vector.setVecViews(
-                vector.getVecViews()
-                    .divide(sum, 4, RoundingMode.HALF_UP)
-            );
-        }
-        
-        log.debug("[벡터 정규화] 결과: [{}, {}, {}]", 
-            vector.getVecBenefitAmount(), vector.getVecDeadline(), vector.getVecViews());
-    }
-    
-    /**
-     * 정책 조회 시 사용자 벡터 갱신 (가중치: 0.1)
-     * @param userId 사용자 ID
-     * @param policyId 정책 ID
-     */
-    public void updateUserVectorOnView(Long userId, Long policyId) {
-        updateUserVectorWithLinearInterpolation(userId, policyId, 0.1);
-        log.info("[사용자 벡터] 정책 조회 기반 갱신 - userId: {}, policyId: {}", userId, policyId);
-    }
 }
