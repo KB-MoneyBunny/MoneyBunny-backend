@@ -1,6 +1,7 @@
 package org.scoula.policy.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.common.util.RedisUtil;
 import org.scoula.external.gpt.GptApiClient;
 import org.scoula.external.gpt.dto.GptRequestDto;
 import org.scoula.external.gpt.dto.GptResponseDto;
@@ -49,6 +50,9 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Autowired
     private GptApiClient gptApiClient;
+    
+    @Autowired
+    private RedisUtil redisUtil;
 
 //  정책 벡터 설정 관련 변수
     private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("1000000");
@@ -331,5 +335,33 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     public PolicyDetailDTO getPolicyById(String policyId) {
         return policyMapper.findPolicyDetailById(Long.parseLong(policyId));
+    }
+    
+    @Override
+    public PolicyDetailDTO getPolicyDetailWithTracking(String policyId, Long userId) {
+        try {
+            // 1. 정책 상세 정보 조회
+            PolicyDetailDTO policyDetail = getPolicyById(policyId);
+            if (policyDetail == null) {
+                log.warn("정책을 찾을 수 없음 - policyId: {}", policyId);
+                return null;
+            }
+            
+            // 2. 일일 조회 기록 (배치 처리를 위해 Redis에 기록만)
+            Long policyIdLong = Long.parseLong(policyId);
+            Long dailyViewCount = redisUtil.recordDailyPolicyView(userId, policyIdLong);
+            
+            log.debug("[일일 조회 기록] userId: {}, policyId: {}, 오늘 조회수: {}", 
+                    userId, policyId, dailyViewCount);
+            
+            return policyDetail;
+            
+        } catch (NumberFormatException e) {
+            log.error("잘못된 정책 ID 형식 - policyId: {}", policyId);
+            throw new IllegalArgumentException("Invalid policy ID format", e);
+        } catch (Exception e) {
+            log.error("정책 상세 조회 실패 - policyId: {}, 오류: {}", policyId, e.getMessage());
+            throw new RuntimeException("Policy detail retrieval failed", e);
+        }
     }
 }

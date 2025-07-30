@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -11,6 +13,12 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtil {
 
     private final RedisTemplate<String, String> redisTemplate;
+    
+    // 일일 조회 기록 TTL (2일 - 배치 처리 실패 대비)
+    private static final long DAILY_VIEW_TTL_DAYS = 2;
+    
+    // 날짜 포맷터
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public RedisUtil(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -69,90 +77,99 @@ public class RedisUtil {
     }
 
     // ────────────────────────────────────────
-    // 📌 사용자별 정책 조회 기록 관련
+    // 📌 사용자별 일일 정책 조회 기록 관련
     // ────────────────────────────────────────
 
     /**
-     * 사용자-정책별 조회수 증가 (키: user:view:{userId}:{policyId}, TTL: 30일)
+     * 사용자의 일일 정책 조회 기록 (하루 단위로 조회수 카운트)
+     * 키: user:daily:{userId}:{date}:{policyId} → count
      * @param userId 사용자 ID
      * @param policyId 정책 ID
-     * @return 증가된 조회수
+     * @return 오늘 해당 정책 조회수
      */
-    public Long incrementUserPolicyView(Long userId, Long policyId) {
-        String key = "user:view:" + userId + ":" + policyId;
+    public Long recordDailyPolicyView(Long userId, Long policyId) {
+        String today = LocalDate.now().format(DATE_FORMATTER);
+        String key = String.format("user:daily:%d:%s:%d", userId, today, policyId);
+        
         Long count = redisTemplate.opsForValue().increment(key);
-        // 30일 TTL 설정
-        redisTemplate.expire(key, Duration.ofDays(30));
-        log.debug("사용자 정책 조회수 증가 - userId: {}, policyId: {}, count: {}", userId, policyId, count);
+        // 첫 조회시에만 TTL 설정 (2일)
+        if (count == 1) {
+            redisTemplate.expire(key, Duration.ofDays(DAILY_VIEW_TTL_DAYS));
+        }
+        
+        log.trace("일일 정책 조회 기록 - userId: {}, policyId: {}, date: {}, count: {}", 
+                userId, policyId, today, count);
         return count;
     }
 
     /**
-     * 사용자 조회 정책 목록에 추가 (키: user:view:{userId}, Set 타입, TTL: 30일)
+     * 특정 날짜의 사용자가 조회한 정책 목록 조회
      * @param userId 사용자 ID
-     * @param policyId 정책 ID
+     * @param date 날짜 (yyyyMMdd 형식)
+     * @return 해당 날짜에 조회한 정책 ID와 조회수 목록
      */
-    public void addToUserViewList(Long userId, Long policyId) {
-        String key = "user:view:" + userId;
-        redisTemplate.opsForSet().add(key, policyId.toString());
-        // 30일 TTL 설정
-        redisTemplate.expire(key, Duration.ofDays(30));
-        log.debug("사용자 조회 목록에 추가 - userId: {}, policyId: {}", userId, policyId);
-    }
-
-    /**
-     * 사용자-정책별 조회수 조회
-     * @param userId 사용자 ID
-     * @param policyId 정책 ID
-     * @return 조회수 (없으면 0)
-     */
-    public Long getUserPolicyViewCount(Long userId, Long policyId) {
-        String key = "user:view:" + userId + ":" + policyId;
-        String count = redisTemplate.opsForValue().get(key);
-        return count != null ? Long.parseLong(count) : 0L;
-    }
-
-    /**
-     * 사용자가 조회한 정책 목록 조회
-     * @param userId 사용자 ID
-     * @return 조회한 정책 ID Set (없으면 빈 Set)
-     */
-    public Set<String> getUserViewedPolicies(Long userId) {
-        String key = "user:view:" + userId;
-        Set<String> policies = redisTemplate.opsForSet().members(key);
-        return policies != null ? policies : Set.of();
-    }
-
-    /**
-     * 모든 사용자 조회 키 목록 조회 (배치 처리용, user:view:* 패턴)
-     * @return 사용자 조회 키 Set
-     */
-    public Set<String> getAllUserViewKeys() {
-        Set<String> keys = redisTemplate.keys("user:view:*");
+    public Set<String> getUserDailyViewKeys(Long userId, String date) {
+        String pattern = String.format("user:daily:%d:%s:*", userId, date);
+        Set<String> keys = redisTemplate.keys(pattern);
         return keys != null ? keys : Set.of();
     }
 
     /**
-     * 사용자별 조회 데이터 삭제 (조회 목록 + 개별 조회수)
-     * @param userId 삭제할 사용자 ID
+     * 특정 날짜의 특정 사용자-정책 조회수 조회
+     * @param userId 사용자 ID
+     * @param policyId 정책 ID
+     * @param date 날짜 (yyyyMMdd 형식)
+     * @return 조회수 (없으면 0)
      */
-    public void deleteUserViewData(Long userId) {
+    public Long getDailyViewCount(Long userId, Long policyId, String date) {
+        String key = String.format("user:daily:%d:%s:%d", userId, date, policyId);
+        String count = redisTemplate.opsForValue().get(key);
+        return count != null ? Long.parseLong(count) : 0L;
+    }
+    
+    /**
+     * 특정 날짜의 모든 사용자 일일 조회 키 목록 조회 (배치 처리용)
+     * @param date 날짜 (yyyyMMdd 형식)
+     * @return 해당 날짜의 모든 조회 키 Set
+     */
+    public Set<String> getAllDailyViewKeys(String date) {
+        String pattern = String.format("user:daily:*:%s:*", date);
+        Set<String> keys = redisTemplate.keys(pattern);
+        return keys != null ? keys : Set.of();
+    }
+    
+    /**
+     * 특정 날짜의 사용자별 조회 데이터 삭제 (배치 처리 완료 후)
+     * @param userId 사용자 ID
+     * @param date 날짜 (yyyyMMdd 형식)
+     */
+    public void deleteDailyViewData(Long userId, String date) {
         try {
-            // 사용자 조회 목록 삭제
-            String listKey = "user:view:" + userId;
-            redisTemplate.delete(listKey);
-            
-            // 개별 조회수 데이터 삭제
-            Set<String> policyIds = getUserViewedPolicies(userId);
-            for (String policyId : policyIds) {
-                String countKey = "user:view:" + userId + ":" + policyId;
-                redisTemplate.delete(countKey);
+            Set<String> keys = getUserDailyViewKeys(userId, date);
+            if (!keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.info("일일 조회 데이터 삭제 완료 - userId: {}, date: {}, 삭제 수: {}", 
+                        userId, date, keys.size());
             }
-            
-            log.info("사용자 조회 데이터 삭제 완료 - userId: {}, 정책 수: {}", userId, policyIds.size());
         } catch (Exception e) {
-            log.error("사용자 조회 데이터 삭제 실패 - userId: {}, 오류: {}", userId, e.getMessage());
+            log.error("일일 조회 데이터 삭제 실패 - userId: {}, date: {}, 오류: {}", 
+                    userId, date, e.getMessage());
         }
+    }
+    
+    /**
+     * 키에서 사용자 ID와 정책 ID 추출 (배치 처리용)
+     * @param key Redis 키 (user:daily:{userId}:{date}:{policyId})
+     * @return [userId, policyId] 배열
+     */
+    public Long[] extractIdsFromKey(String key) {
+        String[] parts = key.split(":");
+        if (parts.length >= 5) {
+            Long userId = Long.parseLong(parts[2]);
+            Long policyId = Long.parseLong(parts[4]);
+            return new Long[]{userId, policyId};
+        }
+        return null;
     }
 
 }
