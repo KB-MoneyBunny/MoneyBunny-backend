@@ -1,5 +1,6 @@
 package org.scoula.security.account.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.scoula.security.account.domain.MemberVO;
 
 public interface UserDetailsMapper {
@@ -10,5 +11,12 @@ public interface UserDetailsMapper {
      */
     public MemberVO get(String username);
 
-    MemberVO getWithAuthByLoginId(String loginId);
+//    MemberVO getWithAuthByLoginId(String loginId);
+
+    MemberVO findByLoginIdAndEmail(@Param("loginId") String loginId,
+                                   @Param("email") String email);  // 이메일 인증용
+    boolean resetPassword(@Param("loginId") String loginId, @Param("password") String password); // 비밀번호 재설정
+    MemberVO findByEmail(@Param("email") String email);
+    MemberVO findByUsername(String username);         // ID 중복 체크용 조회
+
 }
