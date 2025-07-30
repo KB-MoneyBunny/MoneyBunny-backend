@@ -22,5 +22,5 @@ public class SearchRequestDTO {
     private List<String> specialConditions;
     private List<String> keywords;
 
-    private String searchText; // ← 자유 검색어 (제목, 내용 등에서 검색)
+    private List<String> searchTexts; // ← 자유 검색어 (제목, 내용 등에서 검색)
 }
