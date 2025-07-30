@@ -1,6 +1,10 @@
 package org.scoula.userPolicy.service;
 
+import org.scoula.userPolicy.dto.SearchRequestDTO;
+import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
+
+import java.util.List;
 
 
 public interface UserPolicyService {
@@ -9,4 +13,6 @@ public interface UserPolicyService {
     UserPolicyDTO getUserPolicyCondition(String username);
 
     UserPolicyDTO updateUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO);
+
+    List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO);
 }

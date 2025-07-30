@@ -1,6 +1,9 @@
 package org.scoula.userPolicy.mapper;
 
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.SearchRequestDTO;
+import org.scoula.userPolicy.dto.SearchResultDTO;
+import org.scoula.userPolicy.dto.UserPolicyDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +24,8 @@ public interface UserPolicyMapper {
 
     // 사용자 정책 조건에 맞는 정책 ID 목록을 조회
     List<Long> findMatchingPolicyIds(UserPolicyConditionVO userPolicyCondition);
+
+    List<SearchResultDTO> findFilteredPolicies(SearchRequestDTO searchRequestDTO);
 
     // 필터링된 정책 목록을 저장
     void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
