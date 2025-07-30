@@ -12,8 +12,11 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.mapper.PolicyMapper;
+import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.SearchRequestDTO;
+import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.UserPolicyDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.springframework.stereotype.Service;
@@ -25,10 +28,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +39,87 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     private final UserPolicyMapper userPolicyMapper;
     private final PolicyMapper policyMapper;
     private final MemberMapper memberMapper;
+    private final PolicyDataHolder policyDataHolder;
+
+    @Transactional
+    @Override
+    public UserPolicyDTO getUserPolicyCondition(String username) {
+
+
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null; // Or throw an exception
+        }
+
+        Long userId = member.getUserId();
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return null; // Or throw an exception
+        }
+
+        UserPolicyDTO userPolicyDTO = new UserPolicyDTO();
+        userPolicyDTO.setAge(userPolicyCondition.getAge());
+        userPolicyDTO.setMarriage(userPolicyCondition.getMarriage());
+        userPolicyDTO.setIncome(userPolicyCondition.getIncome());
+
+        // 1. regions
+        List<UserRegionVO> regions = userPolicyCondition.getRegions();
+        if (regions != null && !regions.isEmpty()) {
+            List<String> regionCodes = regions.stream()
+                    .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setRegions(regionCodes);
+        }
+
+        // 2. educationLevels
+        List<UserEducationLevelVO> educationLevels = userPolicyCondition.getEducationLevels();
+        if (educationLevels != null && !educationLevels.isEmpty()) {
+            List<String> levelNames = educationLevels.stream()
+                    .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setEducationLevels(levelNames);
+        }
+
+        // 3. employmentStatuses
+        List<UserEmploymentStatusVO> employmentStatuses = userPolicyCondition.getEmploymentStatuses();
+        if (employmentStatuses != null && !employmentStatuses.isEmpty()) {
+            List<String> statusNames = employmentStatuses.stream()
+                    .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setEmploymentStatuses(statusNames);
+        }
+
+        // 4. majors
+        List<UserMajorVO> majors = userPolicyCondition.getMajors();
+        if (majors != null && !majors.isEmpty()) {
+            List<String> majorNames = majors.stream()
+                    .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setMajors(majorNames);
+        }
+
+        // 5. specialConditions
+        List<UserSpecialConditionVO> specialConditions = userPolicyCondition.getSpecialConditions();
+        if (specialConditions != null && !specialConditions.isEmpty()) {
+            List<String> conditionNames = specialConditions.stream()
+                    .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setSpecialConditions(conditionNames);
+        }
+
+        // 6. keywords
+        List<UserPolicyKeywordVO> keywords = userPolicyCondition.getKeywords();
+        if (keywords != null && !keywords.isEmpty()) {
+            List<String> keywordNames = keywords.stream()
+                    .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                    .collect(Collectors.toList());
+            userPolicyDTO.setKeywords(keywordNames);
+        }
+
+        return userPolicyDTO;
+    }
 
     @Transactional
     @Override
@@ -58,15 +139,15 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         // 1. regions - from List<String> regionCodes
         if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
             List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
-                    .map(code -> {
-                        PolicyRegionVO policyRegion = policyMapper.findRegionByCode(code);
-                        if (policyRegion != null) {
+                    .map(name -> {
+                        Long regionId = policyDataHolder.getRegionId(name);
+                        if (regionId != null) {
                             UserRegionVO vo = new UserRegionVO();
-                            vo.setRegionId(policyRegion.getId());
+                            vo.setRegionId(regionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
-                            log.warn("Region code {} not found", code);
+                            log.warn("Region name {} not found", name);
                             return null;
                         }
                     })
@@ -81,10 +162,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
             List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
                     .map(name -> {
-                        PolicyEducationLevelVO policy = policyMapper.findEducationLevelByName(name);
-                        if (policy != null) {
+                        Long educationLevelId = policyDataHolder.getEducationLevelId(name);
+                        if (educationLevelId != null) {
                             UserEducationLevelVO vo = new UserEducationLevelVO();
-                            vo.setEducationLevelId(policy.getId());
+                            vo.setEducationLevelId(educationLevelId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -103,10 +184,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
             List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
                     .map(name -> {
-                        PolicyEmploymentStatusVO policy = policyMapper.findEmploymentStatusByName(name);
-                        if (policy != null) {
+                        Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
+                        if (employmentStatusId != null) {
                             UserEmploymentStatusVO vo = new UserEmploymentStatusVO();
-                            vo.setEmploymentStatusId(policy.getId());
+                            vo.setEmploymentStatusId(employmentStatusId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -125,10 +206,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
             List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
                     .map(name -> {
-                        PolicyMajorVO policy = policyMapper.findMajorByName(name);
-                        if (policy != null) {
+                        Long majorId = policyDataHolder.getMajorId(name);
+                        if (majorId != null) {
                             UserMajorVO vo = new UserMajorVO();
-                            vo.setMajorId(policy.getId());
+                            vo.setMajorId(majorId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -147,10 +228,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
             List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
                     .map(name -> {
-                        PolicySpecialConditionVO policy = policyMapper.findSpecialConditionByName(name);
-                        if (policy != null) {
+                        Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
+                        if (specialConditionId != null) {
                             UserSpecialConditionVO vo = new UserSpecialConditionVO();
-                            vo.setSpecialConditionId(policy.getId());
+                            vo.setSpecialConditionId(specialConditionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -169,10 +250,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
             List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
                     .map(name -> {
-                        PolicyKeywordVO policy = policyMapper.findKeywordByName(name);
-                        if (policy != null) {
+                        Long keywordId = policyDataHolder.getKeywordId(name);
+                        if (keywordId != null) {
                             UserPolicyKeywordVO vo = new UserPolicyKeywordVO();
-                            vo.setKeywordId(policy.getId());
+                            vo.setKeywordId(keywordId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -189,32 +270,6 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         saveUserFilteredPolicies(userId);
         return userPolicyDTO;
-    }
-
-    public void saveUserFilteredPolicies(Long userId) {
-        // 사용자 정책 조건 조회
-        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
-        if (userPolicyCondition == null) {
-            log.error("사용자 정책 조건을 찾을 수 없습니다: userId={}", userId);
-            return;
-        }
-
-        // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = userPolicyMapper.findMatchingPolicyIds(userPolicyCondition);
-        if (matchingPolicyIds.isEmpty()) {
-            log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
-            return;
-        }
-        List<UserFilteredPoliciesVO> filteredPolicies= new ArrayList<>();
-        // 필터링된 정책 점수 저장
-        for (Long policyId : matchingPolicyIds) {
-            UserFilteredPoliciesVO userFilteredPolicy = UserFilteredPoliciesVO.builder()
-                    .userId(userId)
-                    .policyId(policyId)
-                    .build();
-            filteredPolicies.add(userFilteredPolicy);
-        }
-        userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
 
     @Transactional
@@ -247,15 +302,15 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         // 3. Insert new data based on DTO (same logic as save)
         if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
             List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
-                    .map(code -> {
-                        PolicyRegionVO policyRegion = policyMapper.findRegionByCode(code);
-                        if (policyRegion != null) {
+                    .map(name -> {
+                        Long regionId = policyDataHolder.getRegionId(name);
+                        if (regionId != null) {
                             UserRegionVO vo = new UserRegionVO();
-                            vo.setRegionId(policyRegion.getId());
+                            vo.setRegionId(regionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
-                            log.warn("Region code {} not found", code);
+                            log.warn("Region name {} not found", name);
                             return null;
                         }
                     })
@@ -269,10 +324,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
             List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
                     .map(name -> {
-                        PolicyEducationLevelVO policy = policyMapper.findEducationLevelByName(name);
-                        if (policy != null) {
+                        Long educationLevelId = policyDataHolder.getEducationLevelId(name);
+                        if (educationLevelId != null) {
                             UserEducationLevelVO vo = new UserEducationLevelVO();
-                            vo.setEducationLevelId(policy.getId());
+                            vo.setEducationLevelId(educationLevelId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -290,10 +345,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
             List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
                     .map(name -> {
-                        PolicyEmploymentStatusVO policy = policyMapper.findEmploymentStatusByName(name);
-                        if (policy != null) {
+                        Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
+                        if (employmentStatusId != null) {
                             UserEmploymentStatusVO vo = new UserEmploymentStatusVO();
-                            vo.setEmploymentStatusId(policy.getId());
+                            vo.setEmploymentStatusId(employmentStatusId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -311,10 +366,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
             List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
                     .map(name -> {
-                        PolicyMajorVO policy = policyMapper.findMajorByName(name);
-                        if (policy != null) {
+                        Long majorId = policyDataHolder.getMajorId(name);
+                        if (majorId != null) {
                             UserMajorVO vo = new UserMajorVO();
-                            vo.setMajorId(policy.getId());
+                            vo.setMajorId(majorId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -332,10 +387,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
             List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
                     .map(name -> {
-                        PolicySpecialConditionVO policy = policyMapper.findSpecialConditionByName(name);
-                        if (policy != null) {
+                        Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
+                        if (specialConditionId != null) {
                             UserSpecialConditionVO vo = new UserSpecialConditionVO();
-                            vo.setSpecialConditionId(policy.getId());
+                            vo.setSpecialConditionId(specialConditionId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -353,10 +408,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
             List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
                     .map(name -> {
-                        PolicyKeywordVO policy = policyMapper.findKeywordByName(name);
-                        if (policy != null) {
+                        Long keywordId = policyDataHolder.getKeywordId(name);
+                        if (keywordId != null) {
                             UserPolicyKeywordVO vo = new UserPolicyKeywordVO();
-                            vo.setKeywordId(policy.getId());
+                            vo.setKeywordId(keywordId);
                             vo.setUserPolicyConditionId(userPolicyConditionId);
                             return vo;
                         } else {
@@ -376,6 +431,194 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         saveUserFilteredPolicies(userId);
 
         return userPolicyDTO;
+    }
+
+    public void saveUserFilteredPolicies(Long userId) {
+
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return;
+        }
+
+        // 사용자 정책 조건을 기반으로 검색 요청 DTO 생성
+        SearchRequestDTO searchRequestDTO = new SearchRequestDTO();
+        searchRequestDTO.setAge(userPolicyCondition.getAge());
+        searchRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        searchRequestDTO.setIncome(userPolicyCondition.getIncome());
+        searchRequestDTO.setRegions(userPolicyCondition.getRegions().stream()
+                .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEducationLevels(userPolicyCondition.getEducationLevels().stream()
+                .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEmploymentStatuses(userPolicyCondition.getEmploymentStatuses().stream()
+                .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setMajors(userPolicyCondition.getMajors().stream()
+                .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setSpecialConditions(userPolicyCondition.getSpecialConditions().stream()
+                .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setKeywords(userPolicyCondition.getKeywords().stream()
+                .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                .collect(Collectors.toList()));
+
+        // 빈 문자열을 제거하는 유틸 메서드
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장 로직 추가
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> extendedRegions = new HashSet<>(originalRegions);
+        for (String region : originalRegions) {
+            if (region.length() >= 2) {
+                String generalizedRegion = region.substring(0, 2) + "000";
+                extendedRegions.add(generalizedRegion);
+            }
+        }
+        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+
+        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+        // 사용자 정책 조건에 맞는 정책 ID 목록 조회
+        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).collect(Collectors.toList());
+
+        if (matchingPolicyIds.isEmpty()) {
+            log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
+            return;
+        }
+        List<UserFilteredPoliciesVO> filteredPolicies= new ArrayList<>();
+
+        // 필터링된 정책 점수 저장
+        for (Long policyId : matchingPolicyIds) {
+            UserFilteredPoliciesVO userFilteredPolicy = UserFilteredPoliciesVO.builder()
+                    .userId(userId)
+                    .policyId(policyId)
+                    .build();
+            filteredPolicies.add(userFilteredPolicy);
+        }
+        userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
+    }
+    @Override
+    public List<SearchResultDTO> searchMatchingPolicy(String username) {
+
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null; // Or throw an exception
+        }
+        Long userId = member.getUserId();
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return null; // Or throw an exception
+        }
+        SearchRequestDTO searchRequestDTO = new SearchRequestDTO();
+        searchRequestDTO.setAge(userPolicyCondition.getAge());
+        searchRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        searchRequestDTO.setIncome(userPolicyCondition.getIncome());
+        searchRequestDTO.setRegions(userPolicyCondition.getRegions().stream()
+                .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEducationLevels(userPolicyCondition.getEducationLevels().stream()
+                .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEmploymentStatuses(userPolicyCondition.getEmploymentStatuses().stream()
+                .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setMajors(userPolicyCondition.getMajors().stream()
+                .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setSpecialConditions(userPolicyCondition.getSpecialConditions().stream()
+                .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setKeywords(userPolicyCondition.getKeywords().stream()
+                .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                .collect(Collectors.toList()));
+
+        // 빈 문자열을 제거하는 유틸 메서드
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장 로직 추가
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> extendedRegions = new HashSet<>(originalRegions);
+        for (String region : originalRegions) {
+            if (region.length() >= 2) {
+                String generalizedRegion = region.substring(0, 2) + "000";
+                extendedRegions.add(generalizedRegion);
+            }
+        }
+        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+        return searchResultDTO;
+    }
+
+    @Override
+    public List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO){
+
+        MemberVO member = memberMapper.get(username);
+
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null; // Or throw an exception
+        }
+
+
+        Long userId = member.getUserId();
+
+        // 빈 문자열을 제거하는 유틸 메서드
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장 로직 추가
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> extendedRegions = new HashSet<>(originalRegions);
+
+        for (String region : originalRegions) {
+            if (region.length() >= 2) {
+                String generalizedRegion = region.substring(0, 2) + "000";
+                extendedRegions.add(generalizedRegion);
+            }
+        }
+
+        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+
+        // 신청 기간에서 마감일 추출
+        for(SearchResultDTO resultDTO : searchResultDTO){
+            if(resultDTO.getEndDate() != null && resultDTO.getEndDate() != ""){
+                String[] Date=resultDTO.getEndDate().split("~");
+                if(Date.length==2){
+                    resultDTO.setEndDate(Date[1].trim());
+                }
+            }
+        }
+        return searchResultDTO;
+    }
+
+    // 빈 문자열 제거용 메서드
+    private List<String> removeEmptyStrings(List<String> list) {
+        if (list == null) return null;
+        return list.stream()
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .toList();
     }
 
 

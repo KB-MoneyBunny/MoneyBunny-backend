@@ -125,13 +125,16 @@
         WHERE user_policy_condition_id = #{id}
     </select>
 
-    <select id="findMatchingPolicyIds" resultType="Long">
-        SELECT ypc.policy_id
+    <select id="findFilteredPolicies" resultType="org.scoula.userPolicy.dto.SearchResultDTO">
+        SELECT
+            yp.id as policyId,
+            yp.title as title,
+            yp.policy_benefit_description as policyBenefitDescription,
+            ypp.apply_period as endDate
         FROM youth_policy yp
         JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
-        WHERE is_financial_support = 1
-
-        <!-- 나이 조건 -->
+        LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id
+        WHERE yp.is_financial_support = 1
         AND (
         ypc.age_limit_yn = 1
         OR (
@@ -167,129 +170,137 @@
 
         <!-- 지역 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1
-        FROM user_policy_region upr
-        WHERE upr.user_policy_condition_id = #{id}
-        )
-        OR EXISTS (
-        SELECT 1
-        FROM user_policy_region upr
-        JOIN policy_region upr_pr ON upr.region_id = upr_pr.id
-        JOIN youth_policy_region ypr ON upr.user_policy_condition_id = #{id} AND ypr.policy_id = yp.id
-        JOIN policy_region ypr_pr ON ypr.region_id = ypr_pr.id
-        WHERE
-        -- 정확히 지역 코드 일치
-        upr_pr.region_code = ypr_pr.region_code
-
-        -- OR: 정책 지역이 도 코드일 경우, 사용자 지역이 같은 도에 속하면 OK
-        OR (
-        RIGHT(ypr_pr.region_code, 3) = '000'
-        AND LEFT(upr_pr.region_code, 2) = LEFT(ypr_pr.region_code, 2)
-        )
-        )
+            <if test="regions == null or regions.isEmpty()">
+                1=1
+            </if>
+            <if test="regions != null and !regions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_region ypr
+                    JOIN policy_region pr ON ypr.region_id = pr.id
+                    WHERE ypr.policy_id = yp.id
+                    AND pr.region_code IN
+                    <foreach collection="regions" item="region" open="(" separator="," close=")">
+                        #{region}
+                    </foreach>
+                )
+            </if>
         )
 
 
         <!-- 학력 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1 FROM user_education_level uel
-        WHERE uel.user_policy_condition_id = #{id}
-        )
-        OR EXISTS (
-        SELECT 1
-        FROM youth_policy_education_level ypel
-        WHERE ypel.policy_id = yp.id
-        AND (
-        ypel.education_level_id IN (
-        SELECT uel.education_level_id
-        FROM user_education_level uel
-        WHERE uel.user_policy_condition_id = #{id}
-        )
-        OR ypel.education_level_id = '0049010' -- 제한 없음
-        )
-        )
+            <if test="educationLevels == null or educationLevels.isEmpty()">
+                1=1
+            </if>
+            <if test="educationLevels != null and !educationLevels.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_education_level ypel
+                    JOIN policy_education_level pel ON ypel.education_level_id = pel.id
+                    WHERE ypel.policy_id = yp.id
+                    AND (
+                        pel.education_level IN
+                        <foreach collection="educationLevels" item="level" open="(" separator="," close=")">
+                            #{level}
+                        </foreach>
+                        OR pel.education_level = '제한없음'
+                    )
+                )
+            </if>
         )
 
         <!-- 취업 상태 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1 FROM user_employment_status ues
-        WHERE ues.user_policy_condition_id = #{id}
-        )
-        OR EXISTS (
-        SELECT 1
-        FROM youth_policy_employment_status ypes
-        WHERE ypes.policy_id = yp.id
-        AND (
-        ypes.employment_status_id IN (
-        SELECT ues.employment_status_id
-        FROM user_employment_status ues
-        WHERE ues.user_policy_condition_id = #{id}
-        )
-        OR ypes.employment_status_id = '0013010' -- 제한 없음
-        )
-        )
+            <if test="employmentStatuses == null or employmentStatuses.isEmpty()">
+                1=1
+            </if>
+            <if test="employmentStatuses != null and !employmentStatuses.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_employment_status ypes
+                    JOIN policy_employment_status pes ON ypes.employment_status_id = pes.id
+                    WHERE ypes.policy_id = yp.id
+                    AND (
+                        pes.employment_status IN
+                        <foreach collection="employmentStatuses" item="status" open="(" separator="," close=")">
+                            #{status}
+                        </foreach>
+                        OR pes.employment_status = '제한없음'
+                    )
+                )
+            </if>
         )
 
         <!-- 전공 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1 FROM user_major um
-        WHERE um.user_policy_condition_id = #{id}
-        )
-        OR EXISTS (
-        SELECT 1
-        FROM youth_policy_major ypm
-        WHERE ypm.policy_id = yp.id
-        AND (
-        ypm.major_id IN (
-        SELECT um.major_id
-        FROM user_major um
-        WHERE um.user_policy_condition_id = #{id}
-        )
-        OR ypm.major_id = '0011009' -- 제한 없음
-        )
-        )
+            <if test="majors == null or majors.isEmpty()">
+                1=1
+            </if>
+            <if test="majors != null and !majors.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_major ypm
+                    JOIN policy_major pm ON ypm.major_id = pm.id
+                    WHERE ypm.policy_id = yp.id
+                    AND (
+                        pm.major IN
+                        <foreach collection="majors" item="major" open="(" separator="," close=")">
+                            #{major}
+                        </foreach>
+                        OR pm.major = '제한없음'
+                    )
+                )
+            </if>
         )
 
         <!-- 특수 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1 FROM user_special_condition usc
-        WHERE usc.user_policy_condition_id = #{id}
-        )
-        OR EXISTS (
-        SELECT 1
-        FROM youth_policy_special_condition ypsc
-        WHERE ypsc.policy_id = yp.id
-        AND (
-        ypsc.special_condition_id IN (
-        SELECT usc.special_condition_id
-        FROM user_special_condition usc
-        WHERE usc.user_policy_condition_id = #{id}
-        )
-        OR ypsc.special_condition_id = '0014010' -- 제한 없음
-        )
-        )
+            <if test="specialConditions == null or specialConditions.isEmpty()">
+                1=1
+            </if>
+            <if test="specialConditions != null and !specialConditions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_special_condition ypsc
+                    JOIN policy_special_condition psc ON ypsc.special_condition_id = psc.id
+                    WHERE ypsc.policy_id = yp.id
+                    AND (
+                        psc.special_condition IN
+                        <foreach collection="specialConditions" item="condition" open="(" separator="," close=")">
+                            #{condition}
+                        </foreach>
+                        OR psc.special_condition = '제한없음'
+                    )
+                )
+            </if>
         )
 
         <!-- 키워드 조건 -->
         AND (
-        NOT EXISTS (
-        SELECT 1 FROM user_policy_keyword upk
-        WHERE upk.user_policy_condition_id = #{id}
+            <if test="keywords == null or keywords.isEmpty()">
+                1=1
+            </if>
+            <if test="keywords != null and !keywords.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_keyword ypk
+                    JOIN policy_keyword pk ON ypk.keyword_id = pk.id
+                    WHERE ypk.policy_id = yp.id
+                    AND pk.keyword IN
+                    <foreach collection="keywords" item="keyword" open="(" separator="," close=")">
+                        #{keyword}
+                    </foreach>
+                )
+            </if>
         )
-        OR EXISTS (
-        SELECT 1
-        FROM user_policy_keyword upk
-        JOIN youth_policy_keyword ypk
-        ON upk.keyword_id = ypk.keyword_id
-        WHERE upk.user_policy_condition_id = #{id}
-        AND ypk.policy_id = yp.id
-        )
-        )
+        <if test="searchText != null and searchText.length() > 0">
+            AND (
+                yp.title LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.description LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.support_content LIKE CONCAT('%', #{searchText}, '%')
+            )
+        </if>
     </select>
 
     <insert id="saveUserFilteredPolicies" parameterType="java.util.List">
