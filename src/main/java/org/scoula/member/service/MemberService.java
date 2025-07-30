@@ -12,5 +12,6 @@ public interface MemberService {
   MemberDTO join(MemberJoinDTO member);
   // 로그인 ID로 회원 조회
   MemberVO findByUsername(String loginId);
+  void validateJoinInfo(MemberJoinDTO dto); // 회원가입 관련 유효성 검사
 
 }
