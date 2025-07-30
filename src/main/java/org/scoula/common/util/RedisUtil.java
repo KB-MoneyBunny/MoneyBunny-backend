@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -14,8 +15,6 @@ public class RedisUtil {
     public RedisUtil(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
-
-
 
     // ======= (1) 범용 캐시 메서드 =======
     // 토큰·임의값 등 TTL 지정 저장 (TimeUnit 단위 지원)
@@ -55,22 +54,25 @@ public class RedisUtil {
 
 
     // ======= (2) 이메일 인증 코드 전용 =======
-    // 인증코드 저장 (3분)
+    // 인증코드 저장
     public void saveCode(String email, String code) {
         log.info("Redis에 인증코드 저장: {} => {}", email, code);
         try {
             redisTemplate.opsForValue().set(email, code, Duration.ofMinutes(3));
+            String result = redisTemplate.opsForValue().get(email); // 바로 읽음
+            log.info("저장 후 조회 결과: {}", result); // null이면 저장 안 됨
+
         } catch (Exception e) {
             log.error("Redis 저장 실패", e);
         }
     }
 
+    // 인증 코드 인증
     public boolean verifyCode(String email, String code) {
         String storedCode = redisTemplate.opsForValue().get(email);
         return storedCode != null && storedCode.equals(code);
-
-
     }
+    
     // 인증 코드 삭제
     public void deleteCode(String email) {
         redisTemplate.delete(email);
@@ -87,5 +89,22 @@ public class RedisUtil {
         String result = redisTemplate.opsForValue().get(key);
         return "true".equals(result);
     }
+
+    // RefreshToken
+    // Refresh Token 저장
+    public void saveRefreshToken(String username, String refreshToken, Duration ttl) {
+        redisTemplate.opsForValue().set("refresh:" + username, refreshToken, ttl);
+    }
+
+    // Refresh Token 조회
+    public String getRefreshToken(String username) {
+        return redisTemplate.opsForValue().get("refresh:" + username);
+    }
+
+    // Refresh Token 삭제 (로그아웃 등)
+    public void deleteRefreshToken(String username) {
+        redisTemplate.delete("refresh:" + username);
+    }
+
 
 }

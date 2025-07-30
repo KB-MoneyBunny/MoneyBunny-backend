@@ -22,6 +22,18 @@ public interface UserPolicyMapper {
     // 사용자 정책 조건에 맞는 정책 ID 목록을 조회
     List<Long> findMatchingPolicyIds(UserPolicyConditionVO userPolicyCondition);
 
-    // 사용자 정책 점수를 저장
-    BigDecimal saveUserPolicyScore(UserPolicyScoreVO userPolicyScore);
+    // 필터링된 정책 목록을 저장
+    void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
+
+    // 사용자 정책 조건을 수정
+    void updateUserPolicyCondition(UserPolicyConditionVO userPolicyCondition);
+
+    // 사용자 정책 조건 관련 데이터를 삭제
+    void deleteUserMajorsByConditionId(Long userPolicyConditionId);
+    void deleteUserSpecialConditionsByConditionId(Long userPolicyConditionId);
+    void deleteUserPolicyKeywordsByConditionId(Long userPolicyConditionId);
+    void deleteUserPolicyRegionsByConditionId(Long userPolicyConditionId);
+    void deleteUserEmploymentStatusesByConditionId(Long userPolicyConditionId);
+    void deleteUserEducationLevelsByConditionId(Long userPolicyConditionId);
+    void deleteUserFilteredPoliciesByUserId(Long userId);
 }
