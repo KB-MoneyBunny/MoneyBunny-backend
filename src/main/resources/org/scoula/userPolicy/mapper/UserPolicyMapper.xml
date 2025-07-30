@@ -3,8 +3,8 @@
 <mapper namespace="org.scoula.userPolicy.mapper.UserPolicyMapper">
 
     <insert id="saveUserPolicyCondition" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user_policy_condition (user_id, age, marriage, income, created_at, updated_at)
-        VALUES (#{userId}, #{age}, #{marriage}, #{income}, NOW(), NOW())
+        INSERT INTO user_policy_condition (user_id, age, marriage, income, money_rank, period_rank, popularity_rank, created_at, updated_at)
+        VALUES (#{userId}, #{age}, #{marriage}, #{income}, #{money_rank}, #{period_rank}, #{Popularity_rank}, NOW(), NOW())
     </insert>
 
     <insert id="saveUserMajors" parameterType="java.util.List">
@@ -61,6 +61,9 @@
         <result property="age" column="age"/>
         <result property="marriage" column="marriage"/>
         <result property="income" column="income"/>
+        <result property="money_rank" column="money_rank"/>
+        <result property="period_rank" column="period_rank"/>
+        <result property="Popularity_rank" column="Popularity_rank"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <collection property="regions" ofType="org.scoula.userPolicy.domain.UserRegionVO"
@@ -321,6 +324,9 @@
         SET age = #{age},
             marriage = #{marriage},
             income = #{income},
+            money_rank = #{money_rank},
+            period_rank = #{period_rank},
+            popularity_rank = #{Popularity_rank},
             updated_at = NOW()
         WHERE id = #{id}
     </update>
@@ -352,4 +358,24 @@
     <delete id="deleteUserFilteredPoliciesByUserId">
         DELETE FROM user_filtered_policies WHERE user_id = #{userId}
     </delete>
+
+    <insert id="saveUserVector">
+        INSERT INTO user_vector (user_id, vec_benefit_amount, vec_deadline, vec_views, updated_at)
+        VALUES (#{userId}, #{vecBenefitAmount}, #{vecDeadline}, #{vecViews}, NOW())
+    </insert>
+
+    <update id="updateUserVector">
+        UPDATE user_vector
+        SET vec_benefit_amount = #{vecBenefitAmount},
+            vec_deadline = #{vecDeadline},
+            vec_views = #{vecViews},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <select id="findUserVectorByUserId" resultType="org.scoula.userPolicy.domain.UserVectorVO">
+        SELECT *
+        FROM user_vector
+        WHERE user_id = #{userId}
+    </select>
 </mapper>

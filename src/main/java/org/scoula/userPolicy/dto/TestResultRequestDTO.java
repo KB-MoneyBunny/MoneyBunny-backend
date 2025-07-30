@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor       // 기본 생성자
 @AllArgsConstructor      // 모든 필드 생성자
 @Builder
-public class testREsultRequestDTO {
+public class TestResultRequestDTO {
     private int age;
     private String marriage;
     private long income;
@@ -22,9 +22,9 @@ public class testREsultRequestDTO {
     private List<String> majors;
     private List<String> specialConditions;
     private List<String> keywords;
-    private int firstt;
-    private int second;
-    private int third;
+    private int money_rank;
+    private int period_rank;
+    private int Popularity_rank;
 }
 
 
