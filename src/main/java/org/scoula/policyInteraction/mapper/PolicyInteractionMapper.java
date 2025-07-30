@@ -3,6 +3,7 @@ package org.scoula.policyInteraction.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
+import org.scoula.policyInteraction.domain.UserVectorVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
@@ -48,4 +49,11 @@ public interface PolicyInteractionMapper {
 
     /** 사용자의 전체 신청 목록 조회 (정책 정보 포함) */
     List<ApplicationWithPolicyDTO> selectApplicationsByUserId(@Param("userId") Long userId);
+
+
+    UserVectorVO findByUserId(Long userId);
+
+    void insertUserVector(UserVectorVO vector);
+
+    void updateUserVector(UserVectorVO vector);
 }

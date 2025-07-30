@@ -356,4 +356,26 @@
         SELECT id, special_condition
         FROM policy_special_condition
     </select>
+    <!-- 정책 벡터 저장 및 업데이트 -->
+    <insert id="insertPolicyVector" parameterType="org.scoula.policy.domain.PolicyVectorVO">
+        INSERT INTO policy_vector (policy_id, vec_benefit_amount, vec_deadline, vec_views, created_at)
+        VALUES (#{policyId}, #{vecBenefitAmount}, #{vecDeadline}, #{vecViews}, NOW())
+    </insert>
+
+    <update id="updatePolicyVector" parameterType="org.scoula.policy.domain.PolicyVectorVO">
+        UPDATE policy_vector
+        SET vec_benefit_amount = #{vecBenefitAmount},
+            vec_deadline = #{vecDeadline},
+            vec_views = #{vecViews},
+            created_at = NOW()
+        WHERE policy_id = #{policyId}
+    </update>
+
+    <select id="findByPolicyId" parameterType="long" resultType="org.scoula.policy.domain.PolicyVectorVO">
+        SELECT * FROM policy_vector WHERE policy_id = #{policyId}
+    </select>
+
+    <select id="findPolicyIdByPolicyNo" parameterType="string" resultType="long">
+        SELECT id FROM youth_policy WHERE policy_no = #{policyNo}
+    </select>
 </mapper>

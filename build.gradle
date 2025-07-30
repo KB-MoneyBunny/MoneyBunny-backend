@@ -120,8 +120,8 @@ dependencies {
     implementation 'org.mybatis:mybatis-spring:2.1.2'
 
 
-    // SQL 로깅 라이브러리 (핵심)
-    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4:1.16'
+    // SQL 로깅 라이브러리 - 최신 버전으로 업데이트 (Java 8+ 호환)
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 //    implementation 'org.apache.logging.log4j:log4j-api:2.0.1'
 //    implementation 'org.apache.logging.log4j:log4j-core:2.0.1'
 

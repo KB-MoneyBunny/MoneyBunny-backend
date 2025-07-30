@@ -10,9 +10,7 @@ public interface MemberService {
   boolean checkDuplicate(String loginId);       // username → loginId
   MemberDTO get(String loginId);
   MemberDTO join(MemberJoinDTO member);
-  Optional<MemberDTO> login(String username, String password);
+  // 로그인 ID로 회원 조회
   MemberVO findByUsername(String loginId);
-  boolean resetPassword(String loginId, String password);
-  MemberVO findByEmail(String email); // ID 찾기
 
 }
