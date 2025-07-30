@@ -1,11 +1,17 @@
 package org.scoula.codef.dto;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 // 1. DTO 클래스: 사용자 입력값 받기
+@ApiModel(description = "계좌 연동(계정 연결) 요청 DTO")
 @Data
 public class AccountConnectRequest {
-    private String organization;  // 은행 코드 (예: "0020")
-    private String loginId;       // 사용자 아이디
-    private String password;      // 사용자 비밀번호
+    @ApiModelProperty(value = "은행_코드", example = "0004")
+    private String organization;
+    @ApiModelProperty(value = "은행_아이디", example = "CAESES0522")
+    private String loginId;
+    @ApiModelProperty(value = "은행_비밀번호", example = "GGHDUDDD@@")
+    private String password;
 }
