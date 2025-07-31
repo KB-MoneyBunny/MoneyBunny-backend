@@ -7,16 +7,25 @@ import org.scoula.member.mapper.MemberMapper;
 import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.scoula.userPolicy.util.VectorUtil;
+import org.scoula.userPolicy.domain.UserVectorVO;
+import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +45,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
 
     private static final String POPULAR_KEYWORDS_KEY = "popular_keywords";
+    private final PolicyInteractionMapper policyInteractionMapper;
 
 
     /**
@@ -283,13 +293,23 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         saveUserFilteredPolicies(userId);
 
-        // 사용자 벡터 값 계산 및 저장
-        UserVectorVO userVector = new UserVectorVO();
-        userVector.setUserId(userId);
+
+
+        // 사용자 벡터 값 계산 및 저장 (중복 방지)
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+        if (userVector == null) {
+            userVector = new UserVectorVO();
+            userVector.setUserId(userId);
+        }
         userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
         userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
         userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
-        userPolicyMapper.saveUserVector(userVector);
+
+        if (userVector.getId() == null) {
+            userPolicyMapper.saveUserVector(userVector);
+        } else {
+            userPolicyMapper.updateUserVector(userVector);
+        }
 
         return testResultRequestDTO;
     }
@@ -535,10 +555,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
 
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
 
         // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).toList();
+        List<Long> matchingPolicyIds = policiesWithVectors.stream().map(PolicyWithVectorDTO::getPolicyId).collect(Collectors.toList());
 
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
@@ -619,7 +639,41 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
 
-        return userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
+
+        return searchResultDTO;
     }
 
     /**
@@ -662,12 +716,43 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
 
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
 
         // 신청 기간에서 마감일 추출
         for(SearchResultDTO resultDTO : searchResultDTO){
-            if(resultDTO.getEndDate() != null && !resultDTO.getEndDate().isEmpty()){
+            if(resultDTO.getEndDate() != null && resultDTO.getEndDate() != ""){
                 String[] Date=resultDTO.getEndDate().split("~");
                 if(Date.length==2){
                     resultDTO.setEndDate(Date[1].trim());

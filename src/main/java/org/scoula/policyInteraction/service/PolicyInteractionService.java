@@ -5,12 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.scoula.policy.domain.PolicyVectorVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
-import org.scoula.policyInteraction.domain.UserVectorVO;
+import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
-import org.scoula.policyInteraction.util.UserVectorUtil;
+import org.scoula.userPolicy.util.UserVectorUtil;
+import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class PolicyInteractionService {
     
     private final PolicyInteractionMapper policyInteractionMapper;
     private final PolicyMapper policyMapper;
+    private final UserPolicyMapper userPolicyMapper;
     
     // ────────────────────────────────────────
     // 📌 북마크 관련
@@ -124,7 +126,7 @@ public class PolicyInteractionService {
             }
             
             // 2. 사용자 벡터 조회 또는 초기화
-            UserVectorVO userVector = policyInteractionMapper.findByUserId(userId);
+            UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
             if (userVector == null) {
                 userVector = UserVectorUtil.createInitialUserVector(userId);
                 log.info("[사용자 벡터] 초기 벡터 생성 - userId: {}", userId);
@@ -137,10 +139,10 @@ public class PolicyInteractionService {
             
             // 4. DB 저장
             if (userVector.getId() == null) {
-                policyInteractionMapper.insertUserVector(userVector);
+                userPolicyMapper.saveUserVector(userVector);
                 log.info("[사용자 벡터] 신규 생성 완료 - userId: {}", userId);
             } else {
-                policyInteractionMapper.updateUserVector(userVector);
+                userPolicyMapper.updateUserVector(userVector);
                 log.info("[사용자 벡터] 업데이트 완료 - userId: {}", userId);
             }
             
