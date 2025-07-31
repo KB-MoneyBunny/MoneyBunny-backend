@@ -16,22 +16,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class UserNotification {
-    private Long id;                        // 알림 고유 식별자
-    private Long userId;                    // 사용자 아이디
-    private String title;                   // 알림 제목
-    private String message;                 // 알림 본문
-    private String type;                    // 알림 유형 (POLICY, FEEDBACK, SYSTEM)
-    private String targetUrl;               // 이동할 URL (선택적)
-    private Boolean isRead;                 // 읽음 여부
-    private LocalDateTime createdAt;        // 생성시간
-    private LocalDateTime readAt;           // 읽은 시간 (선택적)
-
-    /**
-     * 알림 타입을 NotificationType enum으로 반환
-     */
-    public NotificationType getNotificationType() {
-        return NotificationType.fromString(this.type);
-    }
+    private Long id;                 // 알림 고유 식별자
+    private Long userId;            // 사용자 아이디
+    private String title;           // 알림 제목
+    private String message;         // 알림 본문
+    private NotificationType type;  // 알림 유형 (ENUM)
+    private String targetUrl;       // 이동할 URL
+    private Boolean isRead;         // 읽음 여부
+    private LocalDateTime createdAt; // 생성일시
 
     /**
      * 알림이 읽힌 상태인지 확인
@@ -52,45 +44,51 @@ public class UserNotification {
      */
     public void markAsRead() {
         this.isRead = true;
-        this.readAt = LocalDateTime.now();
+        // readAt 필드가 없다면 시간 저장은 생략하거나 DB 트리거 등으로 처리
     }
 
     /**
-     * 정책 알림인지 확인
+     * 북마크 알림인지 확인
      */
-    public boolean isPolicyNotification() {
-        return NotificationType.POLICY.name().equals(this.type);
+    public boolean isBookmarkNotification() {
+        return NotificationType.BOOKMARK.equals(this.type);
+    }
+
+    /**
+     * Top3 알림인지 확인
+     */
+    public boolean isTop3Notification() {
+        return NotificationType.TOP3.equals(this.type);
+    }
+
+    /**
+     * 신규 정책 알림인지 확인
+     */
+    public boolean isNewPolicyNotification() {
+        return NotificationType.NEW_POLICY.equals(this.type);
     }
 
     /**
      * 피드백 알림인지 확인
      */
     public boolean isFeedbackNotification() {
-        return NotificationType.FEEDBACK.name().equals(this.type);
-    }
-
-    /**
-     * 시스템 알림인지 확인
-     */
-    public boolean isSystemNotification() {
-        return NotificationType.SYSTEM.name().equals(this.type);
+        return NotificationType.FEEDBACK.equals(this.type);
     }
 
     /**
      * 알림이 유효한지 확인 (필수 필드 검증)
      */
     public boolean isValid() {
-        return userId != null && 
-               title != null && !title.trim().isEmpty() &&
-               message != null && !message.trim().isEmpty() &&
-               NotificationType.isValidType(this.type);
+        return userId != null &&
+                title != null && !title.trim().isEmpty() &&
+                message != null && !message.trim().isEmpty() &&
+                type != null;
     }
 
     /**
      * 디스플레이용 타입 이름 반환
      */
     public String getDisplayTypeName() {
-        NotificationType notificationType = getNotificationType();
-        return notificationType != null ? notificationType.getDisplayName() : "알 수 없음";
+        return type != null ? type.getDisplayName() : "알 수 없음";
     }
 }
