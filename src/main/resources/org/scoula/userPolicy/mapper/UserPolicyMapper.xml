@@ -4,7 +4,7 @@
 
     <insert id="saveUserPolicyCondition" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_policy_condition (user_id, age, marriage, income, money_rank, period_rank, popularity_rank, created_at, updated_at)
-        VALUES (#{userId}, #{age}, #{marriage}, #{income}, #{money_rank}, #{period_rank}, #{Popularity_rank}, NOW(), NOW())
+        VALUES (#{userId}, #{age}, #{marriage}, #{income}, #{moneyRank}, #{periodRank}, #{popularityRank}, NOW(), NOW())
     </insert>
 
     <insert id="saveUserMajors" parameterType="java.util.List">
@@ -56,77 +56,83 @@
     </insert>
 
     <resultMap id="userPolicyConditionMap" type="org.scoula.userPolicy.domain.UserPolicyConditionVO">
-        <id property="id" column="id"/>
+        <id property="id" column="upc_id"/>
         <result property="userId" column="user_id"/>
         <result property="age" column="age"/>
         <result property="marriage" column="marriage"/>
         <result property="income" column="income"/>
-        <result property="money_rank" column="money_rank"/>
-        <result property="period_rank" column="period_rank"/>
-        <result property="Popularity_rank" column="Popularity_rank"/>
+        <result property="moneyRank" column="money_rank"/>
+        <result property="periodRank" column="period_rank"/>
+        <result property="popularityRank" column="popularity_rank"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
-        <collection property="regions" ofType="org.scoula.userPolicy.domain.UserRegionVO"
-                    javaType="java.util.ArrayList"
-                    select="findRegionsByConditionId" column="id"/>
-        <collection property="educationLevels" ofType="org.scoula.userPolicy.domain.UserEducationLevelVO"
-                    javaType="java.util.ArrayList"
-                    select="findEducationLevelsByConditionId" column="id"/>
-        <collection property="employmentStatuses" ofType="org.scoula.userPolicy.domain.UserEmploymentStatusVO"
-                    javaType="java.util.ArrayList"
-                    select="findEmploymentStatusesByConditionId" column="id"/>
-        <collection property="majors" ofType="org.scoula.userPolicy.domain.UserMajorVO"
-                    javaType="java.util.ArrayList"
-                    select="findMajorsByConditionId" column="id"/>
-        <collection property="specialConditions" ofType="org.scoula.userPolicy.domain.UserSpecialConditionVO"
-                    javaType="java.util.ArrayList"
-                    select="findSpecialConditionsByConditionId" column="id"/>
-        <collection property="keywords" ofType="org.scoula.userPolicy.domain.UserPolicyKeywordVO"
-                    javaType="java.util.ArrayList"
-                    select="findKeywordsByConditionId" column="id"/>
+
+        <collection property="regions" ofType="org.scoula.userPolicy.domain.UserRegionVO">
+            <id property="regionId" column="region_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="educationLevels" ofType="org.scoula.userPolicy.domain.UserEducationLevelVO">
+            <id property="eduId" column="edu_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="employmentStatuses" ofType="org.scoula.userPolicy.domain.UserEmploymentStatusVO">
+            <id property="employmentStatusId" column="emp_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="majors" ofType="org.scoula.userPolicy.domain.UserMajorVO">
+            <id property="majorId" column="major_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="specialConditions" ofType="org.scoula.userPolicy.domain.UserSpecialConditionVO">
+            <id property="specialConditionId" column="spec_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="keywords" ofType="org.scoula.userPolicy.domain.UserPolicyKeywordVO">
+            <id property="keywordId" column="keyword_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
     </resultMap>
 
     <select id="findUserPolicyConditionByUserId" resultMap="userPolicyConditionMap">
-        SELECT *
-        FROM user_policy_condition
-        WHERE user_id = #{userId}
+        SELECT
+            upc.id AS upc_id,
+            upc.user_id,
+            upc.age,
+            upc.marriage,
+            upc.income,
+            upc.money_rank,
+            upc.period_rank,
+            upc.popularity_rank,
+            upc.created_at,
+            upc.updated_at,
+
+            ur.id AS region_id,
+
+            ue.id AS edu_id,
+
+            ues.id AS emp_id,
+
+            um.id AS major_id,
+
+            usc.id AS spec_id,
+
+            upk.id AS keyword_id
+
+        FROM user_policy_condition upc
+                 LEFT JOIN user_policy_region ur ON ur.user_policy_condition_id = upc.id
+                 LEFT JOIN user_education_level ue ON ue.user_policy_condition_id = upc.id
+                 LEFT JOIN user_employment_status ues ON ues.user_policy_condition_id = upc.id
+                 LEFT JOIN user_major um ON um.user_policy_condition_id = upc.id
+                 LEFT JOIN user_special_condition usc ON usc.user_policy_condition_id = upc.id
+                 LEFT JOIN user_policy_keyword upk ON upk.user_policy_condition_id = upc.id
+        WHERE upc.user_id = #{userId}
     </select>
 
-    <select id="findRegionsByConditionId" resultType="org.scoula.userPolicy.domain.UserRegionVO">
-        SELECT *
-        FROM user_policy_region
-        WHERE user_policy_condition_id = #{id}
-    </select>
-
-    <select id="findEducationLevelsByConditionId" resultType="org.scoula.userPolicy.domain.UserEducationLevelVO">
-        SELECT *
-        FROM user_education_level
-        WHERE user_policy_condition_id = #{id}
-    </select>
-
-    <select id="findEmploymentStatusesByConditionId" resultType="org.scoula.userPolicy.domain.UserEmploymentStatusVO">
-        SELECT *
-        FROM user_employment_status
-        WHERE user_policy_condition_id = #{id}
-    </select>
-
-    <select id="findMajorsByConditionId" resultType="org.scoula.userPolicy.domain.UserMajorVO">
-        SELECT *
-        FROM user_major
-        WHERE user_policy_condition_id = #{id}
-    </select>
-
-    <select id="findSpecialConditionsByConditionId" resultType="org.scoula.userPolicy.domain.UserSpecialConditionVO">
-        SELECT *
-        FROM user_special_condition
-        WHERE user_policy_condition_id = #{id}
-    </select>
-
-    <select id="findKeywordsByConditionId" resultType="org.scoula.userPolicy.domain.UserPolicyKeywordVO">
-        SELECT *
-        FROM user_policy_keyword
-        WHERE user_policy_condition_id = #{id}
-    </select>
 
 
     <!-- 벡터 정보를 포함한 정책 조회 (N+1 문제 해결용) -->
@@ -332,9 +338,9 @@
         SET age = #{age},
             marriage = #{marriage},
             income = #{income},
-            money_rank = #{money_rank},
-            period_rank = #{period_rank},
-            popularity_rank = #{Popularity_rank},
+            money_rank = #{moneyRank},
+            period_rank = #{periodRank},
+            popularity_rank = #{popularityRank},
             updated_at = NOW()
         WHERE id = #{id}
     </update>
