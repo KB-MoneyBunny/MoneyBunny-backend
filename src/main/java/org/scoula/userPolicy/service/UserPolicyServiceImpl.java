@@ -21,7 +21,7 @@ import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.scoula.userPolicy.util.VectorUtil;
-import org.scoula.policyInteraction.domain.UserVectorVO;
+import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -295,13 +295,21 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         saveUserFilteredPolicies(userId);
 
-        // 사용자 벡터 값 계산 및 저장
-        UserVectorVO userVector = new UserVectorVO();
-        userVector.setUserId(userId);
+        // 사용자 벡터 값 계산 및 저장 (중복 방지)
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+        if (userVector == null) {
+            userVector = new UserVectorVO();
+            userVector.setUserId(userId);
+        }
         userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoney_rank()));
         userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriod_rank()));
         userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularity_rank()));
-        userPolicyMapper.saveUserVector(userVector);
+        
+        if (userVector.getId() == null) {
+            userPolicyMapper.saveUserVector(userVector);
+        } else {
+            userPolicyMapper.updateUserVector(userVector);
+        }
 
         return testResultRequestDTO;
     }
@@ -636,7 +644,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
         
         // 2. 사용자 벡터 조회
-        UserVectorVO userVector = policyInteractionMapper.findByUserId(userId);
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
         
         List<SearchResultDTO> searchResultDTO;
         
@@ -713,7 +721,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
         
         // 2. 사용자 벡터 조회
-        UserVectorVO userVector = policyInteractionMapper.findByUserId(userId);
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
         
         List<SearchResultDTO> searchResultDTO;
         

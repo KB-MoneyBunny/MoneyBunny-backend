@@ -1,6 +1,6 @@
 package org.scoula.userPolicy.util;
 
-import org.scoula.policyInteraction.domain.UserVectorVO;
+import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 
