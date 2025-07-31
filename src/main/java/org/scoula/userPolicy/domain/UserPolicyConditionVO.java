@@ -18,8 +18,10 @@ public class UserPolicyConditionVO {
     private int age;
     private String marriage;
     private long income;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
+    private int moneyRank;
+    private int periodRank;
+    private int popularityRank;
+
 
     //조건 목록 추가
     private List<UserRegionVO> regions;
@@ -28,4 +30,7 @@ public class UserPolicyConditionVO {
     private List<UserMajorVO> majors;
     private List<UserSpecialConditionVO> specialConditions;
     private List<UserPolicyKeywordVO> keywords;
+
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 }

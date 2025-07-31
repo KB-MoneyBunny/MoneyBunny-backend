@@ -2,23 +2,21 @@ package org.scoula.userPolicy.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.common.util.RedisUtil;
 import org.scoula.member.mapper.MemberMapper;
-import org.scoula.policy.domain.YouthPolicyPeriodVO;
-import org.scoula.policy.domain.YouthPolicyVO;
-import org.scoula.policy.domain.region.PolicyRegionVO;
-import org.scoula.policy.domain.education.PolicyEducationLevelVO;
-import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
-import org.scoula.policy.domain.keyword.PolicyKeywordVO;
-import org.scoula.policy.domain.major.PolicyMajorVO;
-import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
-import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
-import org.scoula.userPolicy.dto.UserPolicyDTO;
+import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.scoula.userPolicy.util.VectorUtil;
+import org.scoula.userPolicy.domain.UserVectorVO;
+import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +27,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,13 +38,23 @@ import java.util.stream.Collectors;
 public class UserPolicyServiceImpl implements UserPolicyService {
 
     private final UserPolicyMapper userPolicyMapper;
-    private final PolicyMapper policyMapper;
     private final MemberMapper memberMapper;
     private final PolicyDataHolder policyDataHolder;
+    private final RedisUtil redisUtil;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    @Transactional
+
+    private static final String POPULAR_KEYWORDS_KEY = "popular_keywords";
+    private final PolicyInteractionMapper policyInteractionMapper;
+
+
+    /**
+     * 사용자 정책 조건을 조회합니다.
+     * @param username 사용자 이름
+     * @return 사용자 정책 DTO
+     */
     @Override
-    public UserPolicyDTO getUserPolicyCondition(String username) {
+    public TestResultRequestDTO getUserPolicyCondition(String username) {
 
 
         MemberVO member = memberMapper.get(username);
@@ -59,10 +70,13 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             return null; // Or throw an exception
         }
 
-        UserPolicyDTO userPolicyDTO = new UserPolicyDTO();
-        userPolicyDTO.setAge(userPolicyCondition.getAge());
-        userPolicyDTO.setMarriage(userPolicyCondition.getMarriage());
-        userPolicyDTO.setIncome(userPolicyCondition.getIncome());
+        TestResultRequestDTO testResultRequestDTO = new TestResultRequestDTO();
+        testResultRequestDTO.setAge(userPolicyCondition.getAge());
+        testResultRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        testResultRequestDTO.setIncome(userPolicyCondition.getIncome());
+        testResultRequestDTO.setMoneyRank(userPolicyCondition.getMoneyRank());
+        testResultRequestDTO.setPeriodRank(userPolicyCondition.getPeriodRank());
+        testResultRequestDTO.setPopularityRank(userPolicyCondition.getPopularityRank());
 
         // 1. regions
         List<UserRegionVO> regions = userPolicyCondition.getRegions();
@@ -70,7 +84,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> regionCodes = regions.stream()
                     .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setRegions(regionCodes);
+            testResultRequestDTO.setRegions(regionCodes);
         }
 
         // 2. educationLevels
@@ -79,7 +93,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> levelNames = educationLevels.stream()
                     .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setEducationLevels(levelNames);
+            testResultRequestDTO.setEducationLevels(levelNames);
         }
 
         // 3. employmentStatuses
@@ -88,7 +102,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> statusNames = employmentStatuses.stream()
                     .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setEmploymentStatuses(statusNames);
+            testResultRequestDTO.setEmploymentStatuses(statusNames);
         }
 
         // 4. majors
@@ -97,7 +111,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> majorNames = majors.stream()
                     .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setMajors(majorNames);
+            testResultRequestDTO.setMajors(majorNames);
         }
 
         // 5. specialConditions
@@ -106,7 +120,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> conditionNames = specialConditions.stream()
                     .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setSpecialConditions(conditionNames);
+            testResultRequestDTO.setSpecialConditions(conditionNames);
         }
 
         // 6. keywords
@@ -115,30 +129,39 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             List<String> keywordNames = keywords.stream()
                     .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
                     .collect(Collectors.toList());
-            userPolicyDTO.setKeywords(keywordNames);
+            testResultRequestDTO.setKeywords(keywordNames);
         }
 
-        return userPolicyDTO;
+        return testResultRequestDTO;
     }
 
+    /**
+     * 사용자 정책 조건을 저장합니다.
+     * @param username 사용자 이름
+     * @param testResultRequestDTO 사용자 정책 DTO
+     * @return 저장된 사용자 정책 DTO
+     */
     @Transactional
     @Override
-    public UserPolicyDTO saveUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO) {
+    public TestResultRequestDTO saveUserPolicyCondition(String username, TestResultRequestDTO testResultRequestDTO) {
         MemberVO member = memberMapper.get(username);
 
         Long userId = member.getUserId();
 
         UserPolicyConditionVO condition = new UserPolicyConditionVO();
         condition.setUserId(userId);
-        condition.setAge(userPolicyDTO.getAge());
-        condition.setMarriage(userPolicyDTO.getMarriage());
-        condition.setIncome(userPolicyDTO.getIncome());
+        condition.setAge(testResultRequestDTO.getAge());
+        condition.setMarriage(testResultRequestDTO.getMarriage());
+        condition.setIncome(testResultRequestDTO.getIncome());
+        condition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        condition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        condition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.saveUserPolicyCondition(condition);
         Long userPolicyConditionId = condition.getId();
 
         // 1. regions - from List<String> regionCodes
-        if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
-            List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
+        if (testResultRequestDTO.getRegions() != null && !testResultRequestDTO.getRegions().isEmpty()) {
+            List<UserRegionVO> regions = testResultRequestDTO.getRegions().stream()
                     .map(name -> {
                         Long regionId = policyDataHolder.getRegionId(name);
                         if (regionId != null) {
@@ -159,8 +182,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         // 2. educationLevels - from List<String>
-        if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
-            List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
+        if (testResultRequestDTO.getEducationLevels() != null && !testResultRequestDTO.getEducationLevels().isEmpty()) {
+            List<UserEducationLevelVO> educationLevels = testResultRequestDTO.getEducationLevels().stream()
                     .map(name -> {
                         Long educationLevelId = policyDataHolder.getEducationLevelId(name);
                         if (educationLevelId != null) {
@@ -181,8 +204,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         // 3. employmentStatuses - from List<String>
-        if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
-            List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
+        if (testResultRequestDTO.getEmploymentStatuses() != null && !testResultRequestDTO.getEmploymentStatuses().isEmpty()) {
+            List<UserEmploymentStatusVO> statuses = testResultRequestDTO.getEmploymentStatuses().stream()
                     .map(name -> {
                         Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
                         if (employmentStatusId != null) {
@@ -203,8 +226,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         // 4. majors - from List<String>
-        if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
-            List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
+        if (testResultRequestDTO.getMajors() != null && !testResultRequestDTO.getMajors().isEmpty()) {
+            List<UserMajorVO> majors = testResultRequestDTO.getMajors().stream()
                     .map(name -> {
                         Long majorId = policyDataHolder.getMajorId(name);
                         if (majorId != null) {
@@ -225,8 +248,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         // 5. specialConditions - from List<String>
-        if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
-            List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
+        if (testResultRequestDTO.getSpecialConditions() != null && !testResultRequestDTO.getSpecialConditions().isEmpty()) {
+            List<UserSpecialConditionVO> specialConditions = testResultRequestDTO.getSpecialConditions().stream()
                     .map(name -> {
                         Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
                         if (specialConditionId != null) {
@@ -247,8 +270,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         // 6. keywords - from List<String>
-        if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
-            List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
+        if (testResultRequestDTO.getKeywords() != null && !testResultRequestDTO.getKeywords().isEmpty()) {
+            List<UserPolicyKeywordVO> keywords = testResultRequestDTO.getKeywords().stream()
                     .map(name -> {
                         Long keywordId = policyDataHolder.getKeywordId(name);
                         if (keywordId != null) {
@@ -269,12 +292,37 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         saveUserFilteredPolicies(userId);
-        return userPolicyDTO;
+
+
+
+        // 사용자 벡터 값 계산 및 저장 (중복 방지)
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+        if (userVector == null) {
+            userVector = new UserVectorVO();
+            userVector.setUserId(userId);
+        }
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
+
+        if (userVector.getId() == null) {
+            userPolicyMapper.saveUserVector(userVector);
+        } else {
+            userPolicyMapper.updateUserVector(userVector);
+        }
+
+        return testResultRequestDTO;
     }
 
+    /**
+     * 사용자 정책 조건을 수정합니다.
+     * @param username 사용자 이름
+     * @param testResultRequestDTO 수정할 정책 조건 DTO
+     * @return 수정된 정책 조건 DTO
+     */
     @Transactional
     @Override
-    public UserPolicyDTO updateUserPolicyCondition(String username, UserPolicyDTO userPolicyDTO) {
+    public TestResultRequestDTO updateUserPolicyCondition(String username, TestResultRequestDTO testResultRequestDTO) {
         MemberVO member = memberMapper.get(username);
         Long userId = member.getUserId();
 
@@ -294,14 +342,17 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         userPolicyMapper.deleteUserEducationLevelsByConditionId(userPolicyConditionId);
 
         // 2. Update basic condition info
-        existingCondition.setAge(userPolicyDTO.getAge());
-        existingCondition.setMarriage(userPolicyDTO.getMarriage());
-        existingCondition.setIncome(userPolicyDTO.getIncome());
+        existingCondition.setAge(testResultRequestDTO.getAge());
+        existingCondition.setMarriage(testResultRequestDTO.getMarriage());
+        existingCondition.setIncome(testResultRequestDTO.getIncome());
+        existingCondition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        existingCondition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        existingCondition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.updateUserPolicyCondition(existingCondition);
 
         // 3. Insert new data based on DTO (same logic as save)
-        if (userPolicyDTO.getRegions() != null && !userPolicyDTO.getRegions().isEmpty()) {
-            List<UserRegionVO> regions = userPolicyDTO.getRegions().stream()
+        if (testResultRequestDTO.getRegions() != null && !testResultRequestDTO.getRegions().isEmpty()) {
+            List<UserRegionVO> regions = testResultRequestDTO.getRegions().stream()
                     .map(name -> {
                         Long regionId = policyDataHolder.getRegionId(name);
                         if (regionId != null) {
@@ -321,8 +372,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
-        if (userPolicyDTO.getEducationLevels() != null && !userPolicyDTO.getEducationLevels().isEmpty()) {
-            List<UserEducationLevelVO> educationLevels = userPolicyDTO.getEducationLevels().stream()
+        if (testResultRequestDTO.getEducationLevels() != null && !testResultRequestDTO.getEducationLevels().isEmpty()) {
+            List<UserEducationLevelVO> educationLevels = testResultRequestDTO.getEducationLevels().stream()
                     .map(name -> {
                         Long educationLevelId = policyDataHolder.getEducationLevelId(name);
                         if (educationLevelId != null) {
@@ -342,8 +393,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
-        if (userPolicyDTO.getEmploymentStatuses() != null && !userPolicyDTO.getEmploymentStatuses().isEmpty()) {
-            List<UserEmploymentStatusVO> statuses = userPolicyDTO.getEmploymentStatuses().stream()
+        if (testResultRequestDTO.getEmploymentStatuses() != null && !testResultRequestDTO.getEmploymentStatuses().isEmpty()) {
+            List<UserEmploymentStatusVO> statuses = testResultRequestDTO.getEmploymentStatuses().stream()
                     .map(name -> {
                         Long employmentStatusId = policyDataHolder.getEmploymentStatusId(name);
                         if (employmentStatusId != null) {
@@ -363,8 +414,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
-        if (userPolicyDTO.getMajors() != null && !userPolicyDTO.getMajors().isEmpty()) {
-            List<UserMajorVO> majors = userPolicyDTO.getMajors().stream()
+        if (testResultRequestDTO.getMajors() != null && !testResultRequestDTO.getMajors().isEmpty()) {
+            List<UserMajorVO> majors = testResultRequestDTO.getMajors().stream()
                     .map(name -> {
                         Long majorId = policyDataHolder.getMajorId(name);
                         if (majorId != null) {
@@ -384,8 +435,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
-        if (userPolicyDTO.getSpecialConditions() != null && !userPolicyDTO.getSpecialConditions().isEmpty()) {
-            List<UserSpecialConditionVO> specialConditions = userPolicyDTO.getSpecialConditions().stream()
+        if (testResultRequestDTO.getSpecialConditions() != null && !testResultRequestDTO.getSpecialConditions().isEmpty()) {
+            List<UserSpecialConditionVO> specialConditions = testResultRequestDTO.getSpecialConditions().stream()
                     .map(name -> {
                         Long specialConditionId = policyDataHolder.getSpecialConditionId(name);
                         if (specialConditionId != null) {
@@ -405,8 +456,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
 
-        if (userPolicyDTO.getKeywords() != null && !userPolicyDTO.getKeywords().isEmpty()) {
-            List<UserPolicyKeywordVO> keywords = userPolicyDTO.getKeywords().stream()
+        if (testResultRequestDTO.getKeywords() != null && !testResultRequestDTO.getKeywords().isEmpty()) {
+            List<UserPolicyKeywordVO> keywords = testResultRequestDTO.getKeywords().stream()
                     .map(name -> {
                         Long keywordId = policyDataHolder.getKeywordId(name);
                         if (keywordId != null) {
@@ -430,9 +481,29 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         userPolicyMapper.deleteUserFilteredPoliciesByUserId(userId);
         saveUserFilteredPolicies(userId);
 
-        return userPolicyDTO;
+        // 사용자 벡터 값 계산 및 수정
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+        if (userVector == null) {
+            userVector = new UserVectorVO();
+            userVector.setUserId(userId);
+        }
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
+
+        if (userVector.getId() == null) {
+            userPolicyMapper.saveUserVector(userVector);
+        } else {
+            userPolicyMapper.updateUserVector(userVector);
+        }
+
+        return testResultRequestDTO;
     }
 
+    /**
+     * 사용자 정책 조건에 맞는 정책을 필터링하여 저장합니다.
+     * @param userId 사용자 ID
+     */
     public void saveUserFilteredPolicies(Long userId) {
 
         UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
@@ -484,10 +555,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
 
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
 
         // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).collect(Collectors.toList());
+        List<Long> matchingPolicyIds = policiesWithVectors.stream().map(PolicyWithVectorDTO::getPolicyId).collect(Collectors.toList());
 
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
@@ -505,6 +576,13 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         userPolicyMapper.saveUserFilteredPolicies(filteredPolicies);
     }
+
+    /**
+     * 사용자 정책 조건에 맞는 정책을 조회합니다.
+     *
+     * @param username 사용자 이름
+     * @return 정책 목록
+     */
     @Override
     public List<SearchResultDTO> searchMatchingPolicy(String username) {
 
@@ -560,11 +638,51 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
 
         return searchResultDTO;
     }
 
+    /**
+     * 사용자 선택한 조건과 작성한 검색어에 따라 필터링된 정책 목록을 조회합니다.
+     *
+     * @param username 사용자 이름
+     * @param searchRequestDTO 검색 요청 DTO
+     * @return 필터링된 정책 목록
+     */
     @Override
     public List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO){
 
@@ -598,8 +716,39 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
 
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
 
         // 신청 기간에서 마감일 추출
         for(SearchResultDTO resultDTO : searchResultDTO){
@@ -613,7 +762,11 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         return searchResultDTO;
     }
 
-    // 빈 문자열 제거용 메서드
+    /**
+     * 주어진 리스트에서 빈 문자열을 제거하는 유틸리티 메소드.
+     * @param list 문자열 리스트
+     * @return 빈 문자열이 제거된 리스트
+     */
     private List<String> removeEmptyStrings(List<String> list) {
         if (list == null) return null;
         return list.stream()
@@ -621,94 +774,48 @@ public class UserPolicyServiceImpl implements UserPolicyService {
                 .toList();
     }
 
-
-
-
-
-    // 정책 점수 계산에 필요한 상수 정의(추가 논의 필요)
-    private static final BigDecimal MAX_AMOUNT_THRESHOLD = new BigDecimal("1000000"); // 혜택 금액 최대치: 백만 원
-    private static final BigDecimal MAX_VIEW_THRESHOLD = new BigDecimal("1000"); // 조회수 최대치: 1000 회
-    private static final long SCORE_RANGE_DAYS = 100L; // 마감일 기준 최대 범위: 100일
-
-    /**
-     * 정책에 대한 최종 점수를 계산하는 메소드.
-     * 현재는 마감일 기반 점수만 계산하지만, 향후 다른 가중치 요소를 추가할 수 있습니다.
-     * @param policyId 정책 ID
-     * @return 계산된 최종 점수
-     */
-    private double calculateScoreForPolicy(Long policyId) {
-        YouthPolicyPeriodVO policyPeriod = policyMapper.findYouthPolicyPeriodByPolicyId(policyId);
-        YouthPolicyVO policyVO = policyMapper.findYouthPolicyById(policyId); // 다른 가중치 계산에 필요할 수 있음
-
-        double deadlineNorm = normalizeDeadlineScore(policyPeriod);
-        double amountNorm = normalizeBenefitAmount(policyVO.getPolicyBenefitAmount());
-        double viewNorm = normalizeViewCount(policyVO.getViews());
-        System.out.println("정책 ID: " + policyId);
-        System.out.println("마감일: " + policyPeriod.getApplyPeriod());
-        System.out.println("마감일 점수: " + deadlineNorm);
-        System.out.println("혜택 금액: " + policyVO.getPolicyBenefitAmount());
-        System.out.println("혜택 금액 점수: " + amountNorm);
-        System.out.println("조회수: " + policyVO.getViews());
-        System.out.println("조회수 점수: " + viewNorm);
-
-
-        return deadlineNorm+amountNorm+viewNorm; // 현재는 마감일 점수만 반환
+    private BigDecimal getVectorValue(int rank) {
+        return switch (rank) {
+            case 1 -> new BigDecimal("0.6");
+            case 2 -> new BigDecimal("0.5");
+            case 3 -> new BigDecimal("0.4");
+            default -> new BigDecimal("0.0");
+        };
     }
 
     /**
-     * 마감일 점수를 정규화하는 메소드.
-     * 마감일까지 남은 일수에 따라 점수를 0.0에서 1.0 사이로 변환합니다.
-     * @param policyPeriod 정책 기간 정보
-     * @return 정규화된 마감일 점수
+     * 검색어를 Redis의 Sorted Set에 저장하고 점수를 1 증가시킵니다.
+     * @param searchTexts 검색어 리스트
      */
-    private double normalizeDeadlineScore(YouthPolicyPeriodVO policyPeriod) {
-        if (policyPeriod == null || policyPeriod.getApplyPeriod() == null) return 0.0;
-
-        String[] dates = policyPeriod.getApplyPeriod().split("~");
-        if (dates.length != 2) return 0.0;
-
-        try {
-            String endDateStr = dates[1].trim();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-            LocalDate endDate = LocalDate.parse(endDateStr, formatter);
-            long daysUntilEnd = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
-
-            if (daysUntilEnd <= 0) return 0.0;
-            if (daysUntilEnd >= SCORE_RANGE_DAYS) return 0.0;
-
-            return 1.0 - ((double) daysUntilEnd / SCORE_RANGE_DAYS);
-        } catch (DateTimeParseException e) {
-            return 0.0;
+    public void saveSearchText(List<String> searchTexts) {
+        for(String searchText : searchTexts) {
+            if (searchText != null && !searchText.trim().isEmpty()) {
+                String trimmedKeyword = searchText.trim();
+                try {
+                    ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+                    zSetOperations.incrementScore(POPULAR_KEYWORDS_KEY, trimmedKeyword, 1);
+                    log.info("인기 검색어 저장: '{}'", trimmedKeyword);
+                } catch (Exception e) {
+                    log.error("인기 검색어 저장 실패: {}", trimmedKeyword, e);
+                }
+            }
         }
     }
 
-    /**
-     * 정책의 혜택 금액을 정규화하는 메소드.
-     * 혜택 금액이 1천만 원 이상이면 1.0, 그 이하이면 0.0에서 1.0 사이로 변환합니다.
-     * @param policyBenefitAmount 정책의 혜택 금액
-     * @return 정규화된 혜택 금액 점수
-     */
-    private double normalizeBenefitAmount(Long policyBenefitAmount) {
-        if (policyBenefitAmount == null || policyBenefitAmount <= 0) return 0.0;
-
-        BigDecimal amount = BigDecimal.valueOf(policyBenefitAmount);
-        if (amount.compareTo(MAX_AMOUNT_THRESHOLD) >= 0) return 1.0;
-
-        return amount.divide(MAX_AMOUNT_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
-    }
 
     /**
-     * 정책의 조회수를 정규화하는 메소드.
-     * 조회수가 1만 회 이상이면 1.0, 그 이하이면 0.0에서 1.0 사이로 변환합니다.
-     * @param viewCount 정책의 조회수
-     * @return 정규화된 조회수 점수
+     * 인기 검색어 목록을 조회합니다.
+     * @param count 조회할 개수
+     * @return 인기 검색어 목록
      */
-    private double normalizeViewCount(Long viewCount) {
-        if (viewCount == null || viewCount <= 0) return 0.0;
-
-        BigDecimal views = BigDecimal.valueOf(viewCount);
-        if (views.compareTo(MAX_VIEW_THRESHOLD) >= 0) return 1.0;
-
-        return views.divide(MAX_VIEW_THRESHOLD, 4, RoundingMode.HALF_UP).doubleValue();
+    public List<String> getPopularKeywords(int count) {
+        try {
+            ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+            Set<String> keywords = zSetOperations.reverseRange(POPULAR_KEYWORDS_KEY, 0, count - 1);
+            return new ArrayList<>(keywords != null ? keywords : Collections.emptyList());
+        } catch (Exception e) {
+            log.error("인기 검색어 조회 실패", e);
+            return Collections.emptyList();
+        }
     }
 }

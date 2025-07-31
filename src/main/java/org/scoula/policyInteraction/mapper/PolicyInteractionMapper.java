@@ -3,6 +3,7 @@ package org.scoula.policyInteraction.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
+import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
