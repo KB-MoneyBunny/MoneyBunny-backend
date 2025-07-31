@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 알림 스케줄러
- * - 북마크 기반 정책 알림 자동 발송
+ * - 북마크 기반 정책 알림 실시간 체크 및 발송
  * - 소비패턴 피드백 알림 자동 발송  
  */
 @Slf4j
@@ -17,21 +17,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class NotificationScheduler {
 
-    private final UserNotificationService userNotificationService;
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
+    private final UserNotificationService userNotificationService;
 
     /**
-     * 북마크 기반 정책 알림 스케줄러 - 매일 오전 9시 실행
+     * 북마크 알림 실시간 체크 및 발송 스케줄러 - 매일 오후 12시 실행
      */
     @Scheduled(cron = "0 0 12 * * *")
-    public void scheduledPolicyNotifications() {
-        log.info("📅 [정책 알림 스케줄러] 시작");
+    public void sendBookmarkNotifications() {
+        log.info("📅 [북마크 알림] 실시간 체크 및 발송 시작");
         
         try {
             bookmarkPolicyNotificationService.checkAndSendBookmarkNotifications();
-            log.info("📅 [정책 알림 스케줄러] 완료");
+            log.info("📅 [북마크 알림] 실시간 체크 및 발송 완료");
         } catch (Exception e) {
-            log.error("📅 [정책 알림 스케줄러] 오류: {}", e.getMessage());
+            log.error("📅 [북마크 알림] 오류: {}", e.getMessage());
         }
     }
 

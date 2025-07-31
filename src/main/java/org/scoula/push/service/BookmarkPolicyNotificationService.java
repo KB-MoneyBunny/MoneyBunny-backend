@@ -28,14 +28,14 @@ public class BookmarkPolicyNotificationService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
-     * 모든 북마크된 정책에 대해 신청일/마감일 알림 체크 및 발송
+     * 모든 북마크된 정책에 대해 신청일/마감일 알림 체크 및 즉시 발송
      */
     @Transactional
     public void checkAndSendBookmarkNotifications() {
-        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 시작");
+        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 및 발송 시작");
         
-        // 모든 북마크 조회
-        List<YouthPolicyBookmarkVO> allBookmarks = policyInteractionMapper.getAllBookmarks();
+        // 북마크 알림을 구독한 사용자의 북마크만 조회 (최적화)
+        List<YouthPolicyBookmarkVO> allBookmarks = policyInteractionMapper.getBookmarksWithActiveSubscription();
         log.info("📌 [북마크 알림] 총 {}개의 북마크 발견", allBookmarks.size());
 
         LocalDate today = LocalDate.now();
@@ -48,7 +48,7 @@ public class BookmarkPolicyNotificationService {
             }
         }
         
-        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 완료");
+        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 및 발송 완료");
     }
 
     /**
@@ -79,12 +79,12 @@ public class BookmarkPolicyNotificationService {
             return;
         }
 
-        // 알림 조건 체크 및 발송
+        // 알림 조건 체크 및 즉시 발송
         checkAndSendNotification(userId, policy, policyPeriod, today);
     }
 
     /**
-     * 알림 조건 체크 및 발송
+     * 알림 조건 체크 및 즉시 발송
      */
     private void checkAndSendNotification(Long userId, YouthPolicyVO policy, PolicyPeriod period, LocalDate today) {
         String policyTitle = policy.getTitle();
@@ -96,7 +96,7 @@ public class BookmarkPolicyNotificationService {
             String message = String.format("'%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요 💪", policyTitle);
             String targetUrl = "/policy/" + policyId;
             
-            userNotificationService.createAndSendPolicyNotification(userId, title, message, targetUrl);
+            userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
             log.info("📌 [북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", userId, policyTitle);
             return;
         }
@@ -109,7 +109,7 @@ public class BookmarkPolicyNotificationService {
             String message = getDeadlineNotificationMessage(policyTitle, daysUntilDeadline);
             String targetUrl = "/policy/" + policyId;
             
-            userNotificationService.createAndSendPolicyNotification(userId, title, message, targetUrl);
+            userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
             log.info("📌 [북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, userId, policyTitle);
         }
     }
