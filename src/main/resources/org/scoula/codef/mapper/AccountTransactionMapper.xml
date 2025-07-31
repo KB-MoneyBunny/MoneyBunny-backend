@@ -36,6 +36,14 @@
           AND transaction_date_time >= STR_TO_DATE(#{startDate}, '%Y%m%d')
     </select>
 
+    <select id="findLatestBalanceAfterByAccountId" resultType="long">
+        SELECT balance_after
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+        ORDER BY transaction_date_time DESC
+            LIMIT 1
+    </select>
+
 
 
 </mapper>
