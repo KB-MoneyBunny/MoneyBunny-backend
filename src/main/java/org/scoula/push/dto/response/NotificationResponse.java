@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.scoula.push.domain.NotificationType;
 import org.scoula.push.domain.UserNotification;
 
 import java.time.LocalDateTime;
@@ -19,12 +20,11 @@ public class NotificationResponse {
     private Long id;                        // 알림 ID
     private String title;                   // 알림 제목
     private String message;                 // 알림 본문
-    private String type;                    // 알림 타입 (POLICY, FEEDBACK, SYSTEM)
+    private NotificationType type;          // 알림 타입 (BOOKMARK, TOP3, NEW_POLICY, FEEDBACK)
     private String typeName;                // 알림 타입 표시명
     private String targetUrl;               // 이동할 URL
     private boolean isRead;                 // 읽음 여부
     private LocalDateTime createdAt;        // 생성시간
-    private LocalDateTime readAt;           // 읽은 시간
 
     /**
      * UserNotification 엔티티로부터 DTO 생성
@@ -39,7 +39,6 @@ public class NotificationResponse {
                 .targetUrl(notification.getTargetUrl())
                 .isRead(notification.isReadStatus())
                 .createdAt(notification.getCreatedAt())
-                .readAt(notification.getReadAt())
                 .build();
     }
 }
