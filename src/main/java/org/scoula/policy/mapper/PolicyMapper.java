@@ -15,9 +15,11 @@ import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
 import org.scoula.policy.domain.specialcondition.YouthPolicySpecialConditionVO;
 import org.scoula.policy.dto.PolicyDetailDTO;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface PolicyMapper {
 
     /** 전체 정책 수 확인 */
@@ -42,6 +44,9 @@ public interface PolicyMapper {
     /** 키워드 조회 (중복 확인) */
     PolicyKeywordVO findKeywordByName(@Param("keyword") String keyword);
 
+    /** 전체 키워드 조회 */
+    List<PolicyKeywordVO> findAllKeywords();
+
     /** 키워드 마스터 저장 */
     void insertPolicyKeyword(PolicyKeywordVO keywordVO);
 
@@ -56,6 +61,9 @@ public interface PolicyMapper {
     /** 지역 조회 (중복 확인) */
     PolicyRegionVO findRegionByCode(@Param("regionCode") String regionCode);
 
+    /** 전체 지역 조회 */
+    List<PolicyRegionVO> findAllRegions();
+
     /** 지역 마스터 저장 */
     void insertPolicyRegion(PolicyRegionVO regionVO);
 
@@ -67,6 +75,9 @@ public interface PolicyMapper {
 
     /** 전공 조회 */
     PolicyMajorVO findMajorByName(@Param("major") String major);
+
+    /** 전체 전공 조회 */
+    List<PolicyMajorVO> findAllMajors();
 
     /** 전공 마스터 저장 */
     void insertPolicyMajor(PolicyMajorVO vo);
@@ -81,6 +92,9 @@ public interface PolicyMapper {
     /** 학력 조회 */
     PolicyEducationLevelVO findEducationLevelByName(@Param("educationLevel") String educationLevel);
 
+    /** 전체 학력 조회 */
+    List<PolicyEducationLevelVO> findAllEducationLevels();
+
     /** 학력 마스터 저장 */
     void insertPolicyEducationLevel(PolicyEducationLevelVO vo);
 
@@ -94,6 +108,9 @@ public interface PolicyMapper {
     /** 취업 상태 조회 */
     PolicyEmploymentStatusVO findEmploymentStatusByName(@Param("employmentStatus") String employmentStatus);
 
+    /** 전체 취업 상태 조회 */
+    List<PolicyEmploymentStatusVO> findAllEmploymentStatuses();
+
     /** 취업 상태 마스터 저장 */
     void insertPolicyEmploymentStatus(PolicyEmploymentStatusVO vo);
 
@@ -106,6 +123,9 @@ public interface PolicyMapper {
 
     /** 특수 조건 조회 */
     PolicySpecialConditionVO findSpecialConditionByName(@Param("specialCondition") String specialCondition);
+
+    /** 전체 특수 조건 조회 */
+    List<PolicySpecialConditionVO> findAllSpecialConditions();
 
     /** 특수 조건 마스터 저장 */
     void insertPolicySpecialCondition(PolicySpecialConditionVO vo);
@@ -125,4 +145,13 @@ public interface PolicyMapper {
 
     /** 정책 조회수 업데이트 */
     void updatePolicyViews(@Param("policyNo") String policyNo, @Param("views") Long views);
+
+
+    void insertPolicyVector(PolicyVectorVO vector);
+
+    void updatePolicyVector(PolicyVectorVO vector);
+
+    PolicyVectorVO findByPolicyId(Long policyId);
+
+    Long findPolicyIdByPolicyNo(String policyNo);
 }

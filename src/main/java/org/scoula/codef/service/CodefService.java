@@ -3,17 +3,16 @@ package org.scoula.codef.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.scoula.codef.common.exception.AlreadyRegisteredCardException;
 import org.scoula.codef.common.exception.CodefApiException;
 import org.scoula.codef.domain.*;
 import org.scoula.codef.dto.AccountConnectRequest;
 import org.scoula.codef.dto.CardConnectRequest;
 import org.scoula.codef.mapper.*;
-import org.scoula.codef.util.AesUtil;
 import org.scoula.codef.util.CodefUtil;
 import org.scoula.codef.util.RSAUtil;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,17 +24,16 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CodefService {
 
     private final CodefTokenService tokenService;
@@ -50,21 +48,20 @@ public class CodefService {
     private final CardTransactionMapper cardTransactionMapper;
     private final CategoryMapper categoryMapper;
 
-//    private final GptApiClient gptApiClient;
-
-
-    public List<UserAccountVO> connectAndFetchAccounts(AccountConnectRequest request) {
+    /**
+     * 사용자의 은행 계정 연결 및 계좌 목록 조회
+     * - 계정 연결(connectedId 발급/추가) 후 계좌 목록을 CODEF에서 가져와 반환
+     * - 계정 연결에 실패하면 예외 발생
+     */
+    public List<UserAccountVO> connectAndFetchAccounts(String loginId, AccountConnectRequest request) {
         try {
-
-            String loginId = "admin1";
-
             Long userId = connectedAccountMapper.findIdByLoginId(loginId);
-
-            System.out.println("userId = " + userId);
+            log.info("[CODEF 계좌연동] loginId={}, userId={}", loginId, userId);
 
             // 1. connected_accounts 테이블에서 connectedId 먼저 조회
             ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
-            String connectedId = vo.getConnectedId();
+            String connectedId = (vo == null) ? null : vo.getConnectedId();
+            log.debug("connectedId 조회 결과: {}", connectedId);
 
             // 2. 없으면 새로 발급 후 저장
             if (connectedId == null) {
@@ -88,7 +85,7 @@ public class CodefService {
 
                 String connectResponse = sendPost(connectUrl, connectBody);
                 String decodedResponse = URLDecoder.decode(connectResponse, StandardCharsets.UTF_8);
-                System.out.println("계정 연결 응답 = " + decodedResponse);
+                log.debug("[CODEF 계정연결 응답] {}", decodedResponse);
 
 //                if (!CodefUtil.isSuccess(decodedResponse)) {
 //                    // throw new RuntimeException("계정 연결 실패: " + CodefUtil.getResultMessage(decodedResponse));
@@ -101,19 +98,21 @@ public class CodefService {
                     String errorCode = errorNode.get("code").asText();
                     String errorMessage = errorNode.get("message").asText();
 
+                    log.error("[CODEF 계정연결 실패] code={}, msg={}", errorCode, errorMessage);
+
                     throw new CodefApiException(errorCode, errorMessage);
                 }
 
                 connectedId = objectMapper.readTree(decodedResponse)
                         .get("data").get("connectedId").asText();
-
-                System.out.println("발급된 connectedId = " + connectedId);
+                log.info("[CODEF connectedId 발급완료] userId={}, connectedId={}", userId, connectedId);
 
                 // DB에 connectedId 저장
                 connectedAccountMapper.insertConnectedAccount(userId, connectedId);
 
             } else {
                 // 이미 connectedId가 있으면 계정 추가로 처리
+                log.info("[CODEF 계좌연동] 기존 connectedId 사용: {}", connectedId);
                 String encryptedPw = RSAUtil.encryptRSA(request.getPassword(), publicKey);
 
                 String addUrl = "https://development.codef.io/v1/account/add";
@@ -140,7 +139,7 @@ public class CodefService {
                 String addResponse = sendPost(addUrl, addBody);
                 String decodedAddResponse = URLDecoder.decode(addResponse, StandardCharsets.UTF_8);
 
-                System.out.println("계정 추가 응답 = " + decodedAddResponse);
+                log.debug("[CODEF 계정추가 응답] {}", decodedAddResponse);
 
                 if (!CodefUtil.isSuccess(decodedAddResponse)) {
                     JsonNode errorNode = objectMapper.readTree(decodedAddResponse)
@@ -148,6 +147,8 @@ public class CodefService {
 
                     String errorCode = errorNode.get("code").asText();
                     String errorMessage = errorNode.get("message").asText();
+
+                    log.error("[CODEF 계정추가 실패] code={}, msg={}", errorCode, errorMessage);
 
                     throw new CodefApiException(errorCode, errorMessage);
                 }
@@ -165,22 +166,19 @@ public class CodefService {
 
             String response = sendPost(accountUrl, accountBody);
             String decodedAccountResponse = URLDecoder.decode(response, StandardCharsets.UTF_8);
-
-            System.out.println("계좌조회 응답 = " + decodedAccountResponse);
+            log.debug("[CODEF 계좌목록 응답] {}", decodedAccountResponse);
 
             JsonNode root = objectMapper.readTree(decodedAccountResponse);
 
             if (!CodefUtil.isSuccess(decodedAccountResponse)) {
+                log.error("[CODEF 계좌조회 실패] {}", CodefUtil.getResultMessage(decodedAccountResponse));
                 throw new RuntimeException("계좌 조회 실패: " + CodefUtil.getResultMessage(decodedAccountResponse));
             }
 
             JsonNode accountList = root.get("data").get("resDepositTrust");
 
-
-            System.out.println("decodedAccountResponse = " + decodedAccountResponse);
-
-
             if (accountList.isMissingNode() || !accountList.isArray()) {
+                log.warn("[CODEF 계좌목록 비어있음] resDepositTrust 없음/배열아님");
                 throw new RuntimeException("resDepositTrust가 비어있거나 배열이 아님");
             }
 
@@ -196,10 +194,12 @@ public class CodefService {
                         .build()
                 );
             }
+            log.info("[CODEF 계좌목록 파싱완료] 개수={}", result.size());
 
             return result;
 
         } catch (Exception e) {
+            log.error("[CODEF 계좌연동/조회 실패] loginId={}, error={}", loginId, e.getMessage(), e);
             if (e instanceof CodefApiException) {
                 throw (CodefApiException) e;
             }
@@ -207,10 +207,18 @@ public class CodefService {
         }
     }
 
+
+    /**
+     * (트랜잭션) 사용자의 선택 계좌 목록을 DB에 등록
+     * - 계좌별로 1년치 거래내역을 CODEF에서 조회해 배치로 저장
+     */
+    @Transactional
     public void registerUserAccounts(String loginId, List<UserAccountVO> selectedAccounts) {
         Long userId = connectedAccountMapper.findIdByLoginId(loginId);
         ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
         String connectedId = vo.getConnectedId();
+
+        log.info("[계좌등록] 계좌 등록 프로세스 시작: loginId={}, userId={}, 등록요청 계좌수={}", loginId, userId, selectedAccounts.size());
 
         // 오늘 기준 1년 전 ~ 오늘 (yyyyMMdd)
         LocalDate today = LocalDate.now();
@@ -219,9 +227,13 @@ public class CodefService {
 
         for (UserAccountVO account : selectedAccounts) {
 
-            if (userAccountMapper.existsAccount(userId, account.getAccountNumber()) > 0) continue;
+            if (userAccountMapper.existsAccount(userId, account.getAccountNumber()) > 0) {
+                log.info("[계좌등록] 이미 등록된 계좌 skip: userId={}", userId);
+                continue;
+            }
             account.setUserId(userId);
             userAccountMapper.insertUserAccount(account);
+            log.info("[계좌등록] 신규 계좌 DB 저장");
 
             // 2. 계좌 PK(ID) 얻기 (insert 후 select or MyBatis selectKey 활용)
             Long accountId = userAccountMapper.findIdByUserIdAndAccountNumber(userId, account.getAccountNumber());
@@ -230,20 +242,31 @@ public class CodefService {
             List<AccountTransactionVO> txList = fetchAndParseAccountTransactions(
                     account.getBankCode(), connectedId, account.getAccountNumber(), startDate, endDate
             );
-            for (AccountTransactionVO tx : txList) {
-                System.out.println("AccountTransactionVO 도는중~~~~~~~");
-                tx.setAccountId(accountId);
-                accountTransactionMapper.insertAccountTransaction(tx);
+            log.info("[계좌등록] 거래내역 조회 완료: 내역건수={}",  txList.size());
+
+            for (int i = 0; i < txList.size(); i += 500) {
+                List<AccountTransactionVO> batch = txList.subList(i, Math.min(i + 500, txList.size()));
+                for (AccountTransactionVO tx : batch) {
+                    tx.setAccountId(accountId);
+                }
+                accountTransactionMapper.insertAccountTransactions(batch);
+                log.info("[계좌등록] 거래내역 배치 저장: 저장건수={}",  batch.size());
             }
         }
     }
 
 
+
+    /**
+     * 특정 계좌의 거래내역을 CODEF API로 조회하고 파싱
+     * - startDate~endDate 범위의 거래내역을 조회
+     * - 파싱하여 AccountTransactionVO 리스트로 반환
+     */
     // 거래내역 API 호출 및 파싱
     public List<AccountTransactionVO> fetchAndParseAccountTransactions(
             String bankCode, String connectedId, String accountNumber, String startDate, String endDate) {
         List<AccountTransactionVO> txList = new ArrayList<>();
-        System.out.println("fetchAndParseAccountTransactions 들어옴");
+        log.info("[거래내역] 거래내역 조회 시작: bankCode={}, 기간={}-{}", bankCode, startDate, endDate);
         try {
             String reqBody = """
                     {
@@ -257,22 +280,23 @@ public class CodefService {
                     }
                     """.formatted(bankCode, connectedId, accountNumber, startDate, endDate);
 
+
             String url = "https://development.codef.io/v1/kr/bank/p/account/transaction-list";
             String apiResp = sendPost(url, reqBody);
 
-            System.out.println("apiResp = " + apiResp);
-
             String decodedResp = URLDecoder.decode(apiResp, StandardCharsets.UTF_8);
-
-            System.out.println("decodedResp = " + decodedResp);
-
+            log.debug("[거래내역] 디코드된 응답: {}", decodedResp);
 
             JsonNode root = objectMapper.readTree(decodedResp);
             if (!CodefUtil.isSuccess(decodedResp)) {
+                log.warn("[거래내역] CODEF API 실패: {}", CodefUtil.getResultMessage(decodedResp));
                 throw new CodefApiException("TRANSACTION_ERROR", "거래내역 조회 실패");
             }
             JsonNode txArr = root.get("data").get("resTrHistoryList");
-            if (txArr == null || !txArr.isArray()) return txList;
+            if (txArr == null || !txArr.isArray()) {
+                log.info("[거래내역] 반환된 거래내역 없음");
+                return txList;
+            }
 
             for (JsonNode node : txArr) {
                 String out = node.path("resAccountOut").asText("");
@@ -307,29 +331,36 @@ public class CodefService {
                         .branchName(node.path("resAccountDesc4").asText())
                         .build();
 
-                System.out.println("txtxtxtxtxtxtxtxtxtxtx = " + tx);
+                log.debug("[거래내역] 저장 예정 거래내역: {}", tx);
                 txList.add(tx);
             }
 
+            log.info("[거래내역] 거래내역 파싱 및 생성 완료:  건수={}", txList.size());
+
         } catch (Exception e) {
-            System.out.println("거래내역 파싱 실패! " + e.getMessage());
+            log.error("[거래내역] 거래내역 파싱 실패! bankCode={}, 에러={}", bankCode, e.getMessage(), e);
         }
-        System.out.println("txListtxListtxListtxListtxListtxList = " + txList);
         return txList;
     }
 
 
-    public List<UserCardVO> connectAndFetchCards(CardConnectRequest request) {
+    /**
+     * 사용자의 카드 계정 연결 및 카드 목록 조회
+     * - 카드 계정 연결(connectedId 발급/추가) 후 카드 목록을 CODEF에서 가져와 반환
+     * - 카드 연결에 실패하면 예외 발생
+     */
+    public List<UserCardVO> connectAndFetchCards(String loginId, CardConnectRequest request) {
         try {
-            String loginId = "admin1";
             Long userId = connectedAccountMapper.findIdByLoginId(loginId);
+            log.info("[카드] 카드 계정 연결/조회 시작: loginId={}, issuer={}", loginId, request.getOrganization());
 
             // 1. connectedId 조회 or 생성
             ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
-            String connectedId = vo.getConnectedId();
+            String connectedId = (vo == null) ? null : vo.getConnectedId();
             String encryptedPw = RSAUtil.encryptRSA(request.getPassword(), publicKey);
 
             if (connectedId == null) {
+                log.info("[카드] connectedId 없음 → 계정 연결 요청 진행");
                 String connectUrl = "https://development.codef.io/v1/account/create";
                 String connectBody = """
                         {
@@ -352,22 +383,29 @@ public class CodefService {
                 String connectResponse = sendPost(connectUrl, connectBody);
                 String decodedResponse = URLDecoder.decode(connectResponse, StandardCharsets.UTF_8);
 
+
+                log.debug("[카드] 계정 연결 API 응답: {}", decodedResponse);
+
                 if (!CodefUtil.isSuccess(decodedResponse)) {
                     JsonNode errorNode = objectMapper.readTree(decodedResponse)
                             .get("data").get("errorList").get(0);
                     String errorCode = errorNode.get("code").asText();
                     String errorMessage = errorNode.get("message").asText();
+                    log.warn("[카드] 계정 연결 실패: {} - {}", errorCode, errorMessage);
                     throw new CodefApiException(errorCode, errorMessage);
                 }
 
                 connectedId = objectMapper.readTree(decodedResponse)
                         .get("data").get("connectedId").asText();
 
+                log.info("[카드] connectedId 신규 발급 완료: {}", connectedId);
+
                 // DB에 connectedId 저장
                 connectedAccountMapper.insertConnectedAccount(userId, connectedId);
 
             } else {
                 // 이미 connectedId가 있으면 카드 계정 추가 (추가 연결)
+                log.info("[카드] connectedId 존재 → 카드 계정 추가 연결 진행");
                 String addUrl = "https://development.codef.io/v1/account/add";
                 String addBody = """
                         {
@@ -392,16 +430,19 @@ public class CodefService {
                 String addResponse = sendPost(addUrl, addBody);
                 String decodedAddResponse = URLDecoder.decode(addResponse, StandardCharsets.UTF_8);
 
+                log.debug("[카드] 계정 추가 API 응답: {}", decodedAddResponse);
+
                 if (!CodefUtil.isSuccess(decodedAddResponse)) {
                     JsonNode errorNode = objectMapper.readTree(decodedAddResponse)
                             .get("data").get("errorList").get(0);
                     String errorCode = errorNode.get("code").asText();
                     String errorMessage = errorNode.get("message").asText();
+                    log.warn("[카드] 계정 추가 실패: {} - {}", errorCode, errorMessage);
                     throw new CodefApiException(errorCode, errorMessage);
                 }
             }
 
-            // 3. 카드 목록 조회 (CODEF 카드조회 API 엔드포인트로)
+            // 3. 카드 목록 조회
             String cardListUrl = "https://development.codef.io/v1/kr/card/p/account/card-list";
             String cardListBody = """
                     {
@@ -414,11 +455,12 @@ public class CodefService {
             String response = sendPost(cardListUrl, cardListBody);
             String decodedCardListResponse = URLDecoder.decode(response, StandardCharsets.UTF_8);
 
-            System.out.println("카드 목록 조회: decodedCardListResponse = " + decodedCardListResponse);
+            log.debug("[카드] 카드목록 API 응답: {}", decodedCardListResponse);
 
             JsonNode root = objectMapper.readTree(decodedCardListResponse);
 
             if (!CodefUtil.isSuccess(decodedCardListResponse)) {
+                log.warn("[카드] 카드목록 조회 실패: {}", CodefUtil.getResultMessage(decodedCardListResponse));
                 throw new RuntimeException("카드 목록 조회 실패: " + CodefUtil.getResultMessage(decodedCardListResponse));
             }
 
@@ -430,6 +472,7 @@ public class CodefService {
             // resCardList 인지는 확인 필요.. 제가 한 은행에 여러장의 카드가 없어요 ㅜㅜ
             JsonNode cardListNode = dataNode.get("resCardList");
             if (cardListNode != null && cardListNode.isArray()) {
+                log.info("[카드] 여러장 카드 목록 반환: {}장", cardListNode.size());
                 for (JsonNode node : cardListNode) {
                     result.add(UserCardVO.builder()
                             .cardMaskedNumber(node.path("resCardNo").asText())
@@ -444,6 +487,7 @@ public class CodefService {
             } else {
                 // 2. 단일 카드
                 if (dataNode.has("resCardNo")) {
+                    log.info("[카드] 단일 카드만 반환됨");
                     result.add(UserCardVO.builder()
                             .cardMaskedNumber(dataNode.path("resCardNo").asText())
                             .cardName(dataNode.path("resCardName").asText())
@@ -455,21 +499,29 @@ public class CodefService {
                     );
                 }
             }
+            log.info("[카드] 카드목록 파싱 완료: loginId={}, 반환건수={}", loginId, result.size());
             return result;
 
 
         } catch (Exception e) {
+            log.error("[카드] 카드 계정 연결 및 조회 실패", e);
             if (e instanceof CodefApiException) throw (CodefApiException) e;
             throw new CodefApiException("INTERNAL_ERROR", "카드 계정 연결 및 조회 실패");
         }
     }
 
+
+    /**
+     * (트랜잭션) 사용자의 선택 카드 목록을 DB에 등록
+     * - 카드별로 1년치 거래내역을 CODEF에서 조회해 배치로 저장
+     */
     @Transactional
     public void registerUserCards(String loginId, List<UserCardVO> selectedCards) {
         Long userId = connectedAccountMapper.findIdByLoginId(loginId);
         ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
         String connectedId = vo.getConnectedId();
 
+        log.info("[카드등록] 시작: loginId={}, 등록요청 개수={}", loginId, selectedCards.size());
 
         // 오늘 기준 1년 전 ~ 오늘 (yyyyMMdd)
         LocalDate today = LocalDate.now();
@@ -480,13 +532,16 @@ public class CodefService {
         for (UserCardVO card : selectedCards) {
             // 1. 이미 등록된 카드면 skip
             if (userCardMapper.existsCard(userId, card.getCardMaskedNumber()) > 0) {
+                log.warn("[카드등록] 중복카드(이미 등록됨): userId={}", userId);
                 throw new AlreadyRegisteredCardException(card.getCardMaskedNumber());
             }
             card.setUserId(userId);
             userCardMapper.insertUserCard(card);
+            log.info("[카드등록] 카드 등록 성공");
 
-            // 2. 카드 PK(ID) 얻기 (insert 후 select or selectKey)
+            // 2. 카드 PK(ID) 얻기
             Long cardId = userCardMapper.findIdByUserIdAndCardNumber(userId, card.getCardMaskedNumber());
+            log.debug("[카드등록] 카드 PK 조회: cardId={}", cardId);
 
             // 3. 거래내역 조회 및 저장
             List<CardTransactionVO> txList = fetchAndParseCardTransactions(
@@ -497,18 +552,24 @@ public class CodefService {
                     card.getCardName(),
                     card.getCardMaskedNumber()
             );
+            log.info("[카드등록] 거래내역 조회 완료: cardId={}, 내역건수={}", cardId, txList.size());
+            log.debug("[카드등록] 거래내역 샘플: {}", txList.isEmpty() ? "없음" : txList.get(0));
 
-            for (CardTransactionVO tx : txList) {
-                tx.setCardId(cardId);
-                tx.setCategoryId(categoryId);
-                System.out.println("카드 소비 내역 저장중~~~~~~~");
-                cardTransactionMapper.insertCardTransaction(tx);
+            for (int i = 0; i < txList.size(); i += 500) {
+                List<CardTransactionVO> batch = txList.subList(i, Math.min(i + 500, txList.size()));
+                for (CardTransactionVO tx : batch) {
+                    tx.setCardId(cardId);
+                    tx.setCategoryId(categoryId);
+                }
+                cardTransactionMapper.insertCardTransactions(batch);
+                log.debug("[카드등록] 배치 insert: cardId={}, batchStart={}, batchEnd={}", cardId, i, Math.min(i + 500, txList.size()));
             }
-
-            // 4. GPT 태그 비동기 분류
-//            classifyCardTransactionsAsync(cardId);
+            log.info("[카드등록] 카드 등록+내역저장 완료: 전체내역={}",  txList.size());
         }
+        log.info("[카드등록] 전체 완료: loginId={}, 요청카드수={}", loginId, selectedCards.size());
     }
+
+
 
     // Codef 카드 거래내역 API 호출 및 파싱
     public List<CardTransactionVO> fetchAndParseCardTransactions(
@@ -537,18 +598,24 @@ public class CodefService {
         }
         """.formatted(connectedId, cardCode, startDate, endDate, cardName, cardNo);
 
+            log.info("[카드거래] CODEF 승인내역 API 호출: 기간={}-{}", startDate, endDate);
+
             String apiResp = sendPost(url, reqBody);
             String decodedResp = URLDecoder.decode(apiResp, StandardCharsets.UTF_8);
 
-            System.out.println("카드 승인 내역" + decodedResp);
+            log.debug("[카드거래] CODEF 응답: {}", decodedResp);
 
             JsonNode root = objectMapper.readTree(decodedResp);
             if (!CodefUtil.isSuccess(decodedResp)) {
+                log.error("[카드거래] CODEF 응답 실패: {}", CodefUtil.getResultMessage(decodedResp));
                 throw new CodefApiException("CARD_TRANSACTION_ERROR", "카드 승인내역 조회 실패");
             }
 
             JsonNode txArr = root.get("data");
-            if (txArr == null || !txArr.isArray()) return txList;
+            if (txArr == null || !txArr.isArray()) {
+                log.warn("[카드거래] 승인내역 데이터 없음 or 배열 아님");
+                return txList;
+            }
 
             for (JsonNode node : txArr) {
                 // 2. 거래 일시 파싱 (yyyyMMdd + HHmmss → yyyy-MM-dd HH:mm:ss)
@@ -560,6 +627,7 @@ public class CodefService {
                 try {
                     txDateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
                 } catch (Exception e) {
+                    log.warn("[카드거래] 일시 파싱 실패: usedDate={}, usedTime={}", usedDate, usedTime);
                     txDateTime = null;
                 }
 
@@ -568,6 +636,7 @@ public class CodefService {
                 try {
                     amount = Long.parseLong(node.path("resUsedAmount").asText("0"));
                 } catch (Exception e) {
+                    log.warn("[카드거래] 금액 파싱 실패: {}", node.path("resUsedAmount").asText(""));
                     amount = 0L;
                 }
 
@@ -578,6 +647,7 @@ public class CodefService {
                     try {
                         installmentMonth = Integer.valueOf(installmentMonthStr);
                     } catch (Exception e) {
+                        log.warn("[카드거래] 할부개월 파싱 실패: {}", installmentMonthStr);
                         installmentMonth = null;
                     }
                 }
@@ -589,6 +659,7 @@ public class CodefService {
                     try {
                         cancelAmount = Long.valueOf(cancelAmountStr);
                     } catch (Exception e) {
+                        log.warn("[카드거래] 취소금액 파싱 실패: {}", cancelAmountStr);
                         cancelAmount = null;
                     }
                 }
@@ -607,36 +678,94 @@ public class CodefService {
                         .cancelAmount(cancelAmount)
                         .storeName1(node.path("resMemberStoreName1").asText(""))
                         .build();
+
+                log.debug("[거래내역] 저장 예정 거래내역: {}", tx);
                 txList.add(tx);
             }
+            log.info("[거래내역] 거래내역 파싱 및 생성 완료: 건수={}", txList.size());
         } catch (Exception e) {
-//            log.error("[카드 승인내역 파싱 실패]", e);
-            System.out.println("카드 승인내역 파싱 실패 " + e.getMessage());
+            log.error("[카드거래] 승인내역 파싱 실패: , msg={}", e.getMessage(), e);
         }
         return txList;
     }
 
-//    @Async
-//    public void classifyCardTransactionsAsync(Long cardId) {
-//        List<CardTransactionVO> txList = cardTransactionMapper.findUnclassifiedByCardId(cardId);
-//        for (CardTransactionVO tx : txList) {
-//            try {
-//                String prompt = makePrompt(tx);
-//                GptCategoryResponse resp = gptApiClient.classifyTransaction(prompt);
-//                Long categoryId = categoryMapper.findIdByCode(resp.getCategoryCode());
-//                if (categoryId == null) categoryId = categoryMapper.findIdByCode("other");
-//                cardTransactionMapper.updateCategory(tx.getId(), categoryId);
-//            } catch (Exception e) {
-//                log.error("카테고리 분류 실패: txId={}", tx.getId(), e);
-//            }
-//        }
-//    }
 
-    private String makePrompt(CardTransactionVO tx) {
-        return String.format(
-                "아래 카드 거래내역을 한 카테고리로 분류해줘.\n가맹점명: %s\n가맹점명2: %s\n업종: %s\n카테고리 후보: [식비, 쇼핑, 교통, 주거/공과금, 건강/의료, 취미/여가, 교육/자기계발, 선물/경조사, 기타]\n카테고리명(영문코드: food/shopping/transport/housing/health/leisure/education/event/other)만 딱 응답해줘.",
-                tx.getStoreName(), tx.getStoreName1(), tx.getStoreType()
+    /**
+     * 사용자의 특정 계좌의 거래내역을 CODEF와 동기화(신규만 insert)
+     * - DB 내 기존 거래와 CODEF 거래내역을 비교해 신규건만 insert
+     */
+    public void syncAccountTransaction(Long userId, Long accountId, String bankCode, String connectedId, String accountNo, String startDate, String endDate) {
+        log.info("⚡ [CODEF] 거래내역 fetch 시작: bankCode={}, 기간={}-{}", bankCode, startDate, endDate);
+
+        // 1. CODEF 거래내역 불러오기
+        List<AccountTransactionVO> apiTxList = fetchAndParseAccountTransactions(
+                bankCode, connectedId, accountNo, startDate, endDate
         );
+
+        log.info("⚡ [CODEF] API에서 받은 거래내역 개수: {}", apiTxList.size());
+
+        // 2. 해당 계좌의 모든 기존 거래 (중복 비교 키 세트로!)
+        Set<String> dbTxKeySet = accountTransactionMapper.findAllTxKeyByAccountIdFromDate(accountId, startDate);
+        log.debug("[DB] 기존 거래내역(중복키) 개수: {}", dbTxKeySet.size());
+
+
+        int newTxCount = 0;
+        for (AccountTransactionVO tx : apiTxList) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String dateStr = sdf.format(tx.getTransactionDateTime());
+            String key = dateStr + "|" + tx.getAmount() + "|" + tx.getTxType();
+
+//            if (dbTxKeySet.contains(key)) continue;
+            if (dbTxKeySet.contains(key)) {
+                log.debug("⏭[중복] {} → skip", key);
+                continue;
+            }
+            tx.setAccountId(accountId);
+            accountTransactionMapper.insertAccountTransaction(tx);
+            newTxCount++;
+            log.debug("[신규] {} → insert", key);
+            dbTxKeySet.add(key);
+        }
+        log.info("[Sync] 동기화 완료! 신규 {}건 추가",  newTxCount);
+    }
+
+
+
+
+    /**
+     * 사용자의 특정 카드의 승인내역을 CODEF와 동기화(신규만 insert)
+     * - DB 내 기존 승인내역과 CODEF 승인내역을 비교해 신규건만 insert
+     */
+    public void syncCardTransaction(Long userId, Long cardId, String cardCode, String connectedId, String cardNo, String startDate, String endDate, String cardName) {
+        log.info("[Sync] 카드거래 동기화 시작: cardId={}, 기간={}~{}", cardId, startDate, endDate);
+
+        // 1. CODEF 카드거래내역 불러오기
+        List<CardTransactionVO> apiTxList = fetchAndParseCardTransactions(cardCode, connectedId, startDate, endDate, cardName, cardNo);
+        log.info("[CODEF] API 거래내역 개수: {}", apiTxList.size());
+
+        // 2. 해당 카드의 기존 거래키 세트 (approval_no + card_id)
+        Set<String> dbTxKeySet = cardTransactionMapper.findAllTxKeyByCardIdFromDate(cardId, startDate);
+        log.debug("[DB] 기존 승인번호+카드ID 키 개수: {}", dbTxKeySet.size());
+
+        int insertCount = 0;
+
+        for (CardTransactionVO tx : apiTxList) {
+            String key = tx.getApprovalNo() + "|" + cardId;
+            log.debug("   [중복체크] key: {}", key);
+
+            if (dbTxKeySet.contains(key)) {
+                log.debug("⏭[중복] {} → skip", key);
+                continue;
+            }
+
+            log.debug("  신규 삽입: {}", key);
+            tx.setCardId(cardId);
+            insertCount++;
+            cardTransactionMapper.insertCardTransaction(tx);
+            dbTxKeySet.add(key);
+        }
+
+        log.info("[Sync] 카드 {} 동기화 완료! 신규 {}건 추가", cardId, insertCount);
     }
 
 
@@ -644,6 +773,12 @@ public class CodefService {
 
 
 
+
+
+    /**
+     * CODEF API에 POST 요청 전송 (Bearer 토큰 포함)
+     * - HTTP 요청/응답 바이트 변환 등 공통 처리
+     */
     private String sendPost(String urlStr, String jsonBody) throws Exception {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -670,6 +805,10 @@ public class CodefService {
 
 
 
+
+
+
+
     /*
     * 테스트를 위한 서비스.
     * fetchAccountListByConnectedId -> 등록 계좌 조회
@@ -686,7 +825,6 @@ public class CodefService {
         try {
             String response = sendPost(url, body);
             String response2 = URLDecoder.decode(response, StandardCharsets.UTF_8);
-            System.out.println("조회 응답 response2 = " + response2);
             return response2;
         } catch (Exception e) {
             throw new RuntimeException("계정 목록 조회 실패: " + e.getMessage());
@@ -701,7 +839,6 @@ public class CodefService {
 
             String response = sendPost(url, jsonBody);
             String response2 = URLDecoder.decode(response, StandardCharsets.UTF_8);
-            System.out.println("삭제 응답 response2 = " + response2);
             return response2;
         } catch (Exception e) {
             throw new RuntimeException("계정 삭제 실패: " + e.getMessage());

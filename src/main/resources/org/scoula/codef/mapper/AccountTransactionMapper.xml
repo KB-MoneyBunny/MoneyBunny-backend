@@ -12,4 +12,38 @@
         (#{accountId}, #{amount}, #{txType}, #{transactionDateTime}, #{balanceAfter}, #{storeName}, #{branchName})
     </insert>
 
+    <!-- 여러 건 한꺼번에 insert (배치) -->
+    <insert id="insertAccountTransactions" parameterType="java.util.List">
+        INSERT INTO account_transaction
+        (account_id, amount, tx_type, transaction_date_time, balance_after, store_name, branch_name)
+        VALUES
+        <foreach collection="list" item="tx" separator=",">
+            (#{tx.accountId}, #{tx.amount}, #{tx.txType}, #{tx.transactionDateTime}, #{tx.balanceAfter}, #{tx.storeName}, #{tx.branchName})
+        </foreach>
+    </insert>
+
+    <select id="findLastTransactionDateByAccountId" parameterType="long" resultType="string">
+        SELECT DATE_FORMAT(MAX(transaction_date_time), '%Y%m%d')
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+    </select>
+
+    <select id="findAllTxKeyByAccountIdFromDate" parameterType="map" resultType="string">
+        SELECT
+            CONCAT(DATE_FORMAT(transaction_date_time, '%Y-%m-%d %H:%i:%s'), '|', amount, '|', tx_type) AS txKey
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+          AND transaction_date_time >= STR_TO_DATE(#{startDate}, '%Y%m%d')
+    </select>
+
+    <select id="findLatestBalanceAfterByAccountId" resultType="long">
+        SELECT balance_after
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+        ORDER BY transaction_date_time DESC
+            LIMIT 1
+    </select>
+
+
+
 </mapper>
