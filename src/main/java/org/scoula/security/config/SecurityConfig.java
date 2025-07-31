@@ -69,7 +69,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter() throws Exception {
         JwtUsernamePasswordAuthenticationFilter filter =
                 new JwtUsernamePasswordAuthenticationFilter(authenticationManager(), loginSuccessHandler, loginFailureHandler);
-        filter.setFilterProcessesUrl("/api/member/login");
+        filter.setFilterProcessesUrl("/api/auth/login");
         return filter;
     }
 
@@ -104,8 +104,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests() // 경로별 접근 권한 설정
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers("/codef/**").permitAll()  // ✅ 요 줄 추가!!
+                .antMatchers("/codef/**").permitAll()
                 .antMatchers("/api/member/**").permitAll()
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/api/asset/**").permitAll()
                 .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
                 .antMatchers("/api/push/**").authenticated()
                 .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용

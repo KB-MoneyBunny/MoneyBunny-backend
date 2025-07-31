@@ -321,4 +321,61 @@
         WHERE policy_no = #{policyNo}
     </update>
 
+    <!-- 전체 키워드 조회 -->
+    <select id="findAllKeywords" resultType="org.scoula.policy.domain.keyword.PolicyKeywordVO">
+        SELECT id, keyword
+        FROM policy_keyword
+    </select>
+
+    <!-- 전체 지역 조회 -->
+    <select id="findAllRegions" resultType="org.scoula.policy.domain.region.PolicyRegionVO">
+        SELECT id, region_code
+        FROM policy_region
+    </select>
+
+    <!-- 전체 전공 조회 -->
+    <select id="findAllMajors" resultType="org.scoula.policy.domain.major.PolicyMajorVO">
+        SELECT id, major
+        FROM policy_major
+    </select>
+
+    <!-- 전체 학력 조회 -->
+    <select id="findAllEducationLevels" resultType="org.scoula.policy.domain.education.PolicyEducationLevelVO">
+        SELECT id, education_level
+        FROM policy_education_level
+    </select>
+
+    <!-- 전체 취업 상태 조회 -->
+    <select id="findAllEmploymentStatuses" resultType="org.scoula.policy.domain.employment.PolicyEmploymentStatusVO">
+        SELECT id, employment_status
+        FROM policy_employment_status
+    </select>
+
+    <!-- 전체 특수 조건 조회 -->
+    <select id="findAllSpecialConditions" resultType="org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO">
+        SELECT id, special_condition
+        FROM policy_special_condition
+    </select>
+    <!-- 정책 벡터 저장 및 업데이트 -->
+    <insert id="insertPolicyVector" parameterType="org.scoula.policy.domain.PolicyVectorVO">
+        INSERT INTO policy_vector (policy_id, vec_benefit_amount, vec_deadline, vec_views, created_at)
+        VALUES (#{policyId}, #{vecBenefitAmount}, #{vecDeadline}, #{vecViews}, NOW())
+    </insert>
+
+    <update id="updatePolicyVector" parameterType="org.scoula.policy.domain.PolicyVectorVO">
+        UPDATE policy_vector
+        SET vec_benefit_amount = #{vecBenefitAmount},
+            vec_deadline = #{vecDeadline},
+            vec_views = #{vecViews},
+            created_at = NOW()
+        WHERE policy_id = #{policyId}
+    </update>
+
+    <select id="findByPolicyId" parameterType="long" resultType="org.scoula.policy.domain.PolicyVectorVO">
+        SELECT * FROM policy_vector WHERE policy_id = #{policyId}
+    </select>
+
+    <select id="findPolicyIdByPolicyNo" parameterType="string" resultType="long">
+        SELECT id FROM youth_policy WHERE policy_no = #{policyNo}
+    </select>
 </mapper>

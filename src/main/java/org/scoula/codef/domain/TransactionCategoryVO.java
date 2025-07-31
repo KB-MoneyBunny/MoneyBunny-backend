@@ -15,5 +15,4 @@ public class TransactionCategoryVO {
     private String code;
     private String name;
 
-    // Getter & Setter 생략
 }

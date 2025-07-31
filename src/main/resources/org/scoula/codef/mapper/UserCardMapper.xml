@@ -23,10 +23,22 @@
         WHERE user_id = #{userId} AND card_masked_number = #{cardMaskedNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
     </select>
 
-    <select id="findUserCards" resultType="org.scoula.codef.domain.UserCardVO">
-        SELECT *
+
+    <resultMap id="UserCardMap" type="org.scoula.codef.domain.UserCardVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="issuerCode" column="issuer_code"/>
+        <result property="cardName" column="card_name"/>
+        <result property="cardMaskedNumber" column="card_masked_number"
+                typeHandler="org.scoula.codef.util.AesEncryptTypeHandler"/>
+    </resultMap>
+
+    <select id="findByUserId" parameterType="long" resultMap="UserCardMap">
+        SELECT id, user_id, issuer_code, card_name, card_masked_number
         FROM user_card
         WHERE user_id = #{userId}
+        ORDER BY id ASC
     </select>
+
 
 </mapper>

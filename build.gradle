@@ -75,7 +75,7 @@ dependencies {
     // Log4j2 Core - 로깅 구현체 (성능 및 보안 개선)
     implementation "org.apache.logging.log4j:log4j-core:${log4j2Version}"
     // SLF4J와 Log4j2 연결 - Spring에서 사용하는 SLF4J를 Log4j2로 연결
-    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4j2Version}"
+    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4j2Version}"
 
     // ===== XML 처리 관련 =====
     // Xerces XML 파서 - XML 내 한글 문자 처리 개선 (안정 버전 유지)
@@ -120,8 +120,8 @@ dependencies {
     implementation 'org.mybatis:mybatis-spring:2.1.2'
 
 
-    // SQL 로깅 라이브러리 (핵심)
-    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4:1.16'
+    // SQL 로깅 라이브러리 - 최신 버전으로 업데이트 (Java 8+ 호환)
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 //    implementation 'org.apache.logging.log4j:log4j-api:2.0.1'
 //    implementation 'org.apache.logging.log4j:log4j-core:2.0.1'
 
@@ -154,6 +154,10 @@ dependencies {
 
     // Spring Data Redis
     implementation 'org.springframework.data:spring-data-redis:2.7.5'
+
+    // Lettuce 커넥션 풀 필수 의존성
+    implementation 'org.apache.commons:commons-pool2:2.11.1'
+    implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE'
 
     // Jackson (Object → JSON 변환)
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'

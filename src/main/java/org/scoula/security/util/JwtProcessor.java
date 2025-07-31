@@ -1,11 +1,9 @@
 package org.scoula.security.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -16,16 +14,14 @@ import java.util.Date;
 @Component // SecurityConfig에서 @ComponenetScan 수행
 public class JwtProcessor {
 
-    // 테스트용 5분 - 만료 확인용
     static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 60 * 24 * 30; // RefreshToken 구현 전까지만 한 달로 유지!
 
-    // 개발용 고정 Secret Key
-    private String secretKey = "KB_IT`s_Yours_Life_6기_JWT수업_secretKey";
-    private Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    private final Key key;
 
-    // 운영시 사용 - 서버 재시작마다 키 갱신됨
-    // private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-
+    // 생성자를 통해 키 초기화
+    public JwtProcessor(@Value("${jwt.secret}") String secretKey) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
 
     /* ***** 토큰 생성 메서드 ***** */
     /**
@@ -33,6 +29,7 @@ public class JwtProcessor {
      * @param subject 사용자 식별자 (보통 username)
      * @return 생성된 JWT 토큰 문자열
      */
+    // AccessToken
     public String generateToken(String subject) {
         return Jwts.builder()
                 .setSubject(subject)                    // 사용자 식별자
@@ -40,6 +37,19 @@ public class JwtProcessor {
                 .setExpiration(new Date(new Date().getTime() + TOKEN_VALID_MILLISECOND))  // 만료 시간
                 .signWith(key)                         // 서명
                 .compact();                            // 문자열 생성
+    }
+
+    // RefreshToken
+    public String generateRefreshToken(String subject) {
+        // e.g. 유효 기간: 7일
+//        long refreshTokenValidTime = 1000L * 60 * 60 * 24 * 7;
+        long refreshTokenValidTime = 1000L * 60 * 30; // 30분
+        return Jwts.builder()
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + refreshTokenValidTime))
+                .signWith(key)
+                .compact();
     }
 
     /**
@@ -119,6 +129,27 @@ public class JwtProcessor {
         } catch (Exception e) {
             log.error("JWT 검증 실패: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * RefreshToken 또는 AccessToken의 만료 여부 확인
+     * @param token JWT 문자열
+     * @return true: 만료됨, false: 아직 유효
+     */
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expiration = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getExpiration();
+
+            return expiration.before(new Date());
+        } catch (JwtException e) {
+            log.error("토큰 만료 확인 중 오류: {}", e.getMessage());
+            return true; // 토큰이 파싱 안 되면 무효
         }
     }
 
