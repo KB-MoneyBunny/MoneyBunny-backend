@@ -33,7 +33,8 @@ import javax.sql.DataSource;
         "org.scoula.policy.mapper",
         "org.scoula.codef.mapper",
         "org.scoula.push.mapper", // push 매퍼 스캔 추가
-        "org.scoula.policyInteraction.mapper" // 정책 상호작용 매퍼 스캔 추가
+        "org.scoula.policyInteraction.mapper", // 정책 상호작용 매퍼 스캔 추가
+        "org.scoula.asset.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -47,6 +48,7 @@ import javax.sql.DataSource;
         "org.scoula.push.config", // push config 스캔 추가
         "org.scoula.policyInteraction.service", // 정책 상호작용 서비스 스캔 추가
         "org.scoula.policy.util", // 정책 데이터 홀더 스캔 추가
+        "org.scoula.asset",
         "org.scoula.userPolicy.util" // 사용자 정책 유틸리티 스캔 추가
 })
 @EnableScheduling // 스케줄링 기능 활성화

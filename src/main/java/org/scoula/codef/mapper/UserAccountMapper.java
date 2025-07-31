@@ -16,4 +16,8 @@ public interface UserAccountMapper {
     Long findIdByUserIdAndAccountNumber(@Param("userId") Long userId, @Param("accountNumber") String accountNumber);
 
     List<UserAccountVO> findByUserId(Long userId);
+
+    // UserAccountMapper.java
+    void updateBalance(@Param("accountId") Long accountId, @Param("balance") Long balance);
+
 }
