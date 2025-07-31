@@ -17,6 +17,12 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
+    <update id="updateBalance">
+        UPDATE user_account
+        SET balance = #{balance}
+        WHERE id = #{accountId}
+    </update>
+
     <select id="existsAccount" resultType="int">
         SELECT COUNT(1)
         FROM user_account

@@ -10,6 +10,7 @@ import org.scoula.codef.mapper.*;
 import org.scoula.codef.util.RetryUtil;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +36,7 @@ public class SyncService {
      * - 실패시 1초간격 3회 재시도
      */
     @Async
+    @Transactional
     public void syncAccountsAsync(String loginId) {
         Long userId = connectedAccountMapper.findIdByLoginId(loginId);
 
@@ -74,6 +76,14 @@ public class SyncService {
                     codefService.syncAccountTransaction(userId, accountId, bankCode, connectedId, accountNo, startDate, endDate);
                 });
                 log.info("[SYNC][계좌] 동기화 완료!");
+
+                Long latestBalance = accountTransactionMapper.findLatestBalanceAfterByAccountId(accountId);
+                if (latestBalance != null) {
+                    userAccountMapper.updateBalance(accountId, latestBalance);
+                    log.info("[SYNC][계좌] 계좌잔액 최신화 완료! accountId={}, latestBalance={}", accountId, latestBalance);
+                } else {
+                    log.warn("[SYNC][계좌] 거래내역이 없어 잔액 업데이트 건너뜀 accountId={}", accountId);
+                }
             } catch (Exception e) {
                 log.error("[SYNC][계좌] 동기화 3회 재시도 실패", e);
             }

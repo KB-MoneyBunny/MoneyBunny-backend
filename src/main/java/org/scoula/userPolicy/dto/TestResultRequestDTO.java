@@ -22,9 +22,9 @@ public class TestResultRequestDTO {
     private List<String> majors;
     private List<String> specialConditions;
     private List<String> keywords;
-    private int money_rank;
-    private int period_rank;
-    private int Popularity_rank;
+    private int moneyRank;
+    private int periodRank;
+    private int popularityRank;
 }
 
 
