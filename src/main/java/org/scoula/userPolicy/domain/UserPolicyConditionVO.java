@@ -18,9 +18,9 @@ public class UserPolicyConditionVO {
     private int age;
     private String marriage;
     private long income;
-    private int money_rank;
-    private int period_rank;
-    private int Popularity_rank;
+    private int moneyRank;
+    private int periodRank;
+    private int popularityRank;
 
 
     //조건 목록 추가

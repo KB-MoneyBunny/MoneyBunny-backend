@@ -71,9 +71,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         testResultRequestDTO.setAge(userPolicyCondition.getAge());
         testResultRequestDTO.setMarriage(userPolicyCondition.getMarriage());
         testResultRequestDTO.setIncome(userPolicyCondition.getIncome());
-        testResultRequestDTO.setMoney_rank(userPolicyCondition.getMoney_rank());
-        testResultRequestDTO.setPeriod_rank(userPolicyCondition.getPeriod_rank());
-        testResultRequestDTO.setPopularity_rank(userPolicyCondition.getPopularity_rank());
+        testResultRequestDTO.setMoneyRank(userPolicyCondition.getMoneyRank());
+        testResultRequestDTO.setPeriodRank(userPolicyCondition.getPeriodRank());
+        testResultRequestDTO.setPopularityRank(userPolicyCondition.getPopularityRank());
 
         // 1. regions
         List<UserRegionVO> regions = userPolicyCondition.getRegions();
@@ -150,9 +150,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         condition.setAge(testResultRequestDTO.getAge());
         condition.setMarriage(testResultRequestDTO.getMarriage());
         condition.setIncome(testResultRequestDTO.getIncome());
-        condition.setMoney_rank(testResultRequestDTO.getMoney_rank());
-        condition.setPeriod_rank(testResultRequestDTO.getPeriod_rank());
-        condition.setPopularity_rank(testResultRequestDTO.getPopularity_rank());
+        condition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        condition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        condition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.saveUserPolicyCondition(condition);
         Long userPolicyConditionId = condition.getId();
 
@@ -293,9 +293,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         // 사용자 벡터 값 계산 및 저장
         UserVectorVO userVector = new UserVectorVO();
         userVector.setUserId(userId);
-        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoney_rank()));
-        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriod_rank()));
-        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularity_rank()));
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
         userPolicyMapper.saveUserVector(userVector);
 
         return testResultRequestDTO;
@@ -332,9 +332,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         existingCondition.setAge(testResultRequestDTO.getAge());
         existingCondition.setMarriage(testResultRequestDTO.getMarriage());
         existingCondition.setIncome(testResultRequestDTO.getIncome());
-        existingCondition.setMoney_rank(testResultRequestDTO.getMoney_rank());
-        existingCondition.setPeriod_rank(testResultRequestDTO.getPeriod_rank());
-        existingCondition.setPopularity_rank(testResultRequestDTO.getPopularity_rank());
+        existingCondition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        existingCondition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        existingCondition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.updateUserPolicyCondition(existingCondition);
 
         // 3. Insert new data based on DTO (same logic as save)
@@ -474,9 +474,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             userVector = new UserVectorVO();
             userVector.setUserId(userId);
         }
-        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoney_rank()));
-        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriod_rank()));
-        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularity_rank()));
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
 
         if (userVector.getId() == null) {
             userPolicyMapper.saveUserVector(userVector);
@@ -545,7 +545,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
 
         // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).collect(Collectors.toList());
+        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).toList();
 
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
@@ -625,9 +625,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
 
-        return searchResultDTO;
+        return userPolicyMapper.findFilteredPolicies(searchRequestDTO);
     }
 
     /**
@@ -675,7 +674,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         // 신청 기간에서 마감일 추출
         for(SearchResultDTO resultDTO : searchResultDTO){
-            if(resultDTO.getEndDate() != null && resultDTO.getEndDate() != ""){
+            if(resultDTO.getEndDate() != null && !resultDTO.getEndDate().isEmpty()){
                 String[] Date=resultDTO.getEndDate().split("~");
                 if(Date.length==2){
                     resultDTO.setEndDate(Date[1].trim());
@@ -698,15 +697,11 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     }
 
     private BigDecimal getVectorValue(int rank) {
-        switch (rank) {
-            case 1:
-                return new BigDecimal("0.6");
-            case 2:
-                return new BigDecimal("0.5");
-            case 3:
-                return new BigDecimal("0.4");
-            default:
-                return new BigDecimal("0.0");
-        }
+        return switch (rank) {
+            case 1 -> new BigDecimal("0.6");
+            case 2 -> new BigDecimal("0.5");
+            case 3 -> new BigDecimal("0.4");
+            default -> new BigDecimal("0.0");
+        };
     }
 }
