@@ -18,7 +18,8 @@ public class PushNotificationService {
 
     public void sendAllCustomNotifications() {
         System.out.println("ℹ️ [FCM] 맞춤 알림 전송 작업을 시작합니다.");
-        List<Subscription> subscriptions = subscriptionMapper.findAllActive();
+        // 모든 알림 타입의 활성 구독자를 조회 (테스트용이므로 FEEDBACK 타입으로 통일)
+        List<Subscription> subscriptions = subscriptionMapper.findActiveByNotificationType("FEEDBACK");
         System.out.println("ℹ️ [FCM] DB에서 " + subscriptions.size() + "개의 활성 구독을 찾았습니다.");
 
         if (subscriptions.isEmpty()) {
@@ -32,7 +33,7 @@ public class PushNotificationService {
 
             System.out.println("ℹ️ [FCM] 사용자 ID " + userId + "에게 알림 전송을 시도합니다. 토큰: " + endpoint);
 
-            // TODO: 여기에 사용자 맞춤 로직 넣기 (지금은 하드코딩)
+            // 테스트용 하드코딩된 메시지
             String title = "💰 머니버니 알림";
             String body = "안녕하세요 사용자 #" + userId + "님, 맞춤 정책이 도착했어요!";
 
@@ -55,8 +56,6 @@ public class PushNotificationService {
                 MessagingErrorCode errorCode = e.getMessagingErrorCode();
                 if (errorCode == MessagingErrorCode.UNREGISTERED) {
                     System.err.println("❌ [FCM] 사용자 " + userId + "의 토큰이 유효하지 않거나 만료되었습니다. 토큰: " + endpoint);
-                    // 참고: 여기서 해당 토큰을 DB에서 비활성화하거나 삭제하는 로직을 추가할 수 있습니다.
-                    // subscriptionMapper.deactivate(endpoint);
                 } else {
                     System.err.println("❌ [FCM] 사용자 " + userId + "에게 메시지 전송 실패. 토큰: " + endpoint + ", 에러 코드: " + errorCode);
                     e.printStackTrace(); // 전체 스택 트레이스를 출력하여 더 자세한 정보를 확인합니다.
