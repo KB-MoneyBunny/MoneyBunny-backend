@@ -102,37 +102,4 @@
         ORDER BY a.created_at DESC
     </select>
 
-    <!-- ──────────────────────────────────────── -->
-    <!-- 📌 사용자 벡터 관련 -->
-    <!-- ──────────────────────────────────────── -->
-
-    <!-- 사용자 ID로 벡터 조회 -->
-    <select id="findByUserId" parameterType="long" resultType="org.scoula.policyInteraction.domain.UserVectorVO">
-        SELECT 
-            id,
-            user_id AS userId,
-            vec_benefit_amount AS vecBenefitAmount,
-            vec_deadline AS vecDeadline,
-            vec_views AS vecViews,
-            updated_at AS updatedAt
-        FROM user_vector 
-        WHERE user_id = #{userId}
-    </select>
-
-    <!-- 신규 사용자 벡터 생성 -->
-    <insert id="insertUserVector" parameterType="org.scoula.policyInteraction.domain.UserVectorVO" 
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user_vector (user_id, vec_benefit_amount, vec_deadline, vec_views, updated_at)
-        VALUES (#{userId}, #{vecBenefitAmount}, #{vecDeadline}, #{vecViews}, NOW())
-    </insert>
-
-    <!-- 기존 사용자 벡터 갱신 -->
-    <update id="updateUserVector" parameterType="org.scoula.policyInteraction.domain.UserVectorVO">
-        UPDATE user_vector
-        SET vec_benefit_amount = #{vecBenefitAmount},
-            vec_deadline = #{vecDeadline},
-            vec_views = #{vecViews},
-            updated_at = NOW()
-        WHERE user_id = #{userId}
-    </update>
 </mapper>

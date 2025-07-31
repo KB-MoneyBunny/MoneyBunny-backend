@@ -3,7 +3,7 @@ package org.scoula.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policy.service.PolicyService;
-import org.scoula.policyInteraction.service.UserVectorBatchService;
+import org.scoula.userPolicy.service.UserVectorBatchService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
