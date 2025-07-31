@@ -1,9 +1,10 @@
-package org.scoula.member.dto;
+package org.scoula.security.dto;
 
 import lombok.Data;
 
 @Data
-public class LoginRequestDTO {
+public class PasswordResetDTO {
     private String loginId;
     private String password;
 }
+

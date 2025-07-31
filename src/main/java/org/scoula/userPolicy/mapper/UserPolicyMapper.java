@@ -4,7 +4,6 @@ import org.scoula.userPolicy.domain.*;
 import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
-import org.scoula.userPolicy.dto.UserPolicyDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,4 +39,13 @@ public interface UserPolicyMapper {
     void deleteUserEmploymentStatusesByConditionId(Long userPolicyConditionId);
     void deleteUserEducationLevelsByConditionId(Long userPolicyConditionId);
     void deleteUserFilteredPoliciesByUserId(Long userId);
+
+    // 사용자 벡터를 저장
+    void saveUserVector(UserVectorVO userVector);
+
+    // 사용자 벡터를 수정
+    void updateUserVector(UserVectorVO userVector);
+
+    // 사용자 ID로 사용자 벡터를 조회
+    UserVectorVO findUserVectorByUserId(Long userId);
 }
