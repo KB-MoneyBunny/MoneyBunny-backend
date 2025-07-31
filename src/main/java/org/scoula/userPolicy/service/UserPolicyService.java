@@ -50,4 +50,8 @@ public interface UserPolicyService {
      * @return 필터링된 정책 목록
      */
     List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO);
+
+    void saveSearchText(List<String> searchTexts);
+
+    List<String> getPopularKeywords(int count);
 }
