@@ -2,16 +2,8 @@ package org.scoula.userPolicy.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.common.util.RedisUtil;
 import org.scoula.member.mapper.MemberMapper;
-import org.scoula.policy.domain.region.PolicyRegionVO;
-import org.scoula.policy.domain.education.PolicyEducationLevelVO;
-import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
-import org.scoula.policy.domain.keyword.PolicyKeywordVO;
-import org.scoula.policy.domain.major.PolicyMajorVO;
-import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
-import org.scoula.policy.domain.YouthPolicyPeriodVO;
-import org.scoula.policy.domain.YouthPolicyVO;
-import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
@@ -19,15 +11,12 @@ import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +29,13 @@ import java.util.stream.Collectors;
 public class UserPolicyServiceImpl implements UserPolicyService {
 
     private final UserPolicyMapper userPolicyMapper;
-    private final PolicyMapper policyMapper;
     private final MemberMapper memberMapper;
     private final PolicyDataHolder policyDataHolder;
+    private final RedisUtil redisUtil;
+    private final RedisTemplate<String, String> redisTemplate;
+
+
+    private static final String POPULAR_KEYWORDS_KEY = "popular_keywords";
 
 
     /**
@@ -703,5 +696,41 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             case 3 -> new BigDecimal("0.4");
             default -> new BigDecimal("0.0");
         };
+    }
+
+    /**
+     * 검색어를 Redis의 Sorted Set에 저장하고 점수를 1 증가시킵니다.
+     * @param searchTexts 검색어 리스트
+     */
+    public void saveSearchText(List<String> searchTexts) {
+        for(String searchText : searchTexts) {
+            if (searchText != null && !searchText.trim().isEmpty()) {
+                String trimmedKeyword = searchText.trim();
+                try {
+                    ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+                    zSetOperations.incrementScore(POPULAR_KEYWORDS_KEY, trimmedKeyword, 1);
+                    log.info("인기 검색어 저장: '{}'", trimmedKeyword);
+                } catch (Exception e) {
+                    log.error("인기 검색어 저장 실패: {}", trimmedKeyword, e);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 인기 검색어 목록을 조회합니다.
+     * @param count 조회할 개수
+     * @return 인기 검색어 목록
+     */
+    public List<String> getPopularKeywords(int count) {
+        try {
+            ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+            Set<String> keywords = zSetOperations.reverseRange(POPULAR_KEYWORDS_KEY, 0, count - 1);
+            return new ArrayList<>(keywords != null ? keywords : Collections.emptyList());
+        } catch (Exception e) {
+            log.error("인기 검색어 조회 실패", e);
+            return Collections.emptyList();
+        }
     }
 }
