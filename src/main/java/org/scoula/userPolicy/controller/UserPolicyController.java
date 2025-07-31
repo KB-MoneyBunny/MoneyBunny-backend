@@ -6,23 +6,18 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.security.account.domain.CustomUser;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
-import org.scoula.userPolicy.dto.UserPolicyDTO;
+import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -48,18 +43,18 @@ public class UserPolicyController {
      */
     @ApiOperation(value = "사용자 정책 조건 조회", notes = "사용자의 정책 조건을 조회하는 API")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = UserPolicyDTO.class),
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = TestResultRequestDTO.class),
             @ApiResponse(code = 404, message = "리소스를 찾을 수 없습니다."),
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @GetMapping("")
-    public ResponseEntity<UserPolicyDTO> getUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+    public ResponseEntity<TestResultRequestDTO> getUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         String username = customUser.getUsername();
-        UserPolicyDTO userPolicyDTO = userPolicyService.getUserPolicyCondition(username);
-        if (userPolicyDTO == null) {
+        TestResultRequestDTO testResultRequestDTO = userPolicyService.getUserPolicyCondition(username);
+        if (testResultRequestDTO == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(userPolicyDTO);
+        return ResponseEntity.ok(testResultRequestDTO);
     }
 
     /**
@@ -72,14 +67,14 @@ public class UserPolicyController {
      */
     @ApiOperation(value = "사용자 정책 조건 생성", notes = "새로운 사용자 정책 조건을 생성하는 API")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = UserPolicyDTO.class),
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = TestResultRequestDTO.class),
             @ApiResponse(code = 400, message = "잘못된 요청입니다."),
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @PostMapping("")
-    public ResponseEntity<Void> saveUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody UserPolicyDTO userPolicyDTO) {
+    public ResponseEntity<Void> saveUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody TestResultRequestDTO testResultRequestDTO) {
         String username = customUser.getUsername();
-        userPolicyService.saveUserPolicyCondition(username,userPolicyDTO);
+        userPolicyService.saveUserPolicyCondition(username,testResultRequestDTO);
         return ResponseEntity.ok().build();
     }
 
@@ -94,15 +89,15 @@ public class UserPolicyController {
      */
     @ApiOperation(value = "사용자 정책 조건 수정", notes = "기존 사용자 정책 조건을 수정하는 API")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = UserPolicyDTO.class),
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = TestResultRequestDTO.class),
             @ApiResponse(code = 400, message = "잘못된 요청입니다."),
             @ApiResponse(code = 404, message = "리소스를 찾을 수 없습니다."),
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @PutMapping("")
-    public ResponseEntity<Void> updateUserPolicyCondition(@AuthenticationPrincipal CustomUser customUser, @RequestBody UserPolicyDTO userPolicyDTO) {
+    public ResponseEntity<Void> updateUserPolicyCondition(@AuthenticationPrincipal CustomUser customUser, @RequestBody TestResultRequestDTO testResultRequestDTO) {
         String username = customUser.getUsername();
-        userPolicyService.updateUserPolicyCondition(username, userPolicyDTO);
+        userPolicyService.updateUserPolicyCondition(username, testResultRequestDTO);
         return ResponseEntity.ok().build();
     }
 
@@ -148,12 +143,43 @@ public class UserPolicyController {
     @PostMapping("/search")
     public ResponseEntity<List<SearchResultDTO>> searchFilteredPolicy(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody SearchRequestDTO searchRequestDTO) {
         String username = customUser.getUsername();
-        List<SearchResultDTO> searchResultDTO=userPolicyService.searchFilteredPolicy(username, searchRequestDTO);
-        if (searchResultDTO == null || searchResultDTO.isEmpty()) {
+
+        List<SearchResultDTO> searchResultDTO = userPolicyService.searchFilteredPolicy(username, searchRequestDTO);
+
+        // 검색 결과가 있을 경우에만 검색어 저장
+        if (searchResultDTO != null && !searchResultDTO.isEmpty()) {
+            if (searchRequestDTO.getSearchTexts() != null && !searchRequestDTO.getSearchTexts().isEmpty()) {
+                userPolicyService.saveSearchText(
+                        searchRequestDTO.getSearchTexts().stream().distinct().collect(Collectors.toList())
+                );
+            }
+        } else {
             return ResponseEntity.notFound().build();
         }
+
         return ResponseEntity.ok(searchResultDTO);
     }
 
 
+
+    /**
+     * 인기 검색어 조회 API
+     * GET: http://localhost:8080/api/userPolicy/popular-keywords
+     * @return ResponseEntity
+     *         - 200 OK: 인기 검색어 목록 반환
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "인기 검색어 조회", notes = "인기 검색어 목록을 조회하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = String.class, responseContainer = "List"),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("/popular-keywords")
+    public ResponseEntity<List<String>> getPopularKeywords() {
+        List<String> popularKeywords = userPolicyService.getPopularKeywords(10); // 상위 10개 인기 검색어 조회
+        if (popularKeywords == null || popularKeywords.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(popularKeywords);
+    }
 }
