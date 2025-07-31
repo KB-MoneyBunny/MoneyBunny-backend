@@ -103,7 +103,7 @@ public class PushController {
             @AuthenticationPrincipal CustomUser customUser,
             @RequestBody SubscriptionRequest request) {
         Long userId = customUser.getMember().getUserId();
-        subscriptionService.subscribe(userId, request.getToken());
+        subscriptionService.subscribe(userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -117,7 +117,7 @@ public class PushController {
             @AuthenticationPrincipal CustomUser customUser,
             @RequestBody SubscriptionRequest request) {
         Long userId = customUser.getMember().getUserId();
-        subscriptionService.unsubscribe(userId, request.getToken());
+        subscriptionService.updateNotificationSettings(userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -130,8 +130,8 @@ public class PushController {
     public ResponseEntity<SubscriptionStatusResponse> getSubscriptionStatus(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
-        boolean isSubscribed = subscriptionService.isSubscribed(userId);
-        return ResponseEntity.ok(SubscriptionStatusResponse.of(isSubscribed));
+        SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId);
+        return ResponseEntity.ok(status);
     }
 
     // ===============================
@@ -168,7 +168,7 @@ public class PushController {
             return ResponseEntity.ok("피드백 알림이 성공적으로 발송되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body("피드백 알림 발송 중 오료가 발생했습니다: " + e.getMessage());
+                    .body("피드백 알림 발송 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }
