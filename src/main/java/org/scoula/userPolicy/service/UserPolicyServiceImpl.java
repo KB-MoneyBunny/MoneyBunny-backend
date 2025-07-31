@@ -2,23 +2,22 @@ package org.scoula.userPolicy.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.common.util.RedisUtil;
 import org.scoula.member.mapper.MemberMapper;
-import org.scoula.policy.domain.region.PolicyRegionVO;
-import org.scoula.policy.domain.education.PolicyEducationLevelVO;
-import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
-import org.scoula.policy.domain.keyword.PolicyKeywordVO;
-import org.scoula.policy.domain.major.PolicyMajorVO;
-import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
-import org.scoula.policy.domain.YouthPolicyPeriodVO;
-import org.scoula.policy.domain.YouthPolicyVO;
-import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policy.util.PolicyDataHolder;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.domain.*;
+import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.scoula.userPolicy.util.VectorUtil;
+import org.scoula.userPolicy.domain.UserVectorVO;
+import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,9 +39,16 @@ import java.util.stream.Collectors;
 public class UserPolicyServiceImpl implements UserPolicyService {
 
     private final UserPolicyMapper userPolicyMapper;
-    private final PolicyMapper policyMapper;
     private final MemberMapper memberMapper;
     private final PolicyDataHolder policyDataHolder;
+    private final RedisUtil redisUtil;
+    private final RedisTemplate<String, String> redisTemplate;
+
+
+    private static final String POPULAR_KEYWORDS_KEY = "popular_keywords";
+    private static final String RECENT_KEYWORDS_KEY_PREFIX = "recent_keywords:";
+    private static final int MAX_RECENT_KEYWORDS = 6;
+    private final PolicyInteractionMapper policyInteractionMapper;
 
 
     /**
@@ -71,9 +77,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         testResultRequestDTO.setAge(userPolicyCondition.getAge());
         testResultRequestDTO.setMarriage(userPolicyCondition.getMarriage());
         testResultRequestDTO.setIncome(userPolicyCondition.getIncome());
-        testResultRequestDTO.setMoney_rank(userPolicyCondition.getMoney_rank());
-        testResultRequestDTO.setPeriod_rank(userPolicyCondition.getPeriod_rank());
-        testResultRequestDTO.setPopularity_rank(userPolicyCondition.getPopularity_rank());
+        testResultRequestDTO.setMoneyRank(userPolicyCondition.getMoneyRank());
+        testResultRequestDTO.setPeriodRank(userPolicyCondition.getPeriodRank());
+        testResultRequestDTO.setPopularityRank(userPolicyCondition.getPopularityRank());
 
         // 1. regions
         List<UserRegionVO> regions = userPolicyCondition.getRegions();
@@ -150,9 +156,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         condition.setAge(testResultRequestDTO.getAge());
         condition.setMarriage(testResultRequestDTO.getMarriage());
         condition.setIncome(testResultRequestDTO.getIncome());
-        condition.setMoney_rank(testResultRequestDTO.getMoney_rank());
-        condition.setPeriod_rank(testResultRequestDTO.getPeriod_rank());
-        condition.setPopularity_rank(testResultRequestDTO.getPopularity_rank());
+        condition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        condition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        condition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.saveUserPolicyCondition(condition);
         Long userPolicyConditionId = condition.getId();
 
@@ -290,13 +296,23 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         saveUserFilteredPolicies(userId);
 
-        // 사용자 벡터 값 계산 및 저장
-        UserVectorVO userVector = new UserVectorVO();
-        userVector.setUserId(userId);
-        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoney_rank()));
-        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriod_rank()));
-        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularity_rank()));
-        userPolicyMapper.saveUserVector(userVector);
+
+
+        // 사용자 벡터 값 계산 및 저장 (중복 방지)
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+        if (userVector == null) {
+            userVector = new UserVectorVO();
+            userVector.setUserId(userId);
+        }
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
+
+        if (userVector.getId() == null) {
+            userPolicyMapper.saveUserVector(userVector);
+        } else {
+            userPolicyMapper.updateUserVector(userVector);
+        }
 
         return testResultRequestDTO;
     }
@@ -332,9 +348,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         existingCondition.setAge(testResultRequestDTO.getAge());
         existingCondition.setMarriage(testResultRequestDTO.getMarriage());
         existingCondition.setIncome(testResultRequestDTO.getIncome());
-        existingCondition.setMoney_rank(testResultRequestDTO.getMoney_rank());
-        existingCondition.setPeriod_rank(testResultRequestDTO.getPeriod_rank());
-        existingCondition.setPopularity_rank(testResultRequestDTO.getPopularity_rank());
+        existingCondition.setMoneyRank(testResultRequestDTO.getMoneyRank());
+        existingCondition.setPeriodRank(testResultRequestDTO.getPeriodRank());
+        existingCondition.setPopularityRank(testResultRequestDTO.getPopularityRank());
         userPolicyMapper.updateUserPolicyCondition(existingCondition);
 
         // 3. Insert new data based on DTO (same logic as save)
@@ -474,9 +490,9 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             userVector = new UserVectorVO();
             userVector.setUserId(userId);
         }
-        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoney_rank()));
-        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriod_rank()));
-        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularity_rank()));
+        userVector.setVecBenefitAmount(getVectorValue(testResultRequestDTO.getMoneyRank()));
+        userVector.setVecDeadline(getVectorValue(testResultRequestDTO.getPeriodRank()));
+        userVector.setVecViews(getVectorValue(testResultRequestDTO.getPopularityRank()));
 
         if (userVector.getId() == null) {
             userPolicyMapper.saveUserVector(userVector);
@@ -542,10 +558,10 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
 
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
 
         // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = searchResultDTO.stream().map(SearchResultDTO::getPolicyId).collect(Collectors.toList());
+        List<Long> matchingPolicyIds = policiesWithVectors.stream().map(PolicyWithVectorDTO::getPolicyId).collect(Collectors.toList());
 
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
@@ -625,7 +641,40 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             }
         }
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
+
+
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
 
         return searchResultDTO;
     }
@@ -670,8 +719,39 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         }
 
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
-        List<SearchResultDTO> searchResultDTO = userPolicyMapper.findFilteredPolicies(searchRequestDTO);
 
+        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 2. 사용자 벡터 조회
+        UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
+
+        List<SearchResultDTO> searchResultDTO;
+
+        if (userVector == null) {
+            // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
+            log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
+            searchResultDTO = policiesWithVectors.stream()
+                    .map(VectorUtil::toSearchResultDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // 3. 코사인 유사도 계산 및 정렬
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+
+            searchResultDTO = policiesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+                    .map(policy -> {
+                        // 코사인 유사도 계산
+                        double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
+                        policy.setSimilarity(similarity);
+                        return policy;
+                    })
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
+                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .collect(Collectors.toList());
+
+            log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
+        }
 
         // 신청 기간에서 마감일 추출
         for(SearchResultDTO resultDTO : searchResultDTO){
@@ -698,15 +778,88 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     }
 
     private BigDecimal getVectorValue(int rank) {
-        switch (rank) {
-            case 1:
-                return new BigDecimal("0.6");
-            case 2:
-                return new BigDecimal("0.5");
-            case 3:
-                return new BigDecimal("0.4");
-            default:
-                return new BigDecimal("0.0");
+        return switch (rank) {
+            case 1 -> new BigDecimal("0.6");
+            case 2 -> new BigDecimal("0.5");
+            case 3 -> new BigDecimal("0.4");
+            default -> new BigDecimal("0.0");
+        };
+    }
+
+    /**
+     * 검색어를 Redis의 Sorted Set에 저장하고 점수를 1 증가시킵니다.
+     * @param searchText 검색어
+     */
+    public void saveSearchText(String searchText) {
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            try {
+                ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+                zSetOperations.incrementScore(POPULAR_KEYWORDS_KEY, searchText, 1);
+                log.info("인기 검색어 저장: '{}'", searchText);
+            } catch (Exception e) {
+                log.error("인기 검색어 저장 실패: {}", searchText, e);
+            }
+        }
+    }
+
+
+    /**
+     * 인기 검색어 목록을 조회합니다.
+     * @param count 조회할 개수
+     * @return 인기 검색어 목록
+     */
+    public List<String> getPopularKeywords(int count) {
+        try {
+            ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+            Set<String> keywords = zSetOperations.reverseRange(POPULAR_KEYWORDS_KEY, 0, count - 1);
+            return new ArrayList<>(keywords != null ? keywords : Collections.emptyList());
+        } catch (Exception e) {
+            log.error("인기 검색어 조회 실패", e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 최근 검색어를 저장합니다.
+     * @param username 사용자 이름
+     * @param searchText 검색어
+     */
+    @Override
+    public void saveRecentSearch(String username, String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return;
+        }
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+
+        try {
+            ListOperations<String, String> listOperations = redisTemplate.opsForList();
+            // 기존에 있던 검색어는 삭제
+            listOperations.remove(key, 0, searchText);
+            // 새로운 검색어를 맨 앞에 추가
+            listOperations.leftPush(key, searchText);
+            // 리스트의 길이를 6으로 제한
+            listOperations.trim(key, 0, MAX_RECENT_KEYWORDS - 1);
+            log.info("최근 검색어 저장: username={}, keyword={}", username, searchText);
+        } catch (Exception e) {
+            log.error("최근 검색어 저장 실패: username={}, keyword={}", username, searchText, e);
+        }
+    }
+
+    /**
+     * 최근 검색어 목록을 조회합니다.
+     * @param username 사용자 이름
+     * @return 최근 검색어 목록
+     */
+    @Override
+    public List<String> getRecentSearches(String username) {
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+        try {
+            ListOperations<String, String> listOperations = redisTemplate.opsForList();
+            List<String> recentKeywords = listOperations.range(key, 0, MAX_RECENT_KEYWORDS - 1);
+            return recentKeywords != null ? recentKeywords : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("최근 검색어 조회 실패: username={}", username, e);
+            return Collections.emptyList();
         }
     }
 }

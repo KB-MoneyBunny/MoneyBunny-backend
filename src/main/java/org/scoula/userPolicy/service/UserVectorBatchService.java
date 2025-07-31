@@ -1,13 +1,14 @@
-package org.scoula.policyInteraction.service;
+package org.scoula.userPolicy.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.common.util.RedisUtil;
 import org.scoula.policy.domain.PolicyVectorVO;
 import org.scoula.policy.mapper.PolicyMapper;
-import org.scoula.policyInteraction.domain.UserVectorVO;
+import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
-import org.scoula.policyInteraction.util.UserVectorUtil;
+import org.scoula.userPolicy.util.UserVectorUtil;
+import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ public class UserVectorBatchService {
     private final RedisUtil redisUtil;
     private final PolicyInteractionMapper policyInteractionMapper;
     private final PolicyMapper policyMapper;
+    private final UserPolicyMapper userPolicyMapper;
     
     // EMA 학습률 (alpha)
     private static final double ALPHA = 0.1;
@@ -38,7 +40,8 @@ public class UserVectorBatchService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
-     * 사용자 벡터의 조회수 차원을 EMA 방식으로 갱신
+     * 사용자 벡터의 3차원 전체를 EMA 방식으로 갱신
+     * 조회 행동이 모든 차원의 선호도에 영향을 준다고 가정
      */
     public void updateUserVectorsByEMA() {
         String yesterday = LocalDate.now().minusDays(1).format(DATE_FORMATTER);
@@ -67,11 +70,11 @@ public class UserVectorBatchService {
                 redisUtil.deleteDailyViewData(userId, yesterday);
             }
             
-            log.info("조회수 차원 갱신 완료 - 처리 사용자: {}, 갱신 벡터: {}", 
+            log.info("3차원 벡터 갱신 완료 - 처리 사용자: {}, 갱신 벡터: {}", 
                     processedUsers, totalUpdatedVectors);
                     
         } catch (Exception e) {
-            log.error("조회수 차원 갱신 중 오류 발생", e);
+            log.error("3차원 벡터 갱신 중 오류 발생", e);
             throw e;
         }
     }
@@ -91,28 +94,28 @@ public class UserVectorBatchService {
     }
     
     /**
-     * 개별 사용자의 조회수 차원만 갱신 처리
+     * 개별 사용자의 3차원 벡터 전체 갱신 처리
      */
     private int processUserViewsDimensionUpdate(Long userId, List<String> userKeys, String date) {
         int updatedCount = 0;
         
         try {
             // 현재 사용자 벡터 조회 또는 초기화
-            UserVectorVO userVector = policyInteractionMapper.findByUserId(userId);
+            UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
             if (userVector == null) {
                 userVector = UserVectorUtil.createInitialUserVector(userId);
-                policyInteractionMapper.insertUserVector(userVector);
+                userPolicyMapper.saveUserVector(userVector);
                 log.debug("초기 사용자 벡터 생성 - userId: {}", userId);
             }
             
-            // 각 정책별로 조회수 차원만 갱신
+            // 각 정책별로 3차원 벡터 전체 갱신
             for (String key : userKeys) {
                 Long[] ids = redisUtil.extractIdsFromKey(key);
                 if (ids != null && ids.length >= 2) {
                     Long policyId = ids[1];
                     Long viewCount = redisUtil.getDailyViewCount(userId, policyId, date);
                     
-                    if (updateViewsDimensionForPolicy(userVector, policyId, viewCount.intValue())) {
+                    if (updateAllDimensionsForPolicy(userVector, policyId, viewCount.intValue())) {
                         updatedCount++;
                     }
                 }
@@ -120,21 +123,22 @@ public class UserVectorBatchService {
             
             // DB 업데이트
             if (updatedCount > 0) {
-                policyInteractionMapper.updateUserVector(userVector);
-                log.debug("사용자 벡터 조회수 차원 DB 업데이트 완료 - userId: {}, 갱신 정책 수: {}", userId, updatedCount);
+                userPolicyMapper.updateUserVector(userVector);
+                log.debug("사용자 벡터 3차원 전체 DB 업데이트 완료 - userId: {}, 갱신 정책 수: {}", userId, updatedCount);
             }
             
         } catch (Exception e) {
-            log.error("사용자 조회수 차원 갱신 실패 - userId: {}, 오류: {}", userId, e.getMessage());
+            log.error("사용자 3차원 벡터 갱신 실패 - userId: {}, 오류: {}", userId, e.getMessage());
         }
         
         return updatedCount;
     }
     
     /**
-     * 특정 정책에 대한 조회수 차원만 EMA 갱신 (vecViews만 업데이트)
+     * 특정 정책에 대한 3차원 전체 EMA 갱신 (vecBenefitAmount, vecDeadline, vecViews 모두 업데이트)
+     * 조회 행동도 사용자의 정책 선호도를 나타내므로 모든 차원에 영향을 줌
      */
-    private boolean updateViewsDimensionForPolicy(UserVectorVO userVector, Long policyId, int viewCount) {
+    private boolean updateAllDimensionsForPolicy(UserVectorVO userVector, Long policyId, int viewCount) {
         try {
             // 정책 벡터 조회
             PolicyVectorVO policyVector = policyMapper.findByPolicyId(policyId);
@@ -145,25 +149,40 @@ public class UserVectorBatchService {
             
             // EMA 수식: cumulativeWeight = 1 - (1-α)^n
             double cumulativeWeight = 1 - Math.pow(1 - ALPHA, viewCount);
-            
-            // 조회수 차원만 갱신: newViews = (1 - weight) * 기존Views + weight * 정책Views
             BigDecimal oneMinusWeight = BigDecimal.valueOf(1 - cumulativeWeight);
             BigDecimal weight = BigDecimal.valueOf(cumulativeWeight);
             
+            // 3차원 전체 EMA 갱신
+            // 혜택 금액 차원 갱신
+            BigDecimal newBenefit = userVector.getVecBenefitAmount()
+                .multiply(oneMinusWeight)
+                .add(policyVector.getVecBenefitAmount().multiply(weight))
+                .setScale(4, RoundingMode.HALF_UP);
+            
+            // 마감일 차원 갱신
+            BigDecimal newDeadline = userVector.getVecDeadline()
+                .multiply(oneMinusWeight)
+                .add(policyVector.getVecDeadline().multiply(weight))
+                .setScale(4, RoundingMode.HALF_UP);
+            
+            // 조회수 차원 갱신
             BigDecimal newViews = userVector.getVecViews()
                 .multiply(oneMinusWeight)
                 .add(policyVector.getVecViews().multiply(weight))
                 .setScale(4, RoundingMode.HALF_UP);
             
+            // 사용자 벡터 업데이트
+            userVector.setVecBenefitAmount(newBenefit);
+            userVector.setVecDeadline(newDeadline);
             userVector.setVecViews(newViews);
             
-            log.trace("EMA 조회수 차원 갱신 - userId: {}, policyId: {}, viewCount: {}, weight: {:.4f}, newViews: {}", 
-                    userVector.getUserId(), policyId, viewCount, cumulativeWeight, newViews);
+            log.trace("EMA 3차원 전체 갱신 - userId: {}, policyId: {}, viewCount: {}, weight: {:.4f}, 결과: [{}, {}, {}]", 
+                    userVector.getUserId(), policyId, viewCount, cumulativeWeight, newBenefit, newDeadline, newViews);
             
             return true;
             
         } catch (Exception e) {
-            log.error("조회수 차원 갱신 실패 - policyId: {}, 오류: {}", policyId, e.getMessage());
+            log.error("3차원 전체 갱신 실패 - policyId: {}, 오류: {}", policyId, e.getMessage());
             return false;
         }
     }
