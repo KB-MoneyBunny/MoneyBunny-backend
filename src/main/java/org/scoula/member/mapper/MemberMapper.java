@@ -10,6 +10,6 @@ public interface MemberMapper {
   MemberVO get(String username);                    // 회원 조회 (권한 포함)
   MemberVO findByUsername(String username);         // ID 중복 체크용 조회
   int insert(MemberVO member);                      // 회원정보 저장
-  boolean isEmailExists(String email);              // 이메일 중복 검사
+  MemberVO getByEmail(String email);                // 이메일 중복 검사
 
 }

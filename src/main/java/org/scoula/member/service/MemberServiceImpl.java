@@ -81,7 +81,7 @@ public class MemberServiceImpl implements MemberService {
     return get(member.getLoginId());
   }
 
-  private void validateJoinInfo(MemberJoinDTO dto) {
+  public void validateJoinInfo(MemberJoinDTO dto) {
     String email = dto.getEmail();
     String password = dto.getPassword();
 
@@ -90,9 +90,10 @@ public class MemberServiceImpl implements MemberService {
       throw new IllegalArgumentException("유효한 이메일 주소를 입력해주세요.");
     }
 
-    if (mapper.isEmailExists(email)) {
+    if (mapper.getByEmail(email) != null) {
       throw new IllegalArgumentException("이미 가입된 이메일입니다.");
     }
+
 
     // 비밀번호 유효성
     if (password == null || password.length() < 10) {
@@ -107,6 +108,14 @@ public class MemberServiceImpl implements MemberService {
       throw new IllegalArgumentException("비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다.");
     }
   }
+
+  @Override
+  public boolean isEmailExists(String email) {
+    MemberVO member = mapper.getByEmail(email);
+    return member != null;
+  }
+
+
 
 
 
