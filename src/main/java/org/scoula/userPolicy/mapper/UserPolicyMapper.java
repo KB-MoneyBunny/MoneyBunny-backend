@@ -12,7 +12,7 @@ import java.util.List;
 public interface UserPolicyMapper {
 
     // 사용자 정책 조건을 저장
-    Long saveUserPolicyCondition(UserPolicyConditionVO userPolicyCondition);
+    void saveUserPolicyCondition(UserPolicyConditionVO userPolicyCondition);
     void saveUserMajors(List<UserMajorVO> majors);
     void saveUserSpecialConditions(List<UserSpecialConditionVO> specialConditions);
     void saveUserPolicyKeywords(List<UserPolicyKeywordVO> keywords);
