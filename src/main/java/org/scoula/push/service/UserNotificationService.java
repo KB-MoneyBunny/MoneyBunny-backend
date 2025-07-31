@@ -41,7 +41,7 @@ public class UserNotificationService {
                 .userId(userId)
                 .title(title)
                 .message(message)
-                .type(type.name())
+                .type(type)
                 .targetUrl(targetUrl)
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
@@ -88,12 +88,12 @@ public class UserNotificationService {
     }
 
     /**
-     * 정책 알림을 생성하고 FCM으로 발송합니다
+     * 북마크 알림을 생성하고 FCM으로 즉시 발송합니다
      */
     @Transactional
-    public void createAndSendPolicyNotification(Long userId, String title, String message, String targetUrl) {
+    public void createAndSendBookmarkNotification(Long userId, String title, String message, String targetUrl) {
         // 1. 알림 생성
-        createNotification(userId, title, message, NotificationType.POLICY, targetUrl);
+        createNotification(userId, title, message, NotificationType.BOOKMARK, targetUrl);
 
         // 2. FCM 발송
         sendFCMToUser(userId, title, message);
@@ -111,33 +111,34 @@ public class UserNotificationService {
         sendFCMToUser(userId, title, message);
     }
 
+
     /**
      * 특정 사용자에게 FCM 발송
      */
     private void sendFCMToUser(Long userId, String title, String message) {
-        // 해당 사용자의 활성 구독 정보 조회
-        List<Subscription> subscriptions = subscriptionMapper.findAllActive();
+        // 해당 사용자의 구독 정보 조회
+        Subscription subscription = subscriptionMapper.findByUserId(userId);
         
-        for (Subscription subscription : subscriptions) {
-            if (subscription.getUserId().equals(userId)) {
-                try {
-                    Notification notification = Notification.builder()
-                            .setTitle(title)
-                            .setBody(message)
-                            .build();
+        if (subscription != null && subscription.getEndpoint() != null) {
+            try {
+                Notification notification = Notification.builder()
+                        .setTitle(title)
+                        .setBody(message)
+                        .build();
 
-                    Message fcmMessage = Message.builder()
-                            .setToken(subscription.getEndpoint())
-                            .setNotification(notification)
-                            .build();
+                Message fcmMessage = Message.builder()
+                        .setToken(subscription.getEndpoint())
+                        .setNotification(notification)
+                        .build();
 
-                    String response = firebaseMessaging.send(fcmMessage);
-                    log.info("[FCM 발송 성공] 사용자 ID: {}, 응답: {}", userId, response);
-                    
-                } catch (FirebaseMessagingException e) {
-                    log.error("[FCM 발송 실패] 사용자 ID: {}, 오류: {}", userId, e.getMessage());
-                }
+                String response = firebaseMessaging.send(fcmMessage);
+                log.info("[FCM 발송 성공] 사용자 ID: {}, 응답: {}", userId, response);
+                
+            } catch (FirebaseMessagingException e) {
+                log.error("[FCM 발송 실패] 사용자 ID: {}, 오류: {}", userId, e.getMessage());
             }
+        } else {
+            log.warn("[FCM 발송 실패] 사용자 ID: {}의 구독 정보 또는 토큰이 없음", userId);
         }
     }
 
@@ -149,10 +150,8 @@ public class UserNotificationService {
      */
     @Transactional
     public void triggerPersonalizedFeedback(Long userId) {
-        // TODO: 사용자의 최근 소비패턴 분석
-        // TODO: 맞춤형 피드백 메시지 생성
-        // TODO: 피드백 알림 생성 및 발송
         log.info("[스케줄러] 개인 맞춤 피드백 알림 발송 - 사용자 ID: {}", userId);
+        // 구현 예정
     }
 
     /**
@@ -160,9 +159,7 @@ public class UserNotificationService {
      */
     @Transactional
     public void triggerBatchPersonalizedFeedback() {
-        // TODO: 피드백 대상 사용자 조회 (최근 활동 기준)
-        // TODO: 각 사용자별 맞춤형 피드백 생성
-        // TODO: 일괄 알림 발송
         log.info("[스케줄러] 일괄 맞춤형 피드백 알림 발송 시작");
+        // 구현 예정
     }
 }
