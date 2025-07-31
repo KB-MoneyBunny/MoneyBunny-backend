@@ -51,7 +51,11 @@ public interface UserPolicyService {
      */
     List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO);
 
-    void saveSearchText(List<String> searchTexts);
+    void saveSearchText(String searchText);
 
     List<String> getPopularKeywords(int count);
+
+    void saveRecentSearch(String username, String searchText);
+
+    List<String> getRecentSearches(String username);
 }
