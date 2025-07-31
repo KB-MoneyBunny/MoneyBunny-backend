@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.asset.mapper.AssetCardTransactionMapper">
+
+    <select id="sumThisMonthUsedByUserId" resultType="long">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM card_transaction t
+        JOIN user_card c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+        AND t.transaction_date >= DATE_FORMAT(NOW(), '%Y-%m-01')
+        AND (t.cancel_status IS NULL OR t.cancel_status != 'normal')
+    </select>
+
+    <select id="sumThisMonthUsedByCardId" resultType="long">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+        AND transaction_date >= DATE_FORMAT(NOW(), '%Y-%m-01')
+        AND (cancel_status IS NULL OR cancel_status != 'normal')
+    </select>
+
+
+    <select id="findByCardIdWithPaging" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT *
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+        ORDER BY transaction_date DESC
+            LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByCardId" resultType="int">
+        SELECT COUNT(*)
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+    </select>
+
+</mapper>
