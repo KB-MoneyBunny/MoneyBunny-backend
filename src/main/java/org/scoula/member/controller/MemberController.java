@@ -63,4 +63,17 @@ public class MemberController {
     UploadFiles.downloadImage(response, file);
   }
 
+  // 이메일 중복 체크
+  @ApiOperation(
+          value = "이메일 중복 체크",
+          notes = "회원가입 또는 아이디 찾기 시, 입력한 이메일이 이미 가입되어 있는지 확인합니다."
+  )
+  @GetMapping("/check-email")
+  public ResponseEntity<Boolean> checkEmail(@RequestParam("email") String email) {
+    boolean exists = service.isEmailExists(email);
+    return ResponseEntity.ok(exists);
+  }
+
+
+
 }

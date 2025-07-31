@@ -31,9 +31,8 @@
     </insert>
 
     <!-- 이메일 중복 검사  -->
-    <select id="isEmailExists" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM users WHERE email = #{email}
+    <select id="getByEmail" parameterType="string" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users WHERE email = #{email}
     </select>
-
 
 </mapper>
