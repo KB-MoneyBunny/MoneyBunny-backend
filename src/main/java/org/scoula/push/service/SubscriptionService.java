@@ -1,7 +1,10 @@
 package org.scoula.push.service;
 
 import lombok.RequiredArgsConstructor;
+import org.scoula.push.domain.NotificationType;
 import org.scoula.push.domain.Subscription;
+import org.scoula.push.dto.request.SubscriptionRequest;
+import org.scoula.push.dto.response.SubscriptionStatusResponse;
 import org.scoula.push.mapper.SubscriptionMapper;
 import org.springframework.stereotype.Service;
 
@@ -14,42 +17,60 @@ public class SubscriptionService {
     private final SubscriptionMapper subscriptionMapper;
 
     /**
-     * 구독 요청 처리: 이미 존재하면 활성화, 없으면 신규 등록
+     * 구독 요청 처리 (알림 유형별 설정 포함)
      */
-    public void subscribe(Long userId, String token) {
-        Subscription existing = subscriptionMapper.findByToken(token);
+    public void subscribe(Long userId, SubscriptionRequest request) {
+        Subscription existing = subscriptionMapper.findByToken(request.getToken());
 
         if (existing != null) {
-            subscriptionMapper.updateIsActive(token, true);
+            // 기존 구독이 있으면 알림 설정 업데이트
+            existing.setIsActiveBookmark(request.getBookmarkSetting());
+            existing.setIsActiveTop3(request.getTop3Setting());
+            existing.setIsActiveNewPolicy(request.getNewPolicySetting());
+            existing.setIsActiveFeedback(request.getFeedbackSetting());
+            subscriptionMapper.updateNotificationSettings(existing);
         } else {
-            Subscription sub = new Subscription();
-            sub.setUserId(userId);
-            sub.setEndpoint(token);
-            sub.setActive(true);
-            sub.setCreatedAt(LocalDateTime.now());
-            subscriptionMapper.insert(sub);
+            // 신규 구독 생성
+            Subscription subscription = new Subscription();
+            subscription.setUserId(userId);
+            subscription.setEndpoint(request.getToken());
+            subscription.setIsActiveBookmark(request.getBookmarkSetting());
+            subscription.setIsActiveTop3(request.getTop3Setting());
+            subscription.setIsActiveNewPolicy(request.getNewPolicySetting());
+            subscription.setIsActiveFeedback(request.getFeedbackSetting());
+            subscription.setCreatedAt(LocalDateTime.now());
+            subscriptionMapper.insert(subscription);
         }
     }
 
     /**
-     * 구독 해제 처리
+     * 알림 설정 업데이트
      */
-    public void unsubscribe(Long userId, String token) {
-        subscriptionMapper.updateIsActive(token, false);
-    }
-    
-    /**
-     * 구독 해제 처리 (토큰만으로)
-     */
-    public void unsubscribe(String token) {
-        subscriptionMapper.updateIsActive(token, false);
+    public void updateNotificationSettings(Long userId, SubscriptionRequest request) {
+        Subscription existing = subscriptionMapper.findByUserId(userId);
+        if (existing != null) {
+            existing.setEndpoint(request.getToken()); // 토큰도 업데이트
+            existing.setIsActiveBookmark(request.getBookmarkSetting());
+            existing.setIsActiveTop3(request.getTop3Setting());
+            existing.setIsActiveNewPolicy(request.getNewPolicySetting());
+            existing.setIsActiveFeedback(request.getFeedbackSetting());
+            subscriptionMapper.updateNotificationSettings(existing);
+        }
     }
 
     /**
-     * 사용자의 현재 구독 상태 조회
+     * 사용자의 구독 상태 조회
+     */
+    public SubscriptionStatusResponse getSubscriptionStatus(Long userId) {
+        Subscription subscription = subscriptionMapper.findByUserId(userId);
+        return SubscriptionStatusResponse.from(subscription);
+    }
+
+    /**
+     * 사용자의 현재 구독 여부 확인
      */
     public boolean isSubscribed(Long userId) {
-        // TODO: 사용자의 현재 구독 상태 반환
         return subscriptionMapper.isUserSubscribed(userId);
     }
+
 }
