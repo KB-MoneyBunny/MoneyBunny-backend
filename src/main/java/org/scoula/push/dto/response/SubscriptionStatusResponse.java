@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.scoula.push.domain.Subscription;
+import org.scoula.push.domain.SubscriptionVO;
 
 /**
  * 구독 상태 조회 API 응답용 DTO
@@ -26,9 +26,9 @@ public class SubscriptionStatusResponse {
     private boolean isActiveFeedback;       // 피드백 알림 상태
 
     /**
-     * Subscription 엔티티로부터 응답 생성
+     * SubscriptionVO 엔티티로부터 응답 생성
      */
-    public static SubscriptionStatusResponse from(Subscription subscription) {
+    public static SubscriptionStatusResponse from(SubscriptionVO subscription) {
         if (subscription == null) {
             return SubscriptionStatusResponse.builder()
                     .subscribed(false)

@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
  * subscription 테이블과 매핑되는 엔티티
  */
 @Data
-public class Subscription {
+public class SubscriptionVO {
     private Long id;
     private Long userId;
-    private String endpoint; // FCM 토큰
+    private String fcmToken; // FCM 토큰
     private Boolean isActiveBookmark;   // 북마크 알림 활성화 여부
     private Boolean isActiveTop3;       // Top3 알림 활성화 여부
     private Boolean isActiveNewPolicy;  // 신규 정책 알림 활성화 여부

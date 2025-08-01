@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.scoula.push.domain.NotificationType;
-import org.scoula.push.domain.UserNotification;
+import org.scoula.push.domain.UserNotificationVO;
 
 import java.time.LocalDateTime;
 
@@ -27,9 +27,9 @@ public class NotificationResponse {
     private LocalDateTime createdAt;        // 생성시간
 
     /**
-     * UserNotification 엔티티로부터 DTO 생성
+     * UserNotificationVO 엔티티로부터 DTO 생성
      */
-    public static NotificationResponse from(UserNotification notification) {
+    public static NotificationResponse from(UserNotificationVO notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .title(notification.getTitle())

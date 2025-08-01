@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserNotification {
+public class UserNotificationVO {
     private Long id;                 // 알림 고유 식별자
     private Long userId;            // 사용자 아이디
     private String title;           // 알림 제목
