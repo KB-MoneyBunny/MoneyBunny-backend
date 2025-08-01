@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.scoula.security.util.PasswordValidator;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -61,6 +62,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean resetPassword(String loginId, String password) {
+        // 비밀번호 형식 안 맞는 경우
+        if (!PasswordValidator.isValid(password)) {
+            return false;
+        }
+
         MemberVO member = userDetailsMapper.get(loginId);
         if (member == null) return false;
 
