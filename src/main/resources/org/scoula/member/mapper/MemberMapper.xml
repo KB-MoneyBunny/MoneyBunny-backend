@@ -26,7 +26,11 @@
         VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0)
     </insert>
 
-
-
+    <!-- 사용자 ID로 회원 정보 조회 -->
+    <select id="findByUserId" resultMap="memberMap">
+        SELECT user_id, login_id, password, email, create_at, name
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
 
 </mapper>
