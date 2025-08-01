@@ -154,4 +154,7 @@ public interface PolicyMapper {
     PolicyVectorVO findByPolicyId(Long policyId);
 
     Long findPolicyIdByPolicyNo(String policyNo);
+
+    /** 당일 생성된 신규 정책 조회 */
+    List<YouthPolicyVO> findTodayNewPolicies();
 }

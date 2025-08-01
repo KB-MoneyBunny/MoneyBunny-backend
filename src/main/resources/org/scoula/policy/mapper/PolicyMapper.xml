@@ -378,4 +378,11 @@
     <select id="findPolicyIdByPolicyNo" parameterType="string" resultType="long">
         SELECT id FROM youth_policy WHERE policy_no = #{policyNo}
     </select>
+
+    <!-- 당일 생성된 신규 정책 조회 -->
+    <select id="findTodayNewPolicies" resultType="org.scoula.policy.domain.YouthPolicyVO">
+        SELECT * FROM youth_policy 
+        WHERE DATE(created_at) = CURDATE()
+        ORDER BY created_at DESC
+    </select>
 </mapper>
