@@ -21,12 +21,18 @@
         WHERE login_id = #{username}
     </select>
 
+    <select id="findByUsername" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users WHERE login_id = #{username}
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
         INSERT INTO users (login_id, email, password, name, create_at, point)
         VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0)
     </insert>
 
-
-
+    <!-- 이메일 중복 검사  -->
+    <select id="getByEmail" parameterType="string" resultType="org.scoula.security.account.domain.MemberVO">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
 
 </mapper>
