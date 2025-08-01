@@ -177,3 +177,19 @@ All external APIs follow a similar pattern:
    - Use Swagger annotations (`@ApiOperation`, `@Api`) for all endpoints
    - Access Swagger UI at `/swagger-ui.html`
    - Keep API descriptions concise but informative
+
+## Git Commit Convention
+
+**Commit Message Format:**
+- ⚡️feat: 새로운 기능추가 내용 #이슈번호
+- 🚨bug: 버그 수정 내용 #이슈번호
+- 📝docs: 문서 관련 변경 #이슈번호
+- 🎨design: 디자인 내용 #이슈번호
+- ♻️refactor: 리펙토링 내용 #이슈번호
+- 🙈test: 테스트 코드 내용 #이슈번호
+- 🩹fix: 고친 내용 #이슈번호
+
+**Rules:**
+- 한 줄로 작성
+- 부가 설명 없이 간결하게
+- 논리적 묶음 단위로 커밋
