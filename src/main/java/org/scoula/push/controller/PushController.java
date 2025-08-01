@@ -7,6 +7,7 @@ import org.scoula.push.dto.request.SubscriptionRequest;
 import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.dto.response.SubscriptionStatusResponse;
 import org.scoula.push.service.BookmarkPolicyNotificationService;
+import org.scoula.push.service.NewPolicyNotificationService;
 import org.scoula.push.service.PushNotificationService;
 import org.scoula.push.service.SubscriptionService;
 import org.scoula.push.service.UserNotificationService;
@@ -34,6 +35,7 @@ public class PushController {
     private final SubscriptionService subscriptionService;
     private final PushNotificationService pushNotificationService;
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
+    private final NewPolicyNotificationService newPolicyNotificationService;
 
     // ===============================
     // 알림 관련 API
@@ -156,6 +158,19 @@ public class PushController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("알림 발송 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/new-policy/send")
+    @ApiOperation(value = "신규 정책 알림 수동 발송",
+                  notes = "오늘 생성된 정책 중 사용자 조건에 맞는 정책들에 대해 신규 정책 알림을 즉시 발송합니다.")
+    public ResponseEntity<String> sendNewPolicyNotifications() {
+        try {
+            newPolicyNotificationService.processNewPolicyAlerts();
+            return ResponseEntity.ok("신규 정책 알림이 성공적으로 발송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("신규 정책 알림 발송 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
