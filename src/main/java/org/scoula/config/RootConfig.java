@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
@@ -50,6 +51,7 @@ import javax.sql.DataSource;
         "org.scoula.userPolicy.util" // 사용자 정책 유틸리티 스캔 추가
 })
 @EnableScheduling // 스케줄링 기능 활성화
+@EnableRetry // 재시도(@Retryable) 기능 활성화
 public class RootConfig {
 
     // 현재는 기본 설정만 있는 상태
