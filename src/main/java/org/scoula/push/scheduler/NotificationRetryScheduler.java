@@ -52,6 +52,35 @@ public class NotificationRetryScheduler {
         retryFailedNotifications();
     }
 
+    // ==================== 신규 정책 알림 재시도 ====================
+
+    /**
+     * 신규 정책 알림 1차 재시도 - 18:20
+     */
+    @Scheduled(cron = "0 20 18 * * *", zone = "Asia/Seoul")
+    public void newPolicyFirstRetry() {
+        log.info("📧 [신규 정책 알림] 1차 재시도 체크 (18:20)");
+        retryFailedNotifications();
+    }
+
+    /**
+     * 신규 정책 알림 2차 재시도 - 18:40
+     */
+    @Scheduled(cron = "0 40 18 * * *", zone = "Asia/Seoul")
+    public void newPolicySecondRetry() {
+        log.info("📧 [신규 정책 알림] 2차 재시도 체크 (18:40)");
+        retryFailedNotifications();
+    }
+
+    /**
+     * 신규 정책 알림 3차 재시도 - 19:00 (최종)
+     */
+    @Scheduled(cron = "0 0 19 * * *", zone = "Asia/Seoul")
+    public void newPolicyFinalRetry() {
+        log.info("📧 [신규 정책 알림] 3차 재시도 체크 (19:00) - 최종");
+        retryFailedNotifications();
+    }
+
     /**
      * 누락된 알림 재전송 처리
      * 10분 이상 PENDING 상태인 로그를 대상으로 재전송 시도
