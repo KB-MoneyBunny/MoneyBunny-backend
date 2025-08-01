@@ -55,28 +55,6 @@ public class PolicyController {
     }
 
     /**
-     * 정책 ID로 정책 조회 API
-     * 이 API는 정책 ID를 기반으로 특정 정책을 조회하는 기능을 제공합니다.
-     * 정책 ID는 URL 경로 변수로 전달되며, 해당 ID에 해당하는 정책 정보를 반환합니다.
-     * GET: http://localhost:8080/policy/{policyId}
-     *
-     * @return ResponseEntity
-     * - 200 OK: 정책 조회 성공시 PolicyDetailDTO 객체 반환
-     * - 400 Bad Request: 잘못된 요청 데이터 (예: 존재하지 않는 정책 ID 등)
-     * - 500 Internal Server Error: 서버 내부 오류 발생 시
-     */
-    @ApiOperation(value = "정책 ID로 정책 조회", notes = "정책 ID를 기반으로 특정 정책을 조회하는 API")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = PolicyDetailDTO.class),
-            @ApiResponse(code = 400, message = "잘못된 요청입니다."),
-            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
-    })
-    @GetMapping("/{policyId}")
-    public PolicyDetailDTO getPolicyById(@PathVariable String policyId) {
-        return policyService.getPolicyById(policyId);
-    }
-
-    /**
      * 사용자용 정책 상세 조회 API (조회수 증가 + 벡터 갱신)
      * 로그인 사용자의 경우 Redis에 조회 기록 저장 및 첫 조회 시 벡터 갱신 (가중치 0.1)
      * GET: http://localhost:8080/policy/detail/{policyId}
