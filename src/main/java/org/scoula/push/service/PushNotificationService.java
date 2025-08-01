@@ -3,7 +3,7 @@ package org.scoula.push.service;
 
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
-import org.scoula.push.domain.Subscription;
+import org.scoula.push.domain.SubscriptionVO;
 import org.scoula.push.mapper.SubscriptionMapper;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ public class PushNotificationService {
     public void sendAllCustomNotifications() {
         System.out.println("ℹ️ [FCM] 맞춤 알림 전송 작업을 시작합니다.");
         // 모든 알림 타입의 활성 구독자를 조회 (테스트용이므로 FEEDBACK 타입으로 통일)
-        List<Subscription> subscriptions = subscriptionMapper.findActiveByNotificationType("FEEDBACK");
+        List<SubscriptionVO> subscriptions = subscriptionMapper.findActiveByNotificationType("FEEDBACK");
         System.out.println("ℹ️ [FCM] DB에서 " + subscriptions.size() + "개의 활성 구독을 찾았습니다.");
 
         if (subscriptions.isEmpty()) {
@@ -27,8 +27,8 @@ public class PushNotificationService {
             return;
         }
 
-        for (Subscription subscription : subscriptions) {
-            String endpoint = subscription.getEndpoint();
+        for (SubscriptionVO subscription : subscriptions) {
+            String endpoint = subscription.getFcmToken();
             Long userId = subscription.getUserId();
 
             System.out.println("ℹ️ [FCM] 사용자 ID " + userId + "에게 알림 전송을 시도합니다. 토큰: " + endpoint);
