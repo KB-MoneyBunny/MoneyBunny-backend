@@ -149,9 +149,13 @@ public class UserPolicyController {
         // 검색 결과가 있을 경우에만 검색어 저장
         if (searchResultDTO != null && !searchResultDTO.isEmpty()) {
             if (searchRequestDTO.getSearchTexts() != null && !searchRequestDTO.getSearchTexts().isEmpty()) {
-                userPolicyService.saveSearchText(
-                        searchRequestDTO.getSearchTexts().stream().distinct().collect(Collectors.toList())
-                );
+                List<String> searchTexts = searchRequestDTO.getSearchTexts();
+
+                // 검색어 리스트 → 하나의 문장으로 병
+                String searchText = String.join(" ", searchTexts).trim().replaceAll("\\s+", " ");
+
+                userPolicyService.saveSearchText(searchText);   // 인기 검색어용 (ZSet 증가)
+                userPolicyService.saveRecentSearch(username, searchText);   // 유저별 최근 검색어 저장
             }
         } else {
             return ResponseEntity.notFound().build();
@@ -177,9 +181,25 @@ public class UserPolicyController {
     @GetMapping("/popular-keywords")
     public ResponseEntity<List<String>> getPopularKeywords() {
         List<String> popularKeywords = userPolicyService.getPopularKeywords(10); // 상위 10개 인기 검색어 조회
-        if (popularKeywords == null || popularKeywords.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
         return ResponseEntity.ok(popularKeywords);
+    }
+
+    /**
+     * 최근 검색어 조회 API
+     * GET: http://localhost:8080/api/userPolicy/recent-keywords
+     * @return ResponseEntity
+     *         - 200 OK: 최근 검색어 목록 반환
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "최근 검색어 조회", notes = "최근 검색어 목록을 조회하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = String.class, responseContainer = "List"),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("/recent-keywords")
+    public ResponseEntity<List<String>> getRecentSearches(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        List<String> recentSearches = userPolicyService.getRecentSearches(username);
+        return ResponseEntity.ok(recentSearches);
     }
 }

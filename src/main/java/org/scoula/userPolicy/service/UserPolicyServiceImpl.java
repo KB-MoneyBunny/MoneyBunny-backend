@@ -12,6 +12,7 @@ import org.scoula.userPolicy.dto.SearchRequestDTO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.dto.TestResultRequestDTO;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.scoula.userPolicy.util.VectorUtil;
@@ -45,6 +46,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
 
     private static final String POPULAR_KEYWORDS_KEY = "popular_keywords";
+    private static final String RECENT_KEYWORDS_KEY_PREFIX = "recent_keywords:";
+    private static final int MAX_RECENT_KEYWORDS = 6;
     private final PolicyInteractionMapper policyInteractionMapper;
 
 
@@ -785,19 +788,16 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
     /**
      * 검색어를 Redis의 Sorted Set에 저장하고 점수를 1 증가시킵니다.
-     * @param searchTexts 검색어 리스트
+     * @param searchText 검색어
      */
-    public void saveSearchText(List<String> searchTexts) {
-        for(String searchText : searchTexts) {
-            if (searchText != null && !searchText.trim().isEmpty()) {
-                String trimmedKeyword = searchText.trim();
-                try {
-                    ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
-                    zSetOperations.incrementScore(POPULAR_KEYWORDS_KEY, trimmedKeyword, 1);
-                    log.info("인기 검색어 저장: '{}'", trimmedKeyword);
-                } catch (Exception e) {
-                    log.error("인기 검색어 저장 실패: {}", trimmedKeyword, e);
-                }
+    public void saveSearchText(String searchText) {
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            try {
+                ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
+                zSetOperations.incrementScore(POPULAR_KEYWORDS_KEY, searchText, 1);
+                log.info("인기 검색어 저장: '{}'", searchText);
+            } catch (Exception e) {
+                log.error("인기 검색어 저장 실패: {}", searchText, e);
             }
         }
     }
@@ -815,6 +815,50 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             return new ArrayList<>(keywords != null ? keywords : Collections.emptyList());
         } catch (Exception e) {
             log.error("인기 검색어 조회 실패", e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 최근 검색어를 저장합니다.
+     * @param username 사용자 이름
+     * @param searchText 검색어
+     */
+    @Override
+    public void saveRecentSearch(String username, String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return;
+        }
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+
+        try {
+            ListOperations<String, String> listOperations = redisTemplate.opsForList();
+            // 기존에 있던 검색어는 삭제
+            listOperations.remove(key, 0, searchText);
+            // 새로운 검색어를 맨 앞에 추가
+            listOperations.leftPush(key, searchText);
+            // 리스트의 길이를 6으로 제한
+            listOperations.trim(key, 0, MAX_RECENT_KEYWORDS - 1);
+            log.info("최근 검색어 저장: username={}, keyword={}", username, searchText);
+        } catch (Exception e) {
+            log.error("최근 검색어 저장 실패: username={}, keyword={}", username, searchText, e);
+        }
+    }
+
+    /**
+     * 최근 검색어 목록을 조회합니다.
+     * @param username 사용자 이름
+     * @return 최근 검색어 목록
+     */
+    @Override
+    public List<String> getRecentSearches(String username) {
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+        try {
+            ListOperations<String, String> listOperations = redisTemplate.opsForList();
+            List<String> recentKeywords = listOperations.range(key, 0, MAX_RECENT_KEYWORDS - 1);
+            return recentKeywords != null ? recentKeywords : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("최근 검색어 조회 실패: username={}", username, e);
             return Collections.emptyList();
         }
     }
