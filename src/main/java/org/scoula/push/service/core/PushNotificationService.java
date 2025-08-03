@@ -37,14 +37,11 @@ public class PushNotificationService {
             String title = "💰 머니버니 알림";
             String body = "안녕하세요 사용자 #" + userId + "님, 맞춤 정책이 도착했어요!";
 
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
-
             Message message = Message.builder()
                     .setToken(endpoint)
-                    .setNotification(notification)
+                    .putData("title", title)
+                    .putData("body", body)
+                    .putData("targetUrl", "/")
                     .build();
 
             try {
