@@ -1,4 +1,4 @@
-package org.scoula.push.service;
+package org.scoula.push.service.core;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -10,7 +10,6 @@ import org.scoula.push.domain.NotificationSendLogVO;
 import org.scoula.push.mapper.NotificationSendLogMapper;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 

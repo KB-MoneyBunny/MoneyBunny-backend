@@ -1,9 +1,5 @@
-package org.scoula.push.service;
+package org.scoula.push.service.subscription;
 
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.push.domain.NotificationType;
@@ -12,6 +8,7 @@ import org.scoula.push.domain.UserNotificationVO;
 import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.mapper.SubscriptionMapper;
 import org.scoula.push.mapper.UserNotificationMapper;
+import org.scoula.push.service.core.AsyncNotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

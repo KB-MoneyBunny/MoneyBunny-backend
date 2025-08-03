@@ -1,5 +1,5 @@
 // PushNotificationService.java
-package org.scoula.push.service;
+package org.scoula.push.service.core;
 
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;

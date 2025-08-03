@@ -1,4 +1,4 @@
-package org.scoula.push.service;
+package org.scoula.push.service.notification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +7,7 @@ import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
-import org.scoula.push.domain.NotificationType;
+import org.scoula.push.service.subscription.UserNotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

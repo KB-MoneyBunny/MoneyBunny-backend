@@ -2,7 +2,7 @@ package org.scoula.push.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scoula.push.service.AsyncNotificationService;
+import org.scoula.push.service.core.AsyncNotificationService;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.listener.RetryListenerSupport;

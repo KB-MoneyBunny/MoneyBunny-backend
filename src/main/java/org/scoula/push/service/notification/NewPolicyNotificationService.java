@@ -1,4 +1,4 @@
-package org.scoula.push.service;
+package org.scoula.push.service.notification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +7,7 @@ import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.push.domain.SubscriptionVO;
 import org.scoula.push.mapper.SubscriptionMapper;
+import org.scoula.push.service.subscription.UserNotificationService;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.userPolicy.dto.SearchResultDTO;
 import org.scoula.userPolicy.service.UserPolicyService;
