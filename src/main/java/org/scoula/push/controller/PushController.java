@@ -8,6 +8,7 @@ import org.scoula.push.dto.request.SubscriptionRequest;
 import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.dto.response.SubscriptionStatusResponse;
 import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
+import org.scoula.push.service.notification.FeedbackNotificationService;
 import org.scoula.push.service.notification.NewPolicyNotificationService;
 import org.scoula.push.service.notification.Top3NotificationService;
 import org.scoula.push.service.core.PushNotificationService;
@@ -39,6 +40,7 @@ public class PushController {
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
     private final NewPolicyNotificationService newPolicyNotificationService;
     private final Top3NotificationService top3NotificationService;
+    private final FeedbackNotificationService feedbackNotificationService;
 
     // ===============================
     // 알림 관련 API
@@ -238,10 +240,10 @@ public class PushController {
 
     @PostMapping("/admin/feedback/send") 
     @ApiOperation(value = "피드백 알림 수동 발송",
-                  notes = "모든 사용자에게 개인 맞춤 피드백 알림을 발송합니다. 현재는 미구현 상태입니다.")
+                  notes = "모든 FEEDBACK 구독자에게 주간 소비 리포트(지출 비교 + 요일별 피크 분석) 알림을 즉시 발송합니다.")
     public ResponseEntity<String> sendFeedbackNotifications() {
         try {
-            userNotificationService.triggerBatchPersonalizedFeedback();
+            feedbackNotificationService.sendWeeklyConsumptionReportToAll();
             return ResponseEntity.ok("피드백 알림이 성공적으로 발송되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
