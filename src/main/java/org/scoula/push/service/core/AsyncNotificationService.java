@@ -34,7 +34,7 @@ public class AsyncNotificationService {
     /**
      * 비동기 FCM 발송 (발송 로그 자동 기록)
      */
-    @Async
+    @Async("fcmTaskExecutor")
     public CompletableFuture<Void> sendFCMWithLogging(Long notificationId, String fcmToken, String title, String message) {
         // 1. 발송 로그 생성 (PENDING 상태)
         NotificationSendLogVO sendLog = NotificationSendLogVO.builder()
@@ -128,7 +128,7 @@ public class AsyncNotificationService {
     /**
      * 재전송을 위한 FCM 발송 (기존 로그 ID 사용)
      */
-    @Async
+    @Async("fcmTaskExecutor")
     public CompletableFuture<Void> retrySendFCM(NotificationSendLogVO sendLog, String title, String message) {
         Long logId = sendLog.getId();
         
