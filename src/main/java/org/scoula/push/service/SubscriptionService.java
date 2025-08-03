@@ -24,20 +24,20 @@ public class SubscriptionService {
 
         if (existing != null) {
             // 기존 구독이 있으면 알림 설정 업데이트
-            existing.setIsActiveBookmark(request.getBookmarkSetting());
-            existing.setIsActiveTop3(request.getTop3Setting());
-            existing.setIsActiveNewPolicy(request.getNewPolicySetting());
-            existing.setIsActiveFeedback(request.getFeedbackSetting());
+            existing.setIsActiveBookmark(request.isActiveBookmark());
+            existing.setIsActiveTop3(request.isActiveTop3());
+            existing.setIsActiveNewPolicy(request.isActiveNewPolicy());
+            existing.setIsActiveFeedback(request.isActiveFeedback());
             subscriptionMapper.updateNotificationSettings(existing);
         } else {
             // 신규 구독 생성
             SubscriptionVO subscription = new SubscriptionVO();
             subscription.setUserId(userId);
             subscription.setFcmToken(request.getToken());
-            subscription.setIsActiveBookmark(request.getBookmarkSetting());
-            subscription.setIsActiveTop3(request.getTop3Setting());
-            subscription.setIsActiveNewPolicy(request.getNewPolicySetting());
-            subscription.setIsActiveFeedback(request.getFeedbackSetting());
+            subscription.setIsActiveBookmark(request.isActiveBookmark());
+            subscription.setIsActiveTop3(request.isActiveTop3());
+            subscription.setIsActiveNewPolicy(request.isActiveNewPolicy());
+            subscription.setIsActiveFeedback(request.isActiveFeedback());
             subscription.setCreatedAt(LocalDateTime.now());
             subscriptionMapper.insert(subscription);
         }
@@ -50,10 +50,10 @@ public class SubscriptionService {
         SubscriptionVO existing = subscriptionMapper.findByUserId(userId);
         if (existing != null) {
             existing.setFcmToken(request.getToken()); // 토큰도 업데이트
-            existing.setIsActiveBookmark(request.getBookmarkSetting());
-            existing.setIsActiveTop3(request.getTop3Setting());
-            existing.setIsActiveNewPolicy(request.getNewPolicySetting());
-            existing.setIsActiveFeedback(request.getFeedbackSetting());
+            existing.setIsActiveBookmark(request.isActiveBookmark());
+            existing.setIsActiveTop3(request.isActiveTop3());
+            existing.setIsActiveNewPolicy(request.isActiveNewPolicy());
+            existing.setIsActiveFeedback(request.isActiveFeedback());
             subscriptionMapper.updateNotificationSettings(existing);
         }
     }
