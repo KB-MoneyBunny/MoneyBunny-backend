@@ -3,14 +3,15 @@ package org.scoula.push.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.scoula.push.dto.request.NotificationToggleRequest;
 import org.scoula.push.dto.request.SubscriptionRequest;
 import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.dto.response.SubscriptionStatusResponse;
-import org.scoula.push.service.BookmarkPolicyNotificationService;
-import org.scoula.push.service.NewPolicyNotificationService;
-import org.scoula.push.service.PushNotificationService;
-import org.scoula.push.service.SubscriptionService;
-import org.scoula.push.service.UserNotificationService;
+import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
+import org.scoula.push.service.notification.NewPolicyNotificationService;
+import org.scoula.push.service.core.PushNotificationService;
+import org.scoula.push.service.subscription.SubscriptionService;
+import org.scoula.push.service.subscription.UserNotificationService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -96,30 +97,16 @@ public class PushController {
     // ===============================
 
     /**
-     * 알림 구독 등록
+     * FCM 토큰 초기 등록 및 전체 알림 설정
      */
     @PostMapping("/subscriptions")
-    @ApiOperation(value = "푸시 알림 구독 등록", 
-                  notes = "FCM 토큰을 등록하여 푸시 알림을 구독합니다. 이미 등록된 토큰인 경우 활성화 상태로 변경됩니다.")
-    public ResponseEntity<Void> subscribe(
-            @AuthenticationPrincipal CustomUser customUser,
+    @ApiOperation(value = "FCM 토큰 등록 및 초기 알림 설정", 
+                  notes = "앱 최초 설치 시 FCM 토큰을 등록하고 모든 알림 타입의 초기 설정을 한번에 진행합니다.")
+    public ResponseEntity<Void> registerFcmToken(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestBody SubscriptionRequest request) {
         Long userId = customUser.getMember().getUserId();
         subscriptionService.subscribe(userId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 알림 구독 해제
-     */
-    @DeleteMapping("/subscriptions")
-    @ApiOperation(value = "푸시 알림 구독 해제", 
-                  notes = "FCM 토큰을 비활성화하여 푸시 알림 수신을 중단합니다. 토큰은 삭제되지 않고 비활성 상태로 변경됩니다.")
-    public ResponseEntity<Void> unsubscribe(
-            @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody SubscriptionRequest request) {
-        Long userId = customUser.getMember().getUserId();
-        subscriptionService.updateNotificationSettings(userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -134,6 +121,66 @@ public class PushController {
         Long userId = customUser.getMember().getUserId();
         SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId);
         return ResponseEntity.ok(status);
+    }
+
+    // ===============================
+    // 개별 알림 타입 토글 API (실무에서 많이 사용하는 방식)
+    // ===============================
+
+    /**
+     * 북마크 알림 토글
+     */
+    @PutMapping("/subscriptions/bookmark")
+    @ApiOperation(value = "북마크 알림 토글", 
+                  notes = "북마크 정책 알림의 활성화/비활성화를 즉시 토글합니다.")
+    public ResponseEntity<Void> toggleBookmarkNotification(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestBody NotificationToggleRequest request) {
+        Long userId = customUser.getMember().getUserId();
+        subscriptionService.toggleBookmarkNotification(userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * TOP3 알림 토글
+     */
+    @PutMapping("/subscriptions/top3")
+    @ApiOperation(value = "TOP3 알림 토글", 
+                  notes = "TOP3 정책 추천 알림의 활성화/비활성화를 즉시 토글합니다.")
+    public ResponseEntity<Void> toggleTop3Notification(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestBody NotificationToggleRequest request) {
+        Long userId = customUser.getMember().getUserId();
+        subscriptionService.toggleTop3Notification(userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 신규 정책 알림 토글
+     */
+    @PutMapping("/subscriptions/new-policy")
+    @ApiOperation(value = "신규 정책 알림 토글", 
+                  notes = "신규 정책 알림의 활성화/비활성화를 즉시 토글합니다.")
+    public ResponseEntity<Void> toggleNewPolicyNotification(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestBody NotificationToggleRequest request) {
+        Long userId = customUser.getMember().getUserId();
+        subscriptionService.toggleNewPolicyNotification(userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 피드백 알림 토글
+     */
+    @PutMapping("/subscriptions/feedback")
+    @ApiOperation(value = "피드백 알림 토글", 
+                  notes = "개인 맞춤 피드백 알림의 활성화/비활성화를 즉시 토글합니다.")
+    public ResponseEntity<Void> toggleFeedbackNotification(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestBody NotificationToggleRequest request) {
+        Long userId = customUser.getMember().getUserId();
+        subscriptionService.toggleFeedbackNotification(userId, request);
+        return ResponseEntity.ok().build();
     }
 
     // ===============================
