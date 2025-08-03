@@ -111,14 +111,10 @@ public class AsyncNotificationService {
         listeners = {"notificationRetryListener"}
     )
     private void sendFCMWithRetry(String fcmToken, String title, String message) throws FirebaseMessagingException {
-        Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(message)
-                .build();
-
         Message fcmMessage = Message.builder()
                 .setToken(fcmToken)
-                .setNotification(notification)
+                .putData("title", title)
+                .putData("body", message)
                 .build();
 
         String response = firebaseMessaging.send(fcmMessage);
