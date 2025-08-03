@@ -73,7 +73,7 @@
         </collection>
 
         <collection property="educationLevels" ofType="org.scoula.userPolicy.domain.UserEducationLevelVO">
-            <id property="eduId" column="edu_id"/>
+            <id property="educationLevelId" column="education_level_id"/>
             <result property="userPolicyConditionId" column="user_policy_condition_id"/>
         </collection>
 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.codef.mapper.UserAccountMapper">
+
+    <resultMap id="UserAccountMap" type="org.scoula.codef.domain.UserAccountVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bankCode" column="bank_code"/>
+        <result property="accountName" column="account_name"/>
+        <result property="accountNumber" column="account_number"
+                typeHandler="org.scoula.codef.util.AesEncryptTypeHandler"/>
+        <result property="accountType" column="account_type"/>
+        <result property="balance" column="balance"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <update id="updateBalance">
+        UPDATE user_account
+        SET balance = #{balance}
+        WHERE id = #{accountId}
+    </update>
+
+    <select id="existsAccount" resultType="int">
+        SELECT COUNT(1)
+        FROM user_account
+        WHERE user_id = #{userId}
+        AND account_number = #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
+    </select>
+
+
+    <select id="findIdByUserIdAndAccountNumber" resultType="long">
+        SELECT id FROM user_account WHERE user_id = #{userId} AND account_number = #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}
+    </select>
+
+    <select id="findByUserId" parameterType="long" resultMap="UserAccountMap">
+        SELECT id, user_id, bank_code, account_name, account_number, account_type, balance, created_at
+        FROM user_account
+        WHERE user_id = #{userId}
+        ORDER BY id ASC
+    </select>
+
+    <insert id="insertUserAccount" parameterType="org.scoula.codef.domain.UserAccountVO">
+        INSERT INTO user_account
+        (user_id, account_number, account_name, account_type, balance, bank_code)
+        VALUES
+            (#{userId}, #{accountNumber, typeHandler=org.scoula.codef.util.AesEncryptTypeHandler}, #{accountName}, #{accountType}, #{balance}, #{bankCode})
+    </insert>
+
+
+</mapper>
