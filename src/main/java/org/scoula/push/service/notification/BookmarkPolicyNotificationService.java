@@ -105,7 +105,7 @@ public class BookmarkPolicyNotificationService {
         if (today.equals(period.getStartDate())) {
             String title = "🎯 정책 신청 시작!";
             String message = String.format("%s님, '%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요 💪", displayName, policyTitle);
-            String targetUrl = "/policy/" + policyId;
+            String targetUrl = "/policy/detail/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
             log.info("📌 [북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", displayName, policyTitle);
@@ -118,7 +118,7 @@ public class BookmarkPolicyNotificationService {
         if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
             String title = getDeadlineNotificationTitle(daysUntilDeadline);
             String message = getDeadlineNotificationMessage(policyTitle, daysUntilDeadline, displayName);
-            String targetUrl = "/policy/" + policyId;
+            String targetUrl = "/policy/detail/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
             log.info("📌 [북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, displayName, policyTitle);
