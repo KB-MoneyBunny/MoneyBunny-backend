@@ -95,4 +95,5 @@ src/main/resources/firebase/firebase-service-account.json
 *.html
 *.db
 *.sqlite
-
+.claude/
+CLAUDE.md
