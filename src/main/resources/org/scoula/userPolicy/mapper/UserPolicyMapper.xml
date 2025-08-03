@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.userPolicy.mapper.UserPolicyMapper">
+
+    <insert id="saveUserPolicyCondition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_policy_condition (user_id, age, marriage, income, money_rank, period_rank, popularity_rank, created_at, updated_at)
+        VALUES (#{userId}, #{age}, #{marriage}, #{income}, #{moneyRank}, #{periodRank}, #{popularityRank}, NOW(), NOW())
+    </insert>
+
+    <insert id="saveUserMajors" parameterType="java.util.List">
+        INSERT INTO user_major (user_policy_condition_id, major_id, created_at)
+        VALUES
+        <foreach collection="list" item="major" separator=",">
+            (#{major.userPolicyConditionId}, #{major.majorId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserSpecialConditions" parameterType="java.util.List">
+        INSERT INTO user_special_condition (user_policy_condition_id, special_condition_id, created_at)
+        VALUES
+        <foreach collection="list" item="specialCondition" separator=",">
+            (#{specialCondition.userPolicyConditionId}, #{specialCondition.specialConditionId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserPolicyKeywords" parameterType="java.util.List">
+        INSERT INTO user_policy_keyword (user_policy_condition_id, keyword_id, created_at)
+        VALUES
+        <foreach collection="list" item="keyword" separator=",">
+            (#{keyword.userPolicyConditionId}, #{keyword.keywordId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserPolicyRegions" parameterType="java.util.List">
+        INSERT INTO user_policy_region (user_policy_condition_id, region_id, created_at)
+        VALUES
+        <foreach collection="list" item="region" separator=",">
+            (#{region.userPolicyConditionId}, #{region.regionId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserEmploymentStatuses" parameterType="java.util.List">
+        INSERT INTO user_employment_status (user_policy_condition_id, employment_status_id, created_at)
+        VALUES
+        <foreach collection="list" item="employmentStatus" separator=",">
+            (#{employmentStatus.userPolicyConditionId}, #{employmentStatus.employmentStatusId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="saveUserEducationLevels" parameterType="java.util.List">
+        INSERT INTO user_education_level (user_policy_condition_id, education_level_id, created_at)
+        VALUES
+        <foreach collection="list" item="educationLevel" separator=",">
+            (#{educationLevel.userPolicyConditionId}, #{educationLevel.educationLevelId}, NOW())
+        </foreach>
+    </insert>
+
+    <resultMap id="userPolicyConditionMap" type="org.scoula.userPolicy.domain.UserPolicyConditionVO">
+        <id property="id" column="upc_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="age" column="age"/>
+        <result property="marriage" column="marriage"/>
+        <result property="income" column="income"/>
+        <result property="moneyRank" column="money_rank"/>
+        <result property="periodRank" column="period_rank"/>
+        <result property="popularityRank" column="popularity_rank"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+
+        <collection property="regions" ofType="org.scoula.userPolicy.domain.UserRegionVO">
+            <id property="regionId" column="region_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="educationLevels" ofType="org.scoula.userPolicy.domain.UserEducationLevelVO">
+            <id property="eduId" column="edu_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="employmentStatuses" ofType="org.scoula.userPolicy.domain.UserEmploymentStatusVO">
+            <id property="employmentStatusId" column="emp_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="majors" ofType="org.scoula.userPolicy.domain.UserMajorVO">
+            <id property="majorId" column="major_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="specialConditions" ofType="org.scoula.userPolicy.domain.UserSpecialConditionVO">
+            <id property="specialConditionId" column="spec_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+
+        <collection property="keywords" ofType="org.scoula.userPolicy.domain.UserPolicyKeywordVO">
+            <id property="keywordId" column="keyword_id"/>
+            <result property="userPolicyConditionId" column="user_policy_condition_id"/>
+        </collection>
+    </resultMap>
+
+    <select id="findUserPolicyConditionByUserId" resultMap="userPolicyConditionMap">
+        SELECT
+            upc.id AS upc_id,
+            upc.user_id,
+            upc.age,
+            upc.marriage,
+            upc.income,
+            upc.money_rank,
+            upc.period_rank,
+            upc.popularity_rank,
+            upc.created_at,
+            upc.updated_at,
+
+            ur.id AS region_id,
+
+            ue.id AS edu_id,
+
+            ues.id AS emp_id,
+
+            um.id AS major_id,
+
+            usc.id AS spec_id,
+
+            upk.id AS keyword_id
+
+        FROM user_policy_condition upc
+                 LEFT JOIN user_policy_region ur ON ur.user_policy_condition_id = upc.id
+                 LEFT JOIN user_education_level ue ON ue.user_policy_condition_id = upc.id
+                 LEFT JOIN user_employment_status ues ON ues.user_policy_condition_id = upc.id
+                 LEFT JOIN user_major um ON um.user_policy_condition_id = upc.id
+                 LEFT JOIN user_special_condition usc ON usc.user_policy_condition_id = upc.id
+                 LEFT JOIN user_policy_keyword upk ON upk.user_policy_condition_id = upc.id
+        WHERE upc.user_id = #{userId}
+    </select>
+
+
+
+    <!-- 벡터 정보를 포함한 정책 조회 (N+1 문제 해결용) -->
+    <select id="findFilteredPoliciesWithVectors" resultType="org.scoula.userPolicy.dto.PolicyWithVectorDTO">
+        SELECT
+            yp.id as policyId,
+            yp.title as title,
+            yp.policy_benefit_description as policyBenefitDescription,
+            ypp.apply_period as endDate,
+            yp.policy_benefit_amount as policyBenefitAmount,
+            -- 벡터 정보 추가 (LEFT JOIN으로 벡터가 없어도 조회 가능)
+            pv.vec_benefit_amount as vecBenefitAmount,
+            pv.vec_deadline as vecDeadline,
+            pv.vec_views as vecViews
+        FROM youth_policy yp
+        JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
+        LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id
+        LEFT JOIN policy_vector pv ON yp.id = pv.policy_id  -- 벡터 조인 추가
+        WHERE yp.is_financial_support = 1
+        AND (
+        ypc.age_limit_yn = 1
+        OR (
+        (ypc.max_age IS NULL AND #{age} >= ypc.min_age)
+        OR
+        (ypc.max_age IS NOT NULL AND #{age} >= ypc.min_age AND ypc.max_age >= #{age})
+        )
+        OR #{age} = 0
+        )
+
+        <!-- 혼인 여부 조건 -->
+        AND (
+        #{marriage} = ""
+        OR ypc.marriage_status IS NULL
+        OR TRIM(ypc.marriage_status) = ''
+        OR ypc.marriage_status = '0055003'
+        OR ypc.marriage_status = #{marriage}
+        )
+
+        <!-- 소득 조건 -->
+        AND (
+        #{income} = 0
+        OR ypc.income_condition_code IS NULL
+        OR TRIM(ypc.income_condition_code) = ''
+        OR ypc.income_condition_code = '0043001'
+        OR ypc.income_condition_code = '0043003'
+        OR (
+        ypc.income_condition_code = '0043002'
+        AND (ypc.income_min IS NULL OR #{income} >= ypc.income_min)
+        AND (ypc.income_max IS NULL OR ypc.income_max >= #{income})
+        )
+        )
+
+        <!-- 지역 조건 -->
+        AND (
+            <if test="regions == null or regions.isEmpty()">
+                1=1
+            </if>
+            <if test="regions != null and !regions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_region ypr
+                    JOIN policy_region pr ON ypr.region_id = pr.id
+                    WHERE ypr.policy_id = yp.id
+                    AND (
+                        pr.region_code IN
+                        <foreach collection="regions" item="region" open="(" separator="," close=")">
+                            #{region}
+                        </foreach>
+                        OR pr.region_code = '0000000'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 학력 조건 -->
+        AND (
+            <if test="educationLevels == null or educationLevels.isEmpty()">
+                1=1
+            </if>
+            <if test="educationLevels != null and !educationLevels.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_education_level ypel
+                    JOIN policy_education_level pel ON ypel.education_level_id = pel.id
+                    WHERE ypel.policy_id = yp.id
+                    AND (
+                        pel.education_level IN
+                        <foreach collection="educationLevels" item="level" open="(" separator="," close=")">
+                            #{level}
+                        </foreach>
+                        OR pel.education_level = '제한없음'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 취업 상태 조건 -->
+        AND (
+            <if test="employmentStatuses == null or employmentStatuses.isEmpty()">
+                1=1
+            </if>
+            <if test="employmentStatuses != null and !employmentStatuses.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_employment_status ypes
+                    JOIN policy_employment_status pes ON ypes.employment_status_id = pes.id
+                    WHERE ypes.policy_id = yp.id
+                    AND (
+                        pes.employment_status IN
+                        <foreach collection="employmentStatuses" item="status" open="(" separator="," close=")">
+                            #{status}
+                        </foreach>
+                        OR pes.employment_status = '제한없음'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 전공 조건 -->
+        AND (
+            <if test="majors == null or majors.isEmpty()">
+                1=1
+            </if>
+            <if test="majors != null and !majors.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_major ypm
+                    JOIN policy_major pm ON ypm.major_id = pm.id
+                    WHERE ypm.policy_id = yp.id
+                    AND (
+                        pm.major IN
+                        <foreach collection="majors" item="major" open="(" separator="," close=")">
+                            #{major}
+                        </foreach>
+                        OR pm.major = '제한없음'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 특수 조건 -->
+        AND (
+            <if test="specialConditions == null or specialConditions.isEmpty()">
+                1=1
+            </if>
+            <if test="specialConditions != null and !specialConditions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_special_condition ypsc
+                    JOIN policy_special_condition psc ON ypsc.special_condition_id = psc.id
+                    WHERE ypsc.policy_id = yp.id
+                    AND (
+                        psc.special_condition IN
+                        <foreach collection="specialConditions" item="condition" open="(" separator="," close=")">
+                            #{condition}
+                        </foreach>
+                        OR psc.special_condition = '제한없음'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 키워드 조건 -->
+        AND (
+            <if test="keywords == null or keywords.isEmpty()">
+                1=1
+            </if>
+            <if test="keywords != null and !keywords.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_keyword ypk
+                    JOIN policy_keyword pk ON ypk.keyword_id = pk.id
+                    WHERE ypk.policy_id = yp.id
+                    AND pk.keyword IN
+                    <foreach collection="keywords" item="keyword" open="(" separator="," close=")">
+                        #{keyword}
+                    </foreach>
+                )
+            </if>
+        )
+        <if test="searchTexts != null and searchTexts.size() > 0">
+            AND (
+            <foreach collection="searchTexts" item="searchText" separator="OR">
+                (
+                yp.title LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.description LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.support_content LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <insert id="saveUserFilteredPolicies" parameterType="java.util.List">
+        INSERT INTO user_filtered_policies (user_id, policy_id, created_at)
+        VALUES
+        <foreach collection="list" item="policyList" separator=",">
+            (#{policyList.userId}, #{policyList.policyId}, NOW())
+        </foreach>
+    </insert>
+
+    <update id="updateUserPolicyCondition">
+        UPDATE user_policy_condition
+        SET age = #{age},
+            marriage = #{marriage},
+            income = #{income},
+            money_rank = #{moneyRank},
+            period_rank = #{periodRank},
+            popularity_rank = #{popularityRank},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUserMajorsByConditionId">
+        DELETE FROM user_major WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserSpecialConditionsByConditionId">
+        DELETE FROM user_special_condition WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserPolicyKeywordsByConditionId">
+        DELETE FROM user_policy_keyword WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserPolicyRegionsByConditionId">
+        DELETE FROM user_policy_region WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserEmploymentStatusesByConditionId">
+        DELETE FROM user_employment_status WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserEducationLevelsByConditionId">
+        DELETE FROM user_education_level WHERE user_policy_condition_id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserFilteredPoliciesByUserId">
+        DELETE FROM user_filtered_policies WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="saveUserVector">
+        INSERT INTO user_vector (user_id, vec_benefit_amount, vec_deadline, vec_views, updated_at)
+        VALUES (#{userId}, #{vecBenefitAmount}, #{vecDeadline}, #{vecViews}, NOW())
+    </insert>
+
+    <update id="updateUserVector">
+        UPDATE user_vector
+        SET vec_benefit_amount = #{vecBenefitAmount},
+            vec_deadline = #{vecDeadline},
+            vec_views = #{vecViews},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <select id="findUserVectorByUserId" resultType="org.scoula.userPolicy.domain.UserVectorVO">
+        SELECT *
+        FROM user_vector
+        WHERE user_id = #{userId}
+    </select>
+</mapper>
