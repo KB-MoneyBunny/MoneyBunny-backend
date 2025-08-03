@@ -134,7 +134,7 @@ public class NewPolicyNotificationService {
                     policy.getTitle(),
                     policy.getPolicyBenefitDescription() != null ? 
                             policy.getPolicyBenefitDescription() : policy.getDescription());
-            String targetUrl = "/policy/" + policy.getId();
+            String targetUrl = "/policy/detail/" + policy.getId();
             
             userNotificationService.createAndSendNewPolicyNotification(userId, title, message, targetUrl);
             
