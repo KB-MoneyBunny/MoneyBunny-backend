@@ -10,6 +10,7 @@ import org.scoula.push.domain.NotificationSendLogVO;
 import org.scoula.push.mapper.NotificationSendLogMapper;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,9 @@ public class AsyncNotificationService {
 
     private final FirebaseMessaging firebaseMessaging;
     private final NotificationSendLogMapper sendLogMapper;
+    
+    // 재시도 횟수를 추적하기 위한 ThreadLocal
+    private static final ThreadLocal<Integer> retryCountHolder = new ThreadLocal<>();
 
     /**
      * 비동기 FCM 발송 (발송 로그 자동 기록)
@@ -46,25 +50,50 @@ public class AsyncNotificationService {
         Long logId = sendLog.getId();
 
         // 2. FCM 발송 시도
+        int actualAttempts = 1; // 기본값
         try {
+            retryCountHolder.set(1); // 초기화
             sendFCMWithRetry(fcmToken, title, message);
             
-            // 성공 시 로그 업데이트
+            // 실제 시도 횟수 가져오기
+            actualAttempts = retryCountHolder.get();
+            
+            // 성공 시 로그 업데이트 (실제 시도 횟수 포함)
             sendLogMapper.updateSendLogStatus(logId, 
                 NotificationSendLogVO.SendStatus.SUCCESS, 
                 null, 
                 LocalDateTime.now());
+            
+            // 시도 횟수 업데이트
+            if (actualAttempts > 1) {
+                sendLogMapper.incrementAttemptCount(logId); // 실제 재시도 횟수만큼 증가
+                for (int i = 2; i < actualAttempts; i++) {
+                    sendLogMapper.incrementAttemptCount(logId);
+                }
+            }
                 
-            log.info("[FCM 발송 성공] 알림 ID: {}, 로그 ID: {}", notificationId, logId);
+            log.info("[FCM 발송 성공] 알림 ID: {}, 로그 ID: {}, 시도 횟수: {}", 
+                    notificationId, logId, actualAttempts);
             
         } catch (Exception e) {
-            // 실패 시 로그 업데이트
+            // 실제 시도 횟수 가져오기
+            actualAttempts = retryCountHolder.get() != null ? retryCountHolder.get() : 3;
+            
+            // 실패 시 로그 업데이트 (실제 시도 횟수 포함)
             sendLogMapper.updateSendLogStatus(logId, 
                 NotificationSendLogVO.SendStatus.FAILED, 
                 e.getMessage(), 
                 LocalDateTime.now());
+            
+            // 시도 횟수 업데이트
+            for (int i = 1; i < actualAttempts; i++) {
+                sendLogMapper.incrementAttemptCount(logId);
+            }
                 
-            log.error("[FCM 발송 실패] 알림 ID: {}, 로그 ID: {}, 오류: {}", notificationId, logId, e.getMessage());
+            log.error("[FCM 발송 실패] 알림 ID: {}, 로그 ID: {}, 시도 횟수: {}, 오류: {}", 
+                    notificationId, logId, actualAttempts, e.getMessage());
+        } finally {
+            retryCountHolder.remove(); // 메모리 누수 방지
         }
 
         return CompletableFuture.completedFuture(null);
@@ -72,8 +101,16 @@ public class AsyncNotificationService {
 
     /**
      * FCM 발송 (@Retryable 재시도 메커니즘 포함)
+     * - 1차: 즉시
+     * - 2차: 3초 후
+     * - 3차: 9초 후 (최대 15초까지)
      */
-    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
+    @Retryable(
+        value = {FirebaseMessagingException.class, Exception.class},
+        maxAttempts = 3, 
+        backoff = @Backoff(delay = 3000, multiplier = 3, maxDelay = 15000),
+        listeners = {"notificationRetryListener"}
+    )
     private void sendFCMWithRetry(String fcmToken, String title, String message) throws FirebaseMessagingException {
         Notification notification = Notification.builder()
                 .setTitle(title)
