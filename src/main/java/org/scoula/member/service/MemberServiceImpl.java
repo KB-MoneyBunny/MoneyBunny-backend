@@ -60,6 +60,9 @@ public class MemberServiceImpl implements MemberService {
   @Transactional
   @Override
   public MemberDTO join(MemberJoinDTO dto) {
+
+    validateJoinInfo(dto); // 유효성 검사 추가
+
     MemberVO member = dto.toVO();
 
     // 비밀번호 암호화
@@ -77,6 +80,41 @@ public class MemberServiceImpl implements MemberService {
     // 저장된 회원 정보 반환
     return get(member.getLoginId());
   }
+
+  public void validateJoinInfo(MemberJoinDTO dto) {
+    String email = dto.getEmail();
+    String password = dto.getPassword();
+
+    // 이메일 유효성
+    if (email == null || !email.contains("@")) {
+      throw new IllegalArgumentException("유효한 이메일 주소를 입력해주세요.");
+    }
+
+    if (mapper.getByEmail(email) != null) {
+      throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+    }
+
+
+    // 비밀번호 유효성
+    if (password == null || password.length() < 10) {
+      throw new IllegalArgumentException("비밀번호는 10자 이상이어야 합니다.");
+    }
+
+    boolean hasLetter = password.matches(".*[A-Za-z].*");
+    boolean hasDigit = password.matches(".*[0-9].*");
+    boolean hasSpecial = password.matches(".*[!@#$%^&*(),.?\":{}|<>~`\\-_=+\\\\/\\[\\]].*");
+
+    if (!hasLetter || !hasDigit || !hasSpecial) {
+      throw new IllegalArgumentException("비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다.");
+    }
+  }
+
+  @Override
+  public boolean isEmailExists(String email) {
+    MemberVO member = mapper.getByEmail(email);
+    return member != null;
+  }
+
 
 
 

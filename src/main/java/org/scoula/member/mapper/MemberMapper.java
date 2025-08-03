@@ -11,4 +11,6 @@ public interface MemberMapper {
   MemberVO findByUsername(String username);         // ID 중복 체크용 조회
   MemberVO findByUserId(@Param("userId") Long userId);  // 사용자 ID로 조회
   int insert(MemberVO member);                      // 회원정보 저장
+  MemberVO getByEmail(String email);                // 이메일 중복 검사
+
 }

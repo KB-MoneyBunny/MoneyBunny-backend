@@ -14,4 +14,6 @@ public interface AccountTransactionMapper {
     Set<String> findAllTxKeyByAccountIdFromDate(@Param("accountId") Long accountId, @Param("startDate") String startDate);
 
     void insertAccountTransactions(List<AccountTransactionVO> batch);
+
+    Long findLatestBalanceAfterByAccountId(Long accountId);
 }
