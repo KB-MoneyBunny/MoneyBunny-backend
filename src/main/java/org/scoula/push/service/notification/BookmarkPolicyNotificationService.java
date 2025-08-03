@@ -2,12 +2,14 @@ package org.scoula.push.service.notification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.member.mapper.MemberMapper;
 import org.scoula.policy.domain.YouthPolicyPeriodVO;
 import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.scoula.push.service.subscription.UserNotificationService;
+import org.scoula.security.account.domain.MemberVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class BookmarkPolicyNotificationService {
 
     private final PolicyInteractionMapper policyInteractionMapper;
     private final PolicyMapper policyMapper;
+    private final MemberMapper memberMapper;
     private final UserNotificationService userNotificationService;
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -90,14 +93,22 @@ public class BookmarkPolicyNotificationService {
         String policyTitle = policy.getTitle();
         Long policyId = policy.getId();
 
+        // 사용자 정보 조회
+        MemberVO member = memberMapper.findByUserId(userId);
+        if (member == null) {
+            log.warn("📌 [북마크 알림] 사용자 정보를 찾을 수 없음 - userId: {}", userId);
+            return;
+        }
+        String displayName = getDisplayName(member);
+
         // 1. 신청 시작일 당일 체크
         if (today.equals(period.getStartDate())) {
             String title = "🎯 정책 신청 시작!";
-            String message = String.format("'%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요 💪", policyTitle);
+            String message = String.format("%s님, '%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요 💪", displayName, policyTitle);
             String targetUrl = "/policy/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
-            log.info("📌 [북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", userId, policyTitle);
+            log.info("📌 [북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", displayName, policyTitle);
             return;
         }
 
@@ -106,11 +117,11 @@ public class BookmarkPolicyNotificationService {
         
         if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
             String title = getDeadlineNotificationTitle(daysUntilDeadline);
-            String message = getDeadlineNotificationMessage(policyTitle, daysUntilDeadline);
+            String message = getDeadlineNotificationMessage(policyTitle, daysUntilDeadline, displayName);
             String targetUrl = "/policy/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
-            log.info("📌 [북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, userId, policyTitle);
+            log.info("📌 [북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, displayName, policyTitle);
         }
     }
 
@@ -130,13 +141,13 @@ public class BookmarkPolicyNotificationService {
     /**
      * 마감일 알림 메시지 생성
      */
-    private String getDeadlineNotificationMessage(String policyTitle, long daysUntilDeadline) {
+    private String getDeadlineNotificationMessage(String policyTitle, long daysUntilDeadline, String displayName) {
         return switch ((int) daysUntilDeadline) {
-            case 0 -> String.format("'%s' 정책이 오늘 마감됩니다! 지금 바로 신청하세요! 🔥", policyTitle);
-            case 1 -> String.format("'%s' 정책 마감이 하루 남았습니다! 서둘러 신청하세요! ⚡", policyTitle);
-            case 2 -> String.format("'%s' 정책 마감이 이틀 남았습니다! 준비하세요! 📋", policyTitle);
-            case 3 -> String.format("'%s' 정책 마감이 3일 남았습니다! 미리 준비하세요! 📝", policyTitle);
-            default -> String.format("'%s' 정책 마감이 임박했습니다! 서둘러 신청하세요!", policyTitle);
+            case 0 -> String.format("%s님, '%s' 정책이 오늘 마감됩니다! 지금 바로 신청하세요! 🔥", displayName, policyTitle);
+            case 1 -> String.format("%s님, '%s' 정책 마감이 하루 남았습니다! 서둘러 신청하세요! ⚡", displayName, policyTitle);
+            case 2 -> String.format("%s님, '%s' 정책 마감이 이틀 남았습니다! 준비하세요! 📋", displayName, policyTitle);
+            case 3 -> String.format("%s님, '%s' 정책 마감이 3일 남았습니다! 미리 준비하세요! 📝", displayName, policyTitle);
+            default -> String.format("%s님, '%s' 정책 마감이 임박했습니다! 서둘러 신청하세요!", displayName, policyTitle);
         };
     }
 
@@ -171,6 +182,18 @@ public class BookmarkPolicyNotificationService {
             log.warn("📌 [북마크 알림] 날짜 파싱 오류: {}, 입력값: {}", e.getMessage(), applyPeriod);
             return null;
         }
+    }
+
+    /**
+     * 표시용 사용자명 반환 (name 우선, 없으면 loginId)
+     */
+    private String getDisplayName(MemberVO member) {
+        if (member.getName() != null && !member.getName().trim().isEmpty()) {
+            return member.getName();
+        } else if (member.getLoginId() != null && !member.getLoginId().trim().isEmpty()) {
+            return member.getLoginId();
+        }
+        return "사용자" + member.getUserId(); // fallback
     }
 
     /**
