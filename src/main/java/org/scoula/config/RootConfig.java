@@ -12,9 +12,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
 
 /**
  * 🌱 Root Application Context 설정 클래스
@@ -54,6 +57,7 @@ import javax.sql.DataSource;
 })
 @EnableScheduling // 스케줄링 기능 활성화
 @EnableRetry // 재시도(@Retryable) 기능 활성화
+@EnableAsync // 비동기(@Async) 기능 활성화
 public class RootConfig {
 
     // 현재는 기본 설정만 있는 상태
@@ -132,6 +136,34 @@ public class RootConfig {
     public DataSourceTransactionManager transactionManager() {
         DataSourceTransactionManager manager = new DataSourceTransactionManager(dataSource());
         return manager;
+    }
+
+    /**
+     * FCM 전송 전용 비동기 스레드풀 설정
+     * - Firebase Cloud Messaging 전송을 위한 전용 ThreadPoolTaskExecutor
+     */
+    @Bean(name = "fcmTaskExecutor")
+    public Executor fcmTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        
+        // 스레드풀 크기 설정
+        executor.setCorePoolSize(8);           // 기본 스레드 수 (동시 FCM 전송 수)
+        executor.setMaxPoolSize(16);           // 최대 스레드 수 (피크 시간대 대응)
+        executor.setQueueCapacity(500);        // 대기 큐 크기 (대기 중인 FCM 전송 수)
+        
+        // 스레드 설정
+        executor.setThreadNamePrefix("FCM-Async-");  // 스레드 이름 (디버깅 용이)
+        executor.setKeepAliveSeconds(60);            // 유휴 스레드 유지 시간 (60초)
+        executor.setWaitForTasksToCompleteOnShutdown(true);  // 종료 시 대기 중인 작업 완료
+        executor.setAwaitTerminationSeconds(60);     // 종료 대기 시간 (60초)
+        
+        // 스레드풀 초기화
+        executor.initialize();
+        
+        log.info("🚀 [FCM 스레드풀] 초기화 완료 - Core: {}, Max: {}, Queue: {}", 
+                executor.getCorePoolSize(), executor.getMaxPoolSize(), executor.getQueueCapacity());
+        
+        return executor;
     }
 
 }
