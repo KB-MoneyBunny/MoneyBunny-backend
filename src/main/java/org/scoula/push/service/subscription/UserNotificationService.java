@@ -32,8 +32,8 @@ public class UserNotificationService {
      * 새로운 알림을 생성하고 ID를 반환합니다 (개선된 버전)
      */
     @Transactional
-    public Long createNotification(Long userId, String title, String message, 
-                                 NotificationType type, String targetUrl) {
+    public Long createNotification(Long userId, String title, String message,
+                                   NotificationType type, String targetUrl) {
         UserNotificationVO notification = UserNotificationVO.builder()
                 .userId(userId)
                 .title(title)
@@ -46,7 +46,7 @@ public class UserNotificationService {
 
         userNotificationMapper.insertNotification(notification);
         log.info("[알림 생성] 사용자 ID: {}, 제목: {}, 타입: {}, 알림 ID: {}", userId, title, type, notification.getId());
-        
+
         return notification.getId();
     }
 
@@ -93,7 +93,7 @@ public class UserNotificationService {
     public void createAndSendBookmarkNotification(Long userId, String title, String message, String targetUrl) {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.BOOKMARK, targetUrl);
-        
+
         // 2. 비동기: FCM 발송 (로그 기록 포함)
         sendFCMToUserAsync(notificationId, userId, title, message);
     }
@@ -105,7 +105,7 @@ public class UserNotificationService {
     public void createAndSendFeedbackNotification(Long userId, String title, String message, String targetUrl) {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.FEEDBACK, targetUrl);
-        
+
         // 2. 비동기: FCM 발송 (로그 기록 포함)
         sendFCMToUserAsync(notificationId, userId, title, message);
     }
@@ -117,7 +117,7 @@ public class UserNotificationService {
     public void createAndSendNewPolicyNotification(Long userId, String title, String message, String targetUrl) {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.NEW_POLICY, targetUrl);
-        
+
         // 2. 비동기: FCM 발송 (로그 기록 포함)
         sendFCMToUserAsync(notificationId, userId, title, message);
     }
@@ -129,7 +129,7 @@ public class UserNotificationService {
     private void sendFCMToUserAsync(Long notificationId, Long userId, String title, String message) {
         // 해당 사용자의 구독 정보 조회
         SubscriptionVO subscription = subscriptionMapper.findByUserId(userId);
-        
+
         if (subscription != null && subscription.getFcmToken() != null) {
             // 비동기 FCM 발송 (로그 자동 기록)
             asyncNotificationService.sendFCMWithLogging(notificationId, subscription.getFcmToken(), title, message);
@@ -139,24 +139,4 @@ public class UserNotificationService {
         }
     }
 
-
-    // ==================== 스케줄러에서 호출할 메서드들 ====================
-
-    /**
-     * 개인 소비패턴 기반 피드백 알림 발송 (스케줄러용)
-     */
-    @Transactional
-    public void triggerPersonalizedFeedback(Long userId) {
-        log.info("[스케줄러] 개인 맞춤 피드백 알림 발송 - 사용자 ID: {}", userId);
-        // 구현 예정
-    }
-
-    /**
-     * 일괄 맞춤형 피드백 알림 발송 (배치용)
-     */
-    @Transactional
-    public void triggerBatchPersonalizedFeedback() {
-        log.info("[스케줄러] 일괄 맞춤형 피드백 알림 발송 시작");
-        // 구현 예정
-    }
 }
