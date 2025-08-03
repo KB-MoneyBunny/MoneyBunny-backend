@@ -9,6 +9,7 @@ import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.push.dto.response.SubscriptionStatusResponse;
 import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
 import org.scoula.push.service.notification.NewPolicyNotificationService;
+import org.scoula.push.service.notification.Top3NotificationService;
 import org.scoula.push.service.core.PushNotificationService;
 import org.scoula.push.service.subscription.SubscriptionService;
 import org.scoula.push.service.subscription.UserNotificationService;
@@ -37,6 +38,7 @@ public class PushController {
     private final PushNotificationService pushNotificationService;
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
     private final NewPolicyNotificationService newPolicyNotificationService;
+    private final Top3NotificationService top3NotificationService;
 
     // ===============================
     // 알림 관련 API
@@ -218,6 +220,19 @@ public class PushController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("신규 정책 알림 발송 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/top3/send")
+    @ApiOperation(value = "TOP3 정책 추천 알림 수동 발송",
+                  notes = "모든 TOP3 구독자에게 개인화된 TOP3 정책 추천 알림을 즉시 발송합니다.")
+    public ResponseEntity<String> sendTop3Notifications() {
+        try {
+            top3NotificationService.sendTop3Notifications();
+            return ResponseEntity.ok("TOP3 정책 추천 알림이 성공적으로 발송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("TOP3 알림 발송 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
