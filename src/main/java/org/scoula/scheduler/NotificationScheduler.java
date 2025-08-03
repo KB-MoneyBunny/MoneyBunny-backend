@@ -3,9 +3,9 @@ package org.scoula.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
+import org.scoula.push.service.notification.FeedbackNotificationService;
 import org.scoula.push.service.notification.NewPolicyNotificationService;
 import org.scoula.push.service.notification.Top3NotificationService;
-import org.scoula.push.service.subscription.UserNotificationService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +22,7 @@ public class NotificationScheduler {
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
     private final NewPolicyNotificationService newPolicyNotificationService;
     private final Top3NotificationService top3NotificationService;
-    private final UserNotificationService userNotificationService;
+    private final FeedbackNotificationService feedbackNotificationService;
 
     /**
      * 북마크 알림 실시간 체크 및 발송 스케줄러 - 매일 오후 12시 실행
@@ -72,12 +72,12 @@ public class NotificationScheduler {
     /**
      * 피드백 알림 스케줄러 - 매주 일요일 저녁 8시 실행
      */
-    @Scheduled(cron = "0 0 20 * * SUN")
-    public void scheduledFeedbackNotifications() {
+    @Scheduled(cron = "0 0 20 * * SUN", zone = "Asia/Seoul")
+    public void sendFeedbackNotifications() {
         log.info("📅 [피드백 알림 스케줄러] 시작");
         
         try {
-            userNotificationService.triggerBatchPersonalizedFeedback();
+            feedbackNotificationService.sendWeeklyConsumptionReportToAll();
             log.info("📅 [피드백 알림 스케줄러] 완료");
         } catch (Exception e) {
             log.error("📅 [피드백 알림 스케줄러] 오류: {}", e.getMessage());
