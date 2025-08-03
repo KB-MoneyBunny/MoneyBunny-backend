@@ -2,9 +2,10 @@ package org.scoula.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scoula.push.service.BookmarkPolicyNotificationService;
-import org.scoula.push.service.NewPolicyNotificationService;
-import org.scoula.push.service.UserNotificationService;
+import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
+import org.scoula.push.service.notification.NewPolicyNotificationService;
+import org.scoula.push.service.notification.Top3NotificationService;
+import org.scoula.push.service.subscription.UserNotificationService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ public class NotificationScheduler {
 
     private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
     private final NewPolicyNotificationService newPolicyNotificationService;
+    private final Top3NotificationService top3NotificationService;
     private final UserNotificationService userNotificationService;
 
     /**
@@ -49,6 +51,21 @@ public class NotificationScheduler {
             log.info("📅 [신규 정책 알림] 스케줄러 완료");
         } catch (Exception e) {
             log.error("📅 [신규 정책 알림] 스케줄러 오류: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * TOP3 정책 추천 알림 스케줄러 - 매주 일요일 오후 3시 실행
+     */
+    @Scheduled(cron = "0 0 15 * * SUN", zone = "Asia/Seoul")
+    public void sendTop3PolicyNotifications() {
+        log.info("📅 [TOP3 알림 스케줄러] 시작");
+        
+        try {
+            top3NotificationService.sendTop3Notifications();
+            log.info("📅 [TOP3 알림 스케줄러] 완료");
+        } catch (Exception e) {
+            log.error("📅 [TOP3 알림 스케줄러] 오류: {}", e.getMessage());
         }
     }
 
