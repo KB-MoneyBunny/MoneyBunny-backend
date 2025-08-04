@@ -51,7 +51,7 @@ public class PushController {
      */
     @GetMapping("/notifications")
     @ApiOperation(value = "전체 알림 목록 조회", 
-                  notes = "현재 사용자의 모든 알림을 최신순으로 조회합니다. 읽음/미읽음 상태와 알림 타입(POLICY/FEEDBACK)이 포함됩니다.")
+                  notes = "현재 사용자의 모든 알림을 최신순으로 조회합니다. 읽음/미읽음 상태와 알림 타입(BOOKMARK/TOP3/NEW_POLICY/FEEDBACK)이 포함됩니다.")
     public ResponseEntity<List<NotificationResponse>> getNotifications(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
@@ -129,62 +129,41 @@ public class PushController {
     }
 
     // ===============================
-    // 개별 알림 타입 토글 API (실무에서 많이 사용하는 방식)
+    // 통합 알림 타입 토글 API
     // ===============================
 
     /**
-     * 북마크 알림 토글
+     * 알림 타입별 토글 (통합 API)
      */
-    @PutMapping("/subscriptions/bookmark")
-    @ApiOperation(value = "북마크 알림 토글", 
-                  notes = "북마크 정책 알림의 활성화/비활성화를 즉시 토글합니다.")
-    public ResponseEntity<Void> toggleBookmarkNotification(
+    @PutMapping("/subscriptions/{notificationType}")
+    @ApiOperation(value = "알림 타입별 토글", 
+                  notes = "지정된 알림 타입의 활성화/비활성화를 토글합니다. " +
+                         "지원되는 타입: bookmark, top3, new-policy, feedback")
+    public ResponseEntity<Void> toggleNotification(
+            @PathVariable String notificationType,
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestBody NotificationToggleRequest request) {
+        
         Long userId = customUser.getMember().getUserId();
-        subscriptionService.toggleBookmarkNotification(userId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * TOP3 알림 토글
-     */
-    @PutMapping("/subscriptions/top3")
-    @ApiOperation(value = "TOP3 알림 토글", 
-                  notes = "TOP3 정책 추천 알림의 활성화/비활성화를 즉시 토글합니다.")
-    public ResponseEntity<Void> toggleTop3Notification(
-            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody NotificationToggleRequest request) {
-        Long userId = customUser.getMember().getUserId();
-        subscriptionService.toggleTop3Notification(userId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 신규 정책 알림 토글
-     */
-    @PutMapping("/subscriptions/new-policy")
-    @ApiOperation(value = "신규 정책 알림 토글", 
-                  notes = "신규 정책 알림의 활성화/비활성화를 즉시 토글합니다.")
-    public ResponseEntity<Void> toggleNewPolicyNotification(
-            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody NotificationToggleRequest request) {
-        Long userId = customUser.getMember().getUserId();
-        subscriptionService.toggleNewPolicyNotification(userId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 피드백 알림 토글
-     */
-    @PutMapping("/subscriptions/feedback")
-    @ApiOperation(value = "피드백 알림 토글", 
-                  notes = "개인 맞춤 피드백 알림의 활성화/비활성화를 즉시 토글합니다.")
-    public ResponseEntity<Void> toggleFeedbackNotification(
-            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestBody NotificationToggleRequest request) {
-        Long userId = customUser.getMember().getUserId();
-        subscriptionService.toggleFeedbackNotification(userId, request);
+        
+        // 알림 타입 검증 및 해당 서비스 메서드 호출
+        switch (notificationType.toLowerCase()) {
+            case "bookmark":
+                subscriptionService.toggleBookmarkNotification(userId, request);
+                break;
+            case "top3":
+                subscriptionService.toggleTop3Notification(userId, request);
+                break;
+            case "new-policy":
+                subscriptionService.toggleNewPolicyNotification(userId, request);
+                break;
+            case "feedback":
+                subscriptionService.toggleFeedbackNotification(userId, request);
+                break;
+            default:
+                return ResponseEntity.badRequest().build();
+        }
+        
         return ResponseEntity.ok().build();
     }
 
