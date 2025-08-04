@@ -21,6 +21,7 @@ public class PolicyWithVectorDTO {
     private String title;
     private String policyBenefitDescription;
     private String endDate;
+    private Long policyBenefitAmount;
     
     // 벡터 정보 (policy_vector 테이블에서 조회)
     private BigDecimal vecBenefitAmount;  // 혜택금액 벡터
