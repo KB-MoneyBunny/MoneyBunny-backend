@@ -1,12 +1,7 @@
 package org.scoula.policy.util;
 
 import lombok.RequiredArgsConstructor;
-import org.scoula.policy.domain.education.PolicyEducationLevelVO;
-import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
-import org.scoula.policy.domain.keyword.PolicyKeywordVO;
-import org.scoula.policy.domain.major.PolicyMajorVO;
-import org.scoula.policy.domain.region.PolicyRegionVO;
-import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
+import org.scoula.policy.domain.master.*;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.springframework.stereotype.Component;
 
@@ -38,57 +33,57 @@ public class PolicyDataHolder {
 
     @PostConstruct
     public void init() {
-        loadRegions();
-        loadKeywords();
-        loadMajors();
-        loadEducationLevels();
-        loadEmploymentStatuses();
-        loadSpecialConditions();
+        loadMasterRegions();
+        loadMasterKeywords();
+        loadMasterMajors();
+        loadMasterEducationLevels();
+        loadMasterEmploymentStatuses();
+        loadMasterSpecialConditions();
     }
 
-    private void loadRegions() {
-        List<PolicyRegionVO> regions = policyMapper.findAllRegions();
-        for (PolicyRegionVO region : regions) {
+    private void loadMasterRegions() {
+        List<MasterPolicyRegionVO> regions = policyMapper.findAllMasterRegions();
+        for (MasterPolicyRegionVO region : regions) {
             regionMap.put(region.getRegionCode(), region.getId());
             regionNameMap.put(region.getId(), region.getRegionCode());
         }
     }
 
-    private void loadKeywords() {
-        List<PolicyKeywordVO> keywords = policyMapper.findAllKeywords();
-        for (PolicyKeywordVO keyword : keywords) {
+    private void loadMasterKeywords() {
+        List<MasterPolicyKeywordVO> keywords = policyMapper.findAllMasterKeywords();
+        for (MasterPolicyKeywordVO keyword : keywords) {
             keywordMap.put(keyword.getKeyword(), keyword.getId());
             keywordNameMap.put(keyword.getId(), keyword.getKeyword());
         }
     }
 
-    private void loadMajors() {
-        List<PolicyMajorVO> majors = policyMapper.findAllMajors();
-        for (PolicyMajorVO major : majors) {
+    private void loadMasterMajors() {
+        List<MasterPolicyMajorVO> majors = policyMapper.findAllMasterMajors();
+        for (MasterPolicyMajorVO major : majors) {
             majorMap.put(major.getMajor(), major.getId());
             majorNameMap.put(major.getId(), major.getMajor());
         }
     }
 
-    private void loadEducationLevels() {
-        List<PolicyEducationLevelVO> educationLevels = policyMapper.findAllEducationLevels();
-        for (PolicyEducationLevelVO educationLevel : educationLevels) {
+    private void loadMasterEducationLevels() {
+        List<MasterPolicyEducationLevelVO> educationLevels = policyMapper.findAllMasterEducationLevels();
+        for (MasterPolicyEducationLevelVO educationLevel : educationLevels) {
             educationLevelMap.put(educationLevel.getEducationLevel(), educationLevel.getId());
             educationLevelNameMap.put(educationLevel.getId(), educationLevel.getEducationLevel());
         }
     }
 
-    private void loadEmploymentStatuses() {
-        List<PolicyEmploymentStatusVO> employmentStatuses = policyMapper.findAllEmploymentStatuses();
-        for (PolicyEmploymentStatusVO employmentStatus : employmentStatuses) {
+    private void loadMasterEmploymentStatuses() {
+        List<MasterPolicyEmploymentStatusVO> employmentStatuses = policyMapper.findAllMasterEmploymentStatuses();
+        for (MasterPolicyEmploymentStatusVO employmentStatus : employmentStatuses) {
             employmentStatusMap.put(employmentStatus.getEmploymentStatus(), employmentStatus.getId());
             employmentStatusNameMap.put(employmentStatus.getId(), employmentStatus.getEmploymentStatus());
         }
     }
 
-    private void loadSpecialConditions() {
-        List<PolicySpecialConditionVO> specialConditions = policyMapper.findAllSpecialConditions();
-        for (PolicySpecialConditionVO specialCondition : specialConditions) {
+    private void loadMasterSpecialConditions() {
+        List<MasterPolicySpecialConditionVO> specialConditions = policyMapper.findAllMasterSpecialConditions();
+        for (MasterPolicySpecialConditionVO specialCondition : specialConditions) {
             specialConditionMap.put(specialCondition.getSpecialCondition(), specialCondition.getId());
             specialConditionNameMap.put(specialCondition.getId(), specialCondition.getSpecialCondition());
         }
