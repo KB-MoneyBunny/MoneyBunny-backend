@@ -146,7 +146,10 @@
             -- 벡터 정보 추가 (LEFT JOIN으로 벡터가 없어도 조회 가능)
             pv.vec_benefit_amount as vecBenefitAmount,
             pv.vec_deadline as vecDeadline,
-            pv.vec_views as vecViews
+            pv.vec_views as vecViews,
+            -- 대분류 카테고리와 신청 URL 추가
+            yp.large_category as largeCategory,
+            yp.apply_url as applyUrl
         FROM youth_policy yp
         JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
         LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id

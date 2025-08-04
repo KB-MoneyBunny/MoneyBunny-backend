@@ -1,10 +1,10 @@
 package org.scoula.policy.dto;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.scoula.policy.domain.YouthPolicyVO;
 import org.scoula.policy.domain.education.PolicyEducationLevelVO;
 import org.scoula.policy.domain.employment.PolicyEmploymentStatusVO;
+import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
@@ -13,8 +13,25 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class PolicyDetailDTO extends YouthPolicyVO {
+public class PolicyDetailDTO {
+    // 정책 기본 정보
+    private Long id;
+    private String policyNo;
+    private String title;
+    private String description;
+    private String supportContent;
+    private String applicationMethod;
+    private String screeningMethod;
+    private String submitDocuments;
+    private String policyBenefitAmount;
+    private String etcNotes;
+    private String applyUrl;
+    private String refUrl1;
+    private String refUrl2;
+    private Boolean isFinancialSupport;
+    private String policyBenefitDescription;
+    private Integer view;
+
     // YouthPolicyConditionVO Fields
     private Integer minAge;
     private Integer maxAge;
@@ -39,4 +56,5 @@ public class PolicyDetailDTO extends YouthPolicyVO {
     private List<PolicyMajorVO> majors;
     private List<PolicyEmploymentStatusVO> employmentStatuses;
     private List<PolicySpecialConditionVO> specialConditions;
+    private List<PolicyKeywordVO> keywords;
 }
