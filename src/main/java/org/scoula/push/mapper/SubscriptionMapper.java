@@ -30,4 +30,16 @@ public interface SubscriptionMapper {
 
     // 신규 정책 알림 활성 구독자 조회
     List<SubscriptionVO> findActiveNewPolicySubscribers();
+    
+    // 특정 사용자의 북마크 알림이 활성화된 모든 토큰 조회
+    List<String> findActiveBookmarkTokensByUserId(@Param("userId") Long userId);
+    
+    // 특정 사용자의 TOP3 알림이 활성화된 모든 토큰 조회
+    List<String> findActiveTop3TokensByUserId(@Param("userId") Long userId);
+    
+    // 특정 사용자의 신규 정책 알림이 활성화된 모든 토큰 조회
+    List<String> findActiveNewPolicyTokensByUserId(@Param("userId") Long userId);
+    
+    // 특정 사용자의 피드백 알림이 활성화된 모든 토큰 조회
+    List<String> findActiveFeedbackTokensByUserId(@Param("userId") Long userId);
 }
