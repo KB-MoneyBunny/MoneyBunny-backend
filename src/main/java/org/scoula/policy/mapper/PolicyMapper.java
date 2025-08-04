@@ -10,6 +10,7 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.keyword.YouthPolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.major.YouthPolicyMajorVO;
+import org.scoula.policy.domain.master.*;
 import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
@@ -172,4 +173,17 @@ public interface PolicyMapper {
 
     /** 당일 생성된 신규 정책 조회 */
     List<YouthPolicyVO> findTodayNewPolicies();
+
+    // ────────────────────────────────────────
+    // 📌 마스터 테이블 전체 조회 (Master VO 반환)
+    // ────────────────────────────────────────
+
+    List<MasterPolicyRegionVO> findAllMasterRegions();
+    List<MasterPolicyKeywordVO> findAllMasterKeywords();
+    List<MasterPolicyMajorVO> findAllMasterMajors();
+    List<MasterPolicyEducationLevelVO> findAllMasterEducationLevels();
+    List<MasterPolicyEmploymentStatusVO> findAllMasterEmploymentStatuses();
+    List<MasterPolicySpecialConditionVO> findAllMasterSpecialConditions();
+
+    // ...기존 전체 조회 메서드는 필요시 deprecated 처리 또는 내부용으로 유지...
 }
