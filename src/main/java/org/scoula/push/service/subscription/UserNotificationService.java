@@ -94,8 +94,8 @@ public class UserNotificationService {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.BOOKMARK, targetUrl);
 
-        // 2. 비동기: FCM 발송 (로그 기록 포함)
-        sendFCMToUserAsync(notificationId, userId, title, message);
+        // 2. 비동기: 북마크 전용 FCM 발송 (여러 토큰 지원)
+        sendBookmarkFCMToUserAsync(notificationId, userId, title, message);
     }
 
     /**
@@ -106,8 +106,8 @@ public class UserNotificationService {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.FEEDBACK, targetUrl);
 
-        // 2. 비동기: FCM 발송 (로그 기록 포함)
-        sendFCMToUserAsync(notificationId, userId, title, message);
+        // 2. 비동기: 피드백 전용 FCM 발송 (여러 토큰 지원)
+        sendFeedbackFCMToUserAsync(notificationId, userId, title, message);
     }
 
     /**
@@ -118,24 +118,102 @@ public class UserNotificationService {
         // 1. 동기: 알림 생성 (DB 저장)
         Long notificationId = createNotification(userId, title, message, NotificationType.NEW_POLICY, targetUrl);
 
-        // 2. 비동기: FCM 발송 (로그 기록 포함)
-        sendFCMToUserAsync(notificationId, userId, title, message);
+        // 2. 비동기: 신규 정책 전용 FCM 발송 (여러 토큰 지원)
+        sendNewPolicyFCMToUserAsync(notificationId, userId, title, message);
+    }
+
+    /**
+     * TOP3 알림을 동기 생성 후 비동기 FCM 발송
+     */
+    @Transactional
+    public void createAndSendTop3Notification(Long userId, String title, String message, String targetUrl) {
+        // 1. 동기: 알림 생성 (DB 저장)
+        Long notificationId = createNotification(userId, title, message, NotificationType.TOP3, targetUrl);
+
+        // 2. 비동기: TOP3 전용 FCM 발송 (여러 토큰 지원)
+        sendTop3FCMToUserAsync(notificationId, userId, title, message);
     }
 
 
     /**
-     * 비동기 FCM 발송 (로그 기록 포함) - 개선된 버전
+     * 북마크 알림 비동기 FCM 발송 (여러 토큰 지원)
      */
-    private void sendFCMToUserAsync(Long notificationId, Long userId, String title, String message) {
-        // 해당 사용자의 구독 정보 조회
-        SubscriptionVO subscription = subscriptionMapper.findByUserId(userId);
+    private void sendBookmarkFCMToUserAsync(Long notificationId, Long userId, String title, String message) {
+        // 해당 사용자의 북마크 알림이 활성화된 모든 토큰 조회
+        List<String> activeTokens = subscriptionMapper.findActiveBookmarkTokensByUserId(userId);
 
-        if (subscription != null && subscription.getFcmToken() != null) {
-            // 비동기 FCM 발송 (로그 자동 기록)
-            asyncNotificationService.sendFCMWithLogging(notificationId, subscription.getFcmToken(), title, message);
-            log.debug("[비동기 FCM 발송 시작] 사용자 ID: {}, 알림 ID: {}", userId, notificationId);
-        } else {
-            log.warn("[FCM 발송 실패] 사용자 ID: {}의 구독 정보 또는 토큰이 없음", userId);
+        if (activeTokens.isEmpty()) {
+            log.warn("[북마크 FCM 발송 실패] 사용자 ID: {}의 활성화된 북마크 알림 토큰이 없음", userId);
+            return;
+        }
+
+        log.info("[북마크 FCM 발송] 사용자 ID: {}에 대해 {}개의 활성 토큰 발견", userId, activeTokens.size());
+
+        // 각 토큰에 대해 비동기 FCM 발송
+        for (String token : activeTokens) {
+            asyncNotificationService.sendFCMWithLogging(notificationId, token, title, message);
+            log.debug("[북마크 비동기 FCM 발송 시작] 사용자 ID: {}, 알림 ID: {}, 토큰: {}...", 
+                     userId, notificationId, token.substring(0, Math.min(20, token.length())));
+        }
+    }
+
+    /**
+     * TOP3 알림 비동기 FCM 발송 (여러 토큰 지원)
+     */
+    private void sendTop3FCMToUserAsync(Long notificationId, Long userId, String title, String message) {
+        List<String> activeTokens = subscriptionMapper.findActiveTop3TokensByUserId(userId);
+
+        if (activeTokens.isEmpty()) {
+            log.warn("[TOP3 FCM 발송 실패] 사용자 ID: {}의 활성화된 TOP3 알림 토큰이 없음", userId);
+            return;
+        }
+
+        log.info("[TOP3 FCM 발송] 사용자 ID: {}에 대해 {}개의 활성 토큰 발견", userId, activeTokens.size());
+
+        for (String token : activeTokens) {
+            asyncNotificationService.sendFCMWithLogging(notificationId, token, title, message);
+            log.debug("[TOP3 비동기 FCM 발송 시작] 사용자 ID: {}, 알림 ID: {}, 토큰: {}...", 
+                     userId, notificationId, token.substring(0, Math.min(20, token.length())));
+        }
+    }
+
+    /**
+     * 신규 정책 알림 비동기 FCM 발송 (여러 토큰 지원)
+     */
+    private void sendNewPolicyFCMToUserAsync(Long notificationId, Long userId, String title, String message) {
+        List<String> activeTokens = subscriptionMapper.findActiveNewPolicyTokensByUserId(userId);
+
+        if (activeTokens.isEmpty()) {
+            log.warn("[신규 정책 FCM 발송 실패] 사용자 ID: {}의 활성화된 신규 정책 알림 토큰이 없음", userId);
+            return;
+        }
+
+        log.info("[신규 정책 FCM 발송] 사용자 ID: {}에 대해 {}개의 활성 토큰 발견", userId, activeTokens.size());
+
+        for (String token : activeTokens) {
+            asyncNotificationService.sendFCMWithLogging(notificationId, token, title, message);
+            log.debug("[신규 정책 비동기 FCM 발송 시작] 사용자 ID: {}, 알림 ID: {}, 토큰: {}...", 
+                     userId, notificationId, token.substring(0, Math.min(20, token.length())));
+        }
+    }
+
+    /**
+     * 피드백 알림 비동기 FCM 발송 (여러 토큰 지원)
+     */
+    private void sendFeedbackFCMToUserAsync(Long notificationId, Long userId, String title, String message) {
+        List<String> activeTokens = subscriptionMapper.findActiveFeedbackTokensByUserId(userId);
+
+        if (activeTokens.isEmpty()) {
+            log.warn("[피드백 FCM 발송 실패] 사용자 ID: {}의 활성화된 피드백 알림 토큰이 없음", userId);
+            return;
+        }
+
+        log.info("[피드백 FCM 발송] 사용자 ID: {}에 대해 {}개의 활성 토큰 발견", userId, activeTokens.size());
+
+        for (String token : activeTokens) {
+            asyncNotificationService.sendFCMWithLogging(notificationId, token, title, message);
+            log.debug("[피드백 비동기 FCM 발송 시작] 사용자 ID: {}, 알림 ID: {}, 토큰: {}...", 
+                     userId, notificationId, token.substring(0, Math.min(20, token.length())));
         }
     }
 
