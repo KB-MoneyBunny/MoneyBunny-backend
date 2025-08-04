@@ -75,11 +75,22 @@ public class PolicyServiceImpl implements PolicyService {
             List<PolicyDTO> dtoList = response.getResult().getYouthPolicyList();
 
             for (PolicyDTO dto : dtoList) {
-                // 기존 정책인 경우 조회수만 업데이트
+                // 기존 정책인 경우 조회수, 신청URL, 신청기간만 업데이트
                 if (policyMapper.existsByPolicyNo(dto.getPolicyNo())) {
-                    log.info("[기존 정책] 정책번호 {} 조회수 업데이트: {}", dto.getPolicyNo(), dto.getViews());
+                    log.info("[기존 정책] 정책번호 {} 정보 업데이트 - 조회수: {}", dto.getPolicyNo(), dto.getViews());
+                    
+                    // 1. 조회수 업데이트
                     policyMapper.updatePolicyViews(dto.getPolicyNo(), dto.getViews());
-                    // 💪 기존 정책의 조회수 변경 → 벡터 재계산
+                    
+                    // 2. 신청URL 업데이트
+                    if (dto.getApplyUrl() != null && !dto.getApplyUrl().trim().isEmpty()) {
+                        policyMapper.updatePolicyApplyUrl(dto.getPolicyNo(), dto.getApplyUrl());
+                    }
+                    
+                    // 3. 신청 기간 업데이트
+                    policyMapper.updatePolicyPeriod(dto.getPolicyNo(), dto.getApplyPeriod());
+                    
+                    // 💪 기존 정책의 정보 변경 → 벡터 재계산
                     Long policyId = policyMapper.findPolicyIdByPolicyNo(dto.getPolicyNo());
                     calculateAndSavePolicyVector(policyId);
                     continue;

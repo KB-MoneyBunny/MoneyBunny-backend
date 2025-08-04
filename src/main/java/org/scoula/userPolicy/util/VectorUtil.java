@@ -71,6 +71,7 @@ public class VectorUtil {
                 .title(policyWithVector.getTitle())
                 .policyBenefitDescription(policyWithVector.getPolicyBenefitDescription())
                 .endDate(policyWithVector.getEndDate())
+                .policyBenefitAmount(policyWithVector.getPolicyBenefitAmount())
                 .build();
     }
 }
