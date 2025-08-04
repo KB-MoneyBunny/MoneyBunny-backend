@@ -11,6 +11,7 @@ import org.scoula.security.service.MailService;
 import org.scoula.member.service.MemberService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.scoula.security.util.PasswordValidator;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -40,8 +41,15 @@ public class MemberController {
           notes = "신규 사용자의 회원가입을 처리합니다. 사용자 정보와 비밀번호를 포함한 데이터를 전송해야 합니다."
   )
   @PostMapping("/join")
-  public ResponseEntity<MemberDTO> join(@RequestBody MemberJoinDTO member) {
-    return ResponseEntity.ok(service.join(member));
+  public ResponseEntity<?> join(@RequestBody MemberJoinDTO member) {
+    // 비밀번호 정규식 유효성 검사
+    if (!PasswordValidator.isValid(member.getPassword())) {
+      return ResponseEntity.badRequest().body("비밀번호 형식이 올바르지 않습니다.");
+    }
+
+    // 회원가입 처리
+    MemberDTO joined = service.join(member);
+    return ResponseEntity.ok(joined);
   }
 
 

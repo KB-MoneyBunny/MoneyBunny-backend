@@ -6,36 +6,69 @@
 <mapper namespace="org.scoula.push.mapper.SubscriptionMapper">
 
     <!-- FCM 토큰으로 기존 구독 정보 조회 -->
-    <select id="findByToken" resultType="org.scoula.push.domain.Subscription">
+    <select id="findByToken" resultType="org.scoula.push.domain.SubscriptionVO">
         SELECT *
         FROM subscription
-        WHERE endpoint = #{token}
+        WHERE fcm_token = #{token}
     </select>
 
     <!-- 새 구독 정보 삽입 -->
-    <insert id="insert" parameterType="org.scoula.push.domain.Subscription">
-        INSERT INTO subscription (user_id, endpoint, is_active, created_at)
-        VALUES (#{userId}, #{endpoint}, #{isActive}, #{createdAt})
+    <insert id="insert" parameterType="org.scoula.push.domain.SubscriptionVO">
+        INSERT INTO subscription (user_id, fcm_token, is_active_bookmark, is_active_top3, is_active_new_policy, is_active_feedback, created_at)
+        VALUES (#{userId}, #{fcmToken}, #{isActiveBookmark}, #{isActiveTop3}, #{isActiveNewPolicy}, #{isActiveFeedback}, #{createdAt})
     </insert>
 
-    <!-- 구독 활성/비활성 처리 -->
-    <update id="updateIsActive">
+    <!-- 알림 유형별 구독 설정 업데이트 -->
+    <update id="updateNotificationSettings">
         UPDATE subscription
-        SET is_active = #{isActive}
-        WHERE endpoint = #{token}
+        SET is_active_bookmark = #{isActiveBookmark},
+            is_active_top3 = #{isActiveTop3},
+            is_active_new_policy = #{isActiveNewPolicy},
+            is_active_feedback = #{isActiveFeedback}
+        WHERE fcm_token = #{fcmToken}
     </update>
 
-    <!--  모든 알림 구독자 조회  -->
-    <select id="findAllActive" resultType="org.scoula.push.domain.Subscription">
+    <!-- 특정 알림 타입의 활성 구독자 조회 -->
+    <select id="findActiveByNotificationType" resultType="org.scoula.push.domain.SubscriptionVO">
         SELECT * FROM subscription
-        WHERE is_active = true
+        WHERE 
+        <choose>
+            <when test="notificationType == 'BOOKMARK'">
+                is_active_bookmark = true
+            </when>
+            <when test="notificationType == 'TOP3'">
+                is_active_top3 = true
+            </when>
+            <when test="notificationType == 'NEW_POLICY'">
+                is_active_new_policy = true
+            </when>
+            <when test="notificationType == 'FEEDBACK'">
+                is_active_feedback = true
+            </when>
+        </choose>
     </select>
 
-    <!-- 사용자의 현재 구독 상태 조회 -->
+    <!-- 사용자의 구독 정보 조회 -->
+    <select id="findByUserId" resultType="org.scoula.push.domain.SubscriptionVO">
+        SELECT * FROM subscription
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 사용자의 현재 구독 상태 조회 (하나라도 활성화되어 있으면 true) -->
     <select id="isUserSubscribed" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM subscription
-        WHERE user_id = #{userId} AND is_active = true
+        WHERE user_id = #{userId} 
+        AND (is_active_bookmark = true OR is_active_top3 = true OR is_active_new_policy = true OR is_active_feedback = true)
+    </select>
+
+    <!-- 신규 정책 알림 활성 구독자 조회 -->
+    <select id="findActiveNewPolicySubscribers" resultType="org.scoula.push.domain.SubscriptionVO">
+        SELECT * FROM subscription
+        WHERE is_active_new_policy = true
+        AND fcm_token IS NOT NULL
+        AND fcm_token != ''
     </select>
 
 </mapper>
