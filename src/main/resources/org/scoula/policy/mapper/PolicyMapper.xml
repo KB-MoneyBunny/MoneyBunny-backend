@@ -283,6 +283,10 @@
             <id property="id" column="sc_id"/>
             <result property="specialCondition" column="special_condition"/>
         </collection>
+        <collection property="keywords" ofType="org.scoula.policy.domain.keyword.PolicyKeywordVO">
+            <id property="id" column="keyword_id"/>
+            <result property="keyword" column="keyword"/>
+        </collection>
     </resultMap>
 
     <select id="findPolicyDetailById" resultMap="policyDetailResultMap">
@@ -299,7 +303,8 @@
             e.id AS edu_id, e.education_level,
             m.id AS major_id, m.major,
             es.id AS emp_id, es.employment_status,
-            sc.id AS sc_id, sc.special_condition
+            sc.id AS sc_id, sc.special_condition,
+            k.id AS keyword_id, k.keyword
         FROM
             youth_policy p
                 LEFT JOIN youth_policy_condition c ON p.id = c.policy_id
@@ -314,6 +319,8 @@
                 LEFT JOIN policy_employment_status es ON ypes.employment_status_id = es.id
                 LEFT JOIN youth_policy_special_condition ypsc ON p.id = ypsc.policy_id
                 LEFT JOIN policy_special_condition sc ON ypsc.special_condition_id = sc.id
+                LEFT JOIN youth_policy_keyword ypk ON p.id = ypk.policy_id
+                LEFT JOIN policy_keyword k ON ypk.keyword_id = k.id
         WHERE
             p.id = #{policyId}
     </select>
