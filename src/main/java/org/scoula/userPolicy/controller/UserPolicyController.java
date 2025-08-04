@@ -95,7 +95,7 @@ public class UserPolicyController {
             @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
     })
     @PutMapping("")
-    public ResponseEntity<Void> updateUserPolicyCondition(@AuthenticationPrincipal CustomUser customUser, @RequestBody TestResultRequestDTO testResultRequestDTO) {
+    public ResponseEntity<Void> updateUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser, @RequestBody TestResultRequestDTO testResultRequestDTO) {
         String username = customUser.getUsername();
         userPolicyService.updateUserPolicyCondition(username, testResultRequestDTO);
         return ResponseEntity.ok().build();
