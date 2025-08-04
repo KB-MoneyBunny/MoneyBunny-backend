@@ -111,17 +111,17 @@
             upc.created_at,
             upc.updated_at,
 
-            ur.id AS region_id,
+            ur.region_id AS region_id,
 
-            ue.id AS edu_id,
+            ue.education_level_id AS edu_id,
 
-            ues.id AS emp_id,
+            ues.employment_status_id AS emp_id,
 
-            um.id AS major_id,
+            um.major_id AS major_id,
 
-            usc.id AS spec_id,
+            usc.special_condition_id AS spec_id,
 
-            upk.id AS keyword_id
+            upk.keyword_id AS keyword_id
 
         FROM user_policy_condition upc
                  LEFT JOIN user_policy_region ur ON ur.user_policy_condition_id = upc.id
