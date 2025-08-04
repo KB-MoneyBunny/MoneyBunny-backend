@@ -54,6 +54,12 @@
         WHERE user_id = #{userId}
         LIMIT 1
     </select>
+    
+    <!-- 사용자 ID와 토큰으로 특정 기기의 구독 정보 조회 -->
+    <select id="findByUserIdAndToken" resultType="org.scoula.push.domain.SubscriptionVO">
+        SELECT * FROM subscription
+        WHERE user_id = #{userId} AND fcm_token = #{token}
+    </select>
 
     <!-- 사용자의 현재 구독 상태 조회 (하나라도 활성화되어 있으면 true) -->
     <select id="isUserSubscribed" resultType="boolean">

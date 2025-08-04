@@ -21,6 +21,9 @@ public interface SubscriptionMapper {
 
     // 사용자 ID로 구독 정보 조회
     SubscriptionVO findByUserId(@Param("userId") Long userId);
+    
+    // 사용자 ID와 토큰으로 특정 기기의 구독 정보 조회
+    SubscriptionVO findByUserIdAndToken(@Param("userId") Long userId, @Param("token") String token);
 
     // 사용자의 구독 상태 확인 (하나라도 활성화되어 있으면 true)
     boolean isUserSubscribed(@Param("userId") Long userId);
