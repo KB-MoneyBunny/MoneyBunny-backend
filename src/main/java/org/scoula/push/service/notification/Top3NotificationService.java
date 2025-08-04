@@ -33,18 +33,18 @@ public class Top3NotificationService {
      * TOP3 구독자들에게 개인화된 정책 추천 알림 발송
      */
     public void sendTop3Notifications() {
-        log.info("📊 [TOP3 알림] 발송 시작");
+        log.info("[TOP3 알림] 발송 시작");
 
         try {
             // 1. TOP3 알림 구독자 조회
             List<SubscriptionVO> top3Subscribers = subscriptionMapper.findActiveByNotificationType("TOP3");
             
             if (top3Subscribers.isEmpty()) {
-                log.info("📊 [TOP3 알림] 구독자가 없습니다.");
+                log.info("[TOP3 알림] 구독자가 없습니다.");
                 return;
             }
 
-            log.info("📊 [TOP3 알림] 구독자 수: {}", top3Subscribers.size());
+            log.info("[TOP3 알림] 구독자 수: {}", top3Subscribers.size());
             
             int successCount = 0;
             int failCount = 0;
@@ -59,16 +59,16 @@ public class Top3NotificationService {
                         failCount++;
                     }
                 } catch (Exception e) {
-                    log.error("📊 [TOP3 알림] 사용자별 알림 발송 실패 - userId: {}, 오류: {}", 
+                    log.error("[TOP3 알림] 사용자별 알림 발송 실패 - userId: {}, 오류: {}", 
                             subscriber.getUserId(), e.getMessage());
                     failCount++;
                 }
             }
 
-            log.info("📊 [TOP3 알림] 발송 완료 - 성공: {}, 실패: {}", successCount, failCount);
+            log.info("[TOP3 알림] 발송 완료 - 성공: {}, 실패: {}", successCount, failCount);
 
         } catch (Exception e) {
-            log.error("📊 [TOP3 알림] 전체 발송 실패: {}", e.getMessage());
+            log.error("[TOP3 알림] 전체 발송 실패: {}", e.getMessage());
         }
     }
 
@@ -80,7 +80,7 @@ public class Top3NotificationService {
             // 1. 사용자 정보 조회
             MemberVO member = memberMapper.findByUserId(subscriber.getUserId());
             if (member == null) {
-                log.warn("📊 [TOP3 알림] 사용자 정보를 찾을 수 없음 - userId: {}", subscriber.getUserId());
+                log.warn("[TOP3 알림] 사용자 정보를 찾을 수 없음 - userId: {}", subscriber.getUserId());
                 return false;
             }
 
@@ -91,17 +91,17 @@ public class Top3NotificationService {
             List<SearchResultDTO> matchingPolicies = userPolicyService.searchMatchingPolicy(username);
             
             if (matchingPolicies == null || matchingPolicies.isEmpty()) {
-                log.info("📊 [TOP3 알림] 사용자에게 맞는 정책이 없음 - 조건 설정 유도 알림 발송 - userId: {}", subscriber.getUserId());
+                log.info("[TOP3 알림] 사용자에게 맞는 정책이 없음 - 조건 설정 유도 알림 발송 - userId: {}", subscriber.getUserId());
                 
                 // 조건 미설정 사용자에게 설정 유도 알림 발송
-                String title = "🎯 맞춤 정책 추천 설정";
-                String message = String.format("🎯 %s님, 맞춤 정책 추천을 받으려면 조건을 설정해주세요!", displayName);
+                String title = "[TOP3] 맞춤 정책 추천 설정";
+                String message = String.format("%s님, 맞춤 정책 추천을 받으려면 조건을 설정해주세요!", displayName);
                 String targetUrl = "/condition/setup";
                 
                 // UserNotificationService를 통한 통합 알림 발송 (여러 토큰 지원)
                 userNotificationService.createAndSendTop3Notification(subscriber.getUserId(), title, message, targetUrl);
                 
-                log.info("📊 [TOP3 알림] 조건 설정 유도 알림 발송 완료 - userId: {}", subscriber.getUserId());
+                log.info("[TOP3 알림] 조건 설정 유도 알림 발송 완료 - userId: {}", subscriber.getUserId());
                 return true; // 성공으로 처리
             }
 
@@ -112,7 +112,7 @@ public class Top3NotificationService {
                     .toList();
 
             if (top3Policies.size() < 3) {
-                log.info("📊 [TOP3 알림] 지원금 정보가 있는 정책이 3개 미만 - userId: {}, 정책 수: {}", 
+                log.info("[TOP3 알림] 지원금 정보가 있는 정책이 3개 미만 - userId: {}, 정책 수: {}", 
                         subscriber.getUserId(), top3Policies.size());
                 return false;
             }
@@ -124,21 +124,21 @@ public class Top3NotificationService {
 
             // 5. 알림 메시지 생성
             String formattedAmount = NumberFormat.getNumberInstance(Locale.KOREA).format(totalAmount);
-            String title = "💰 TOP3 맞춤 정책 추천";
-            String message = String.format("💰 %s님, 최대 %s원 지원받을 수 있는 TOP3 정책을 확인하세요!", 
+            String title = "[TOP3] 맞춤 정책 추천";
+            String message = String.format("%s님, 최대 %s원 지원받을 수 있는 TOP3 정책을 확인하세요!", 
                     displayName, formattedAmount);
             String targetUrl = "/policy/top3";
 
             // 6. UserNotificationService를 통한 통합 알림 발송 (여러 토큰 지원)
             userNotificationService.createAndSendTop3Notification(subscriber.getUserId(), title, message, targetUrl);
 
-            log.info("📊 [TOP3 알림] 발송 성공 - userId: {}, 총 지원금액: {}원", 
+            log.info("[TOP3 알림] 발송 성공 - userId: {}, 총 지원금액: {}원", 
                     subscriber.getUserId(), formattedAmount);
             
             return true;
 
         } catch (Exception e) {
-            log.error("📊 [TOP3 알림] 개별 발송 실패 - userId: {}, 오류: {}", 
+            log.error("[TOP3 알림] 개별 발송 실패 - userId: {}, 오류: {}", 
                     subscriber.getUserId(), e.getMessage());
             return false;
         }

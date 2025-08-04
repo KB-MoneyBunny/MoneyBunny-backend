@@ -37,28 +37,28 @@ public class NewPolicyNotificationService {
      * 오후 6시에 실행되어 당일 생성된 정책들을 처리
      */
     public void processNewPolicyAlerts() {
-        log.info("🎉 [신규 정책 알림] 처리 시작");
+        log.info("[신규 정책 알림] 처리 시작");
         
         try {
             // 1. 오늘 생성된 신규 정책들 조회
             List<YouthPolicyVO> todayNewPolicies = policyMapper.findTodayNewPolicies();
             
             if (todayNewPolicies.isEmpty()) {
-                log.info("🎉 [신규 정책 알림] 오늘 생성된 신규 정책 없음");
+                log.info("[신규 정책 알림] 오늘 생성된 신규 정책 없음");
                 return;
             }
             
-            log.info("🎉 [신규 정책 알림] 오늘 생성된 신규 정책 {}건 발견", todayNewPolicies.size());
+            log.info("[신규 정책 알림] 오늘 생성된 신규 정책 {}건 발견", todayNewPolicies.size());
             
             // 2. 신규 정책 알림 구독자들 조회
             List<SubscriptionVO> newPolicySubscribers = getNewPolicySubscribers();
             
             if (newPolicySubscribers.isEmpty()) {
-                log.info("🎉 [신규 정책 알림] 신규 정책 알림 구독자 없음");
+                log.info("[신규 정책 알림] 신규 정책 알림 구독자 없음");
                 return;
             }
             
-            log.info("🎉 [신규 정책 알림] 신규 정책 알림 구독자 {}명 발견", newPolicySubscribers.size());
+            log.info("[신규 정책 알림] 신규 정책 알림 구독자 {}명 발견", newPolicySubscribers.size());
             
             // 3. 각 구독자별로 매칭되는 신규 정책 확인 및 알림 발송
             int totalNotificationsSent = 0;
@@ -67,10 +67,10 @@ public class NewPolicyNotificationService {
                 totalNotificationsSent += sentCount;
             }
             
-            log.info("🎉 [신규 정책 알림] 처리 완료 - 총 {}건의 알림 발송", totalNotificationsSent);
+            log.info("[신규 정책 알림] 처리 완료 - 총 {}건의 알림 발송", totalNotificationsSent);
             
         } catch (Exception e) {
-            log.error("🎉 [신규 정책 알림] 처리 중 오류 발생", e);
+            log.error("[신규 정책 알림] 처리 중 오류 발생", e);
         }
     }
 
@@ -82,7 +82,7 @@ public class NewPolicyNotificationService {
             // 사용자 정보 조회
             MemberVO member = memberMapper.findByUserId(userId);
             if (member == null || member.getLoginId() == null) {
-                log.warn("🎉 [신규 정책 알림] 사용자를 찾을 수 없음 - userId: {}", userId);
+                log.warn("[신규 정책 알림] 사용자를 찾을 수 없음 - userId: {}", userId);
                 return 0;
             }
             
@@ -93,7 +93,7 @@ public class NewPolicyNotificationService {
             List<SearchResultDTO> userMatchingPolicies = userPolicyService.searchMatchingPolicy(loginId);
             
             if (userMatchingPolicies == null || userMatchingPolicies.isEmpty()) {
-                log.debug("🎉 [신규 정책 알림] 사용자에게 맞는 정책 없음 - userId: {}", userId);
+                log.debug("[신규 정책 알림] 사용자에게 맞는 정책 없음 - userId: {}", userId);
                 return 0;
             }
             
@@ -112,14 +112,14 @@ public class NewPolicyNotificationService {
             }
             
             if (sentCount > 0) {
-                log.info("🎉 [신규 정책 알림] 사용자 {}({})에게 {}건의 신규 정책 알림 발송", 
+                log.info("[신규 정책 알림] 사용자 {}({})에게 {}건의 신규 정책 알림 발송", 
                          displayName, userId, sentCount);
             }
             
             return sentCount;
             
         } catch (Exception e) {
-            log.error("🎉 [신규 정책 알림] 사용자별 처리 중 오류 - userId: {}, 오류: {}", userId, e.getMessage());
+            log.error("[신규 정책 알림] 사용자별 처리 중 오류 - userId: {}, 오류: {}", userId, e.getMessage());
             return 0;
         }
     }
@@ -129,7 +129,7 @@ public class NewPolicyNotificationService {
      */
     private void sendNewPolicyNotification(Long userId, YouthPolicyVO policy, String displayName) {
         try {
-            String title = "🎉 " + displayName + "님이 신청 가능한 새로운 지원정책이 생겼어요!";
+            String title = "[신규 정책] " + displayName + "님의 맞춤형 정책이 생겼어요!";
             String message = String.format("[%s]\n%s", 
                     policy.getTitle(),
                     policy.getPolicyBenefitDescription() != null ? 
@@ -138,10 +138,10 @@ public class NewPolicyNotificationService {
             
             userNotificationService.createAndSendNewPolicyNotification(userId, title, message, targetUrl);
             
-            log.debug("🎉 [신규 정책 알림] 개별 알림 발송 완료 - 사용자: {}, 정책: {}", displayName, policy.getTitle());
+            log.debug("[신규 정책 알림] 개별 알림 발송 완료 - 사용자: {}, 정책: {}", displayName, policy.getTitle());
             
         } catch (Exception e) {
-            log.error("🎉 [신규 정책 알림] 개별 알림 발송 실패 - 사용자: {}, 정책: {}, 오류: {}", 
+            log.error("[신규 정책 알림] 개별 알림 발송 실패 - 사용자: {}, 정책: {}, 오류: {}", 
                       displayName, policy.getTitle(), e.getMessage());
         }
     }
@@ -153,7 +153,7 @@ public class NewPolicyNotificationService {
         try {
             return subscriptionMapper.findActiveNewPolicySubscribers();
         } catch (Exception e) {
-            log.error("🎉 [신규 정책 알림] 구독자 조회 중 오류", e);
+            log.error("[신규 정책 알림] 구독자 조회 중 오류", e);
             return List.of();
         }
     }
