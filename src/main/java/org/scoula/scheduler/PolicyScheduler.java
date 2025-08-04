@@ -3,6 +3,7 @@ package org.scoula.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policy.service.PolicyService;
+import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
 import org.scoula.userPolicy.service.UserVectorBatchService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ public class PolicyScheduler {
 
     private final PolicyService policyService;
     private final UserVectorBatchService userVectorBatchService;
+    private final BookmarkPolicyNotificationService bookmarkPolicyNotificationService;
 
     /**
      * 매일 새벽 5시에 정책 데이터 동기화 및 사용자 벡터 갱신 실행
@@ -34,6 +36,7 @@ public class PolicyScheduler {
             log.info("[정책 스케줄러] 사용자 벡터 3차원 갱신 시작");
             userVectorBatchService.updateUserVectorsByEMA();
             log.info("[정책 스케줄러] 사용자 벡터 3차원 갱신 완료");
+            
             
             log.info("[정책 스케줄러] 모든 배치 작업 완료");
         } catch (Exception e) {

@@ -6,14 +6,14 @@
 <mapper namespace="org.scoula.push.mapper.UserNotificationMapper">
 
     <!-- 새로운 알림 생성 -->
-    <insert id="insertNotification" parameterType="org.scoula.push.domain.UserNotification"
+    <insert id="insertNotification" parameterType="org.scoula.push.domain.UserNotificationVO"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_notification (user_id, title, message, type, target_url, is_read, created_at)
         VALUES (#{userId}, #{title}, #{message}, #{type}, #{targetUrl}, #{isRead}, #{createdAt})
     </insert>
 
     <!-- 특정 사용자의 미읽은 알림 조회 -->
-    <select id="findUnreadByUserId" resultType="org.scoula.push.domain.UserNotification">
+    <select id="findUnreadByUserId" resultType="org.scoula.push.domain.UserNotificationVO">
         SELECT id, user_id, title, message, type, target_url, is_read, created_at
         FROM user_notification
         WHERE user_id = #{userId} AND is_read = false
@@ -21,7 +21,7 @@
     </select>
 
     <!-- 특정 사용자의 모든 알림 조회 -->
-    <select id="findByUserId" resultType="org.scoula.push.domain.UserNotification">
+    <select id="findByUserId" resultType="org.scoula.push.domain.UserNotificationVO">
         SELECT id, user_id, title, message, type, target_url, is_read, created_at
         FROM user_notification
         WHERE user_id = #{userId}
@@ -43,11 +43,18 @@
     </select>
 
     <!-- 특정 사용자의 특정 타입 알림 조회 -->
-    <select id="findByUserIdAndType" resultType="org.scoula.push.domain.UserNotification">
+    <select id="findByUserIdAndType" resultType="org.scoula.push.domain.UserNotificationVO">
         SELECT id, user_id, title, message, type, target_url, is_read, created_at
         FROM user_notification
         WHERE user_id = #{userId} AND type = #{type}
         ORDER BY created_at DESC
+    </select>
+
+    <!-- 알림 ID로 단건 조회 -->
+    <select id="findById" resultType="org.scoula.push.domain.UserNotificationVO">
+        SELECT id, user_id AS userId, title, message, type, target_url AS targetUrl, is_read AS isRead, created_at AS createdAt
+        FROM user_notification
+        WHERE id = #{id}
     </select>
 
 </mapper>
