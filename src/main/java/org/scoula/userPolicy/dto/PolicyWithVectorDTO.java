@@ -21,6 +21,7 @@ public class PolicyWithVectorDTO {
     private String title;
     private String policyBenefitDescription;
     private String endDate;
+    private Long policyBenefitAmount;
     
     // 벡터 정보 (policy_vector 테이블에서 조회)
     private BigDecimal vecBenefitAmount;  // 혜택금액 벡터
@@ -29,7 +30,11 @@ public class PolicyWithVectorDTO {
     
     // 계산된 유사도
     private Double similarity;            // 코사인 유사도 점수
-    
+
+    // 추가: 대분류 카테고리, 신청 URL
+    private String largeCategory;
+    private String applyUrl;
+
     /**
      * 벡터를 double 배열로 변환 (null 안전)
      * 기존 UserVectorVO, PolicyVectorVO와 동일한 방식

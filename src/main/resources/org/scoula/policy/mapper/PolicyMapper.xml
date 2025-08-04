@@ -28,12 +28,14 @@
             policy_no, title, description, support_content,
             application_method, screening_method, submit_documents,
             policy_benefit_amount, etc_notes, apply_url, ref_url_1, ref_url_2,
-            is_financial_support, policy_benefit_description, views
+            is_financial_support, policy_benefit_description, views,
+            large_category, medium_category
         ) VALUES (
                      #{policyNo}, #{title}, #{description}, #{supportContent},
                      #{applicationMethod}, #{screeningMethod}, #{submitDocuments},
                      #{policyBenefitAmount}, #{etcNotes}, #{applyUrl}, #{refUrl1}, #{refUrl2},
-                     #{isFinancialSupport}, #{policyBenefitDescription}, #{views}
+                     #{isFinancialSupport}, #{policyBenefitDescription}, #{views},
+                     #{largeCategory}, #{mediumCategory}
                  )
     </insert>
 
@@ -223,7 +225,8 @@
         SELECT id, policy_no, title, description, support_content,
                application_method, screening_method, submit_documents,
                policy_benefit_amount, etc_notes, apply_url, ref_url_1, ref_url_2,
-               is_financial_support, policy_benefit_description,views
+               is_financial_support, policy_benefit_description, views,
+               large_category, medium_category
         FROM youth_policy
         WHERE id = #{policyId}
     </select>
@@ -280,6 +283,10 @@
             <id property="id" column="sc_id"/>
             <result property="specialCondition" column="special_condition"/>
         </collection>
+        <collection property="keywords" ofType="org.scoula.policy.domain.keyword.PolicyKeywordVO">
+            <id property="id" column="keyword_id"/>
+            <result property="keyword" column="keyword"/>
+        </collection>
     </resultMap>
 
     <select id="findPolicyDetailById" resultMap="policyDetailResultMap">
@@ -296,7 +303,8 @@
             e.id AS edu_id, e.education_level,
             m.id AS major_id, m.major,
             es.id AS emp_id, es.employment_status,
-            sc.id AS sc_id, sc.special_condition
+            sc.id AS sc_id, sc.special_condition,
+            k.id AS keyword_id, k.keyword
         FROM
             youth_policy p
                 LEFT JOIN youth_policy_condition c ON p.id = c.policy_id
@@ -311,6 +319,8 @@
                 LEFT JOIN policy_employment_status es ON ypes.employment_status_id = es.id
                 LEFT JOIN youth_policy_special_condition ypsc ON p.id = ypsc.policy_id
                 LEFT JOIN policy_special_condition sc ON ypsc.special_condition_id = sc.id
+                LEFT JOIN youth_policy_keyword ypk ON p.id = ypk.policy_id
+                LEFT JOIN policy_keyword k ON ypk.keyword_id = k.id
         WHERE
             p.id = #{policyId}
     </select>
@@ -318,6 +328,32 @@
     <update id="updatePolicyViews">
         UPDATE youth_policy
         SET views = #{views}
+        WHERE policy_no = #{policyNo}
+    </update>
+
+    <!-- 기존 정책 주요 정보 업데이트 -->
+    <update id="updatePolicyInfo">
+        UPDATE youth_policy
+        SET views = #{views},
+            large_category = #{largeCategory},
+            medium_category = #{mediumCategory},
+            apply_url = #{applyUrl}
+        WHERE policy_no = #{policyNo}
+    </update>
+
+    <!-- 정책 기간 업데이트 -->
+    <update id="updatePolicyPeriod">
+        UPDATE youth_policy_period
+        SET apply_period = #{applyPeriod}
+        WHERE policy_id = (
+            SELECT id FROM youth_policy WHERE policy_no = #{policyNo}
+        )
+    </update>
+
+    <!-- 정책 신청URL 업데이트 -->
+    <update id="updatePolicyApplyUrl">
+        UPDATE youth_policy
+        SET apply_url = #{applyUrl}
         WHERE policy_no = #{policyNo}
     </update>
 
@@ -377,5 +413,42 @@
 
     <select id="findPolicyIdByPolicyNo" parameterType="string" resultType="long">
         SELECT id FROM youth_policy WHERE policy_no = #{policyNo}
+    </select>
+
+    <!-- 당일 생성된 신규 정책 조회 -->
+    <select id="findTodayNewPolicies" resultType="org.scoula.policy.domain.YouthPolicyVO">
+        SELECT * FROM youth_policy 
+        WHERE DATE(created_at) = CURDATE()
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 마스터 지역 전체 조회 -->
+    <select id="findAllMasterRegions" resultType="org.scoula.policy.domain.master.MasterPolicyRegionVO">
+        SELECT id, region_code FROM policy_region
+    </select>
+
+    <!-- 마스터 키워드 전체 조회 -->
+    <select id="findAllMasterKeywords" resultType="org.scoula.policy.domain.master.MasterPolicyKeywordVO">
+        SELECT id, keyword FROM policy_keyword
+    </select>
+
+    <!-- 마스터 전공 전체 조회 -->
+    <select id="findAllMasterMajors" resultType="org.scoula.policy.domain.master.MasterPolicyMajorVO">
+        SELECT id, major FROM policy_major
+    </select>
+
+    <!-- 마스터 학력 전체 조회 -->
+    <select id="findAllMasterEducationLevels" resultType="org.scoula.policy.domain.master.MasterPolicyEducationLevelVO">
+        SELECT id, education_level FROM policy_education_level
+    </select>
+
+    <!-- 마스터 취업상태 전체 조회 -->
+    <select id="findAllMasterEmploymentStatuses" resultType="org.scoula.policy.domain.master.MasterPolicyEmploymentStatusVO">
+        SELECT id, employment_status FROM policy_employment_status
+    </select>
+
+    <!-- 마스터 특수조건 전체 조회 -->
+    <select id="findAllMasterSpecialConditions" resultType="org.scoula.policy.domain.master.MasterPolicySpecialConditionVO">
+        SELECT id, special_condition FROM policy_special_condition
     </select>
 </mapper>
