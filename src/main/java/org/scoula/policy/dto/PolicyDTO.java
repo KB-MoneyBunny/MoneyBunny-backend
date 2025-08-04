@@ -52,6 +52,12 @@ public class PolicyDTO {
     @JsonProperty("inqCnt")
     private Long views;
 
+    @JsonProperty("lclsfNm")
+    private String largeCategory;
+
+    @JsonProperty("mclsfNm")
+    private String mediumCategory;
+
     // === 조건 정보 (youth_policy_condition) ===
     @JsonProperty("sprtTrgtMinAge")
     private String minAge;

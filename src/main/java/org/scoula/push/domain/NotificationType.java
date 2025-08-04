@@ -4,9 +4,10 @@ package org.scoula.push.domain;
  * 맞춤형 알림 유형을 정의하는 Enum
  */
 public enum NotificationType {
-    POLICY("정책 알림", "북마크한 정책의 오픈/마감 알림"),           
-    FEEDBACK("피드백 알림", "개인 소비패턴 기반 맞춤형 피드백"),
-    SYSTEM("시스템 알림", "앱 업데이트, 점검 등 시스템 관련 알림");       
+    BOOKMARK("북마크 알림", "북마크한 정책의 오픈/마감 알림"),
+    TOP3("Top3 알림", "사용자 맞춤 Top3 정책 추천"),
+    NEW_POLICY("신규 정책 알림", "사용자 조건에 부합하는 신규 정책 알림"),
+    FEEDBACK("피드백 알림", "개인 소비패턴 기반 맞춤형 피드백");
 
     private final String displayName;
     private final String description;
@@ -31,7 +32,7 @@ public enum NotificationType {
         if (type == null || type.trim().isEmpty()) {
             return null;
         }
-        
+
         try {
             return NotificationType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {

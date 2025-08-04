@@ -32,6 +32,8 @@ public class YouthPolicyVO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long views;
+    private String largeCategory;
+    private String mediumCategory;
 
     private String policyBenefitDescription;
 
@@ -69,6 +71,8 @@ public class YouthPolicyVO {
         vo.setIsFinancialSupport(null); // GPT 후처리 예정
         vo.setPolicyBenefitDescription(null);
         vo.setViews(dto.getViews());
+        vo.setLargeCategory(dto.getLargeCategory());
+        vo.setMediumCategory(dto.getMediumCategory());
         return vo;
     }
 }
