@@ -34,5 +34,11 @@
     <select id="getByEmail" parameterType="string" resultType="org.scoula.security.account.domain.MemberVO">
         SELECT * FROM users WHERE email = #{email}
     </select>
+    <!-- 사용자 ID로 회원 정보 조회 -->
+    <select id="findByUserId" resultMap="memberMap">
+        SELECT user_id, login_id, password, email, create_at, name
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
 
 </mapper>
