@@ -10,6 +10,7 @@ import org.scoula.security.account.domain.MemberVO;
 import org.scoula.security.dto.*;
 import org.scoula.security.service.AuthServiceImpl;
 import org.scoula.security.util.JwtProcessor;
+import org.scoula.security.util.PasswordValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -190,6 +191,12 @@ public class AuthController {
     @ApiOperation(value = "비밀번호 재설정", notes = "이메일 인증을 마친 사용자에 대해 새로운 비밀번호로 재설정합니다.")
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO dto) {
+        // 비밀번호 유효성 검사
+        if (!PasswordValidator.isValid(dto.getPassword())) {
+            return ResponseEntity.badRequest().body("비밀번호 형식이 유효하지 않습니다.");
+        }
+
+        // 정상 처리
         boolean success = authService.resetPassword(dto.getLoginId(), dto.getPassword());
         if (success) {
             return ResponseEntity.ok("password reset");

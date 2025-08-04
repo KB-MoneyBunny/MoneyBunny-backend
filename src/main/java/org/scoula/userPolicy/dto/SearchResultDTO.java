@@ -14,4 +14,7 @@ public class SearchResultDTO {
     private String title;
     private String policyBenefitDescription;
     private String endDate;
+    private Long policyBenefitAmount;
+    private String largeCategory;
+    private String applyUrl;
 }
