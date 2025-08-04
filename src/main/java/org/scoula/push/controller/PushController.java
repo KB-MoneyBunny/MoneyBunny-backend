@@ -119,11 +119,12 @@ public class PushController {
      */
     @GetMapping("/subscriptions/status")
     @ApiOperation(value = "푸시 알림 구독 상태 확인", 
-                  notes = "현재 사용자의 푸시 알림 구독 여부를 확인합니다. 활성 토큰이 있으면 true, 없으면 false를 반환합니다.")
+                  notes = "현재 사용자의 특정 기기(토큰)에 대한 푸시 알림 구독 상태를 확인합니다. FCM 토큰은 필수 파라미터입니다.")
     public ResponseEntity<SubscriptionStatusResponse> getSubscriptionStatus(
-            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam String token) {
         Long userId = customUser.getMember().getUserId();
-        SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId);
+        SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId, token);
         return ResponseEntity.ok(status);
     }
 
