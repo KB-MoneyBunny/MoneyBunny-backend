@@ -53,10 +53,9 @@ public class CodefService {
      * - 계정 연결(connectedId 발급/추가) 후 계좌 목록을 CODEF에서 가져와 반환
      * - 계정 연결에 실패하면 예외 발생
      */
-    public List<UserAccountVO> connectAndFetchAccounts(String loginId, AccountConnectRequest request) {
+    public List<UserAccountVO> connectAndFetchAccounts(Long userId, AccountConnectRequest request) {
         try {
-            Long userId = connectedAccountMapper.findIdByLoginId(loginId);
-            log.info("[CODEF 계좌연동] loginId={}, userId={}", loginId, userId);
+            log.info("[CODEF 계좌연동] userId={}", userId);
 
             // 1. connected_accounts 테이블에서 connectedId 먼저 조회
             ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
@@ -170,12 +169,17 @@ public class CodefService {
 
             JsonNode root = objectMapper.readTree(decodedAccountResponse);
 
+            log.debug("[CODEF 최종 root] root={}", root);
+
+
             if (!CodefUtil.isSuccess(decodedAccountResponse)) {
                 log.error("[CODEF 계좌조회 실패] {}", CodefUtil.getResultMessage(decodedAccountResponse));
                 throw new RuntimeException("계좌 조회 실패: " + CodefUtil.getResultMessage(decodedAccountResponse));
             }
 
             JsonNode accountList = root.get("data").get("resDepositTrust");
+
+            log.debug("[CODEF accountList] accountList={}", accountList);
 
             if (accountList.isMissingNode() || !accountList.isArray()) {
                 log.warn("[CODEF 계좌목록 비어있음] resDepositTrust 없음/배열아님");
@@ -199,7 +203,7 @@ public class CodefService {
             return result;
 
         } catch (Exception e) {
-            log.error("[CODEF 계좌연동/조회 실패] loginId={}, error={}", loginId, e.getMessage(), e);
+            log.error("[CODEF 계좌연동/조회 실패] userId={}, error={}", userId, e.getMessage(), e);
             if (e instanceof CodefApiException) {
                 throw (CodefApiException) e;
             }
@@ -213,12 +217,11 @@ public class CodefService {
      * - 계좌별로 1년치 거래내역을 CODEF에서 조회해 배치로 저장
      */
     @Transactional
-    public void registerUserAccounts(String loginId, List<UserAccountVO> selectedAccounts) {
-        Long userId = connectedAccountMapper.findIdByLoginId(loginId);
+    public void registerUserAccounts(Long userId, List<UserAccountVO> selectedAccounts) {
         ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
         String connectedId = vo.getConnectedId();
 
-        log.info("[계좌등록] 계좌 등록 프로세스 시작: loginId={}, userId={}, 등록요청 계좌수={}", loginId, userId, selectedAccounts.size());
+        log.info("[계좌등록] 계좌 등록 프로세스 시작: userId={}, 등록요청 계좌수={}", userId, selectedAccounts.size());
 
         // 오늘 기준 1년 전 ~ 오늘 (yyyyMMdd)
         LocalDate today = LocalDate.now();
@@ -349,10 +352,9 @@ public class CodefService {
      * - 카드 계정 연결(connectedId 발급/추가) 후 카드 목록을 CODEF에서 가져와 반환
      * - 카드 연결에 실패하면 예외 발생
      */
-    public List<UserCardVO> connectAndFetchCards(String loginId, CardConnectRequest request) {
+    public List<UserCardVO> connectAndFetchCards(Long userId, CardConnectRequest request) {
         try {
-            Long userId = connectedAccountMapper.findIdByLoginId(loginId);
-            log.info("[카드] 카드 계정 연결/조회 시작: loginId={}, issuer={}", loginId, request.getOrganization());
+            log.info("[카드] 카드 계정 연결/조회 시작: userId={}, issuer={}", userId, request.getOrganization());
 
             // 1. connectedId 조회 or 생성
             ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
@@ -499,7 +501,7 @@ public class CodefService {
                     );
                 }
             }
-            log.info("[카드] 카드목록 파싱 완료: loginId={}, 반환건수={}", loginId, result.size());
+            log.info("[카드] 카드목록 파싱 완료: userId={}, 반환건수={}", userId, result.size());
             return result;
 
 
@@ -516,12 +518,11 @@ public class CodefService {
      * - 카드별로 1년치 거래내역을 CODEF에서 조회해 배치로 저장
      */
     @Transactional
-    public void registerUserCards(String loginId, List<UserCardVO> selectedCards) {
-        Long userId = connectedAccountMapper.findIdByLoginId(loginId);
+    public void registerUserCards(Long userId, List<UserCardVO> selectedCards) {
         ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
         String connectedId = vo.getConnectedId();
 
-        log.info("[카드등록] 시작: loginId={}, 등록요청 개수={}", loginId, selectedCards.size());
+        log.info("[카드등록] 시작: userId={}, 등록요청 개수={}", userId, selectedCards.size());
 
         // 오늘 기준 1년 전 ~ 오늘 (yyyyMMdd)
         LocalDate today = LocalDate.now();
@@ -566,7 +567,7 @@ public class CodefService {
             }
             log.info("[카드등록] 카드 등록+내역저장 완료: 전체내역={}",  txList.size());
         }
-        log.info("[카드등록] 전체 완료: loginId={}, 요청카드수={}", loginId, selectedCards.size());
+        log.info("[카드등록] 전체 완료: userId={}, 요청카드수={}", userId, selectedCards.size());
     }
 
 
