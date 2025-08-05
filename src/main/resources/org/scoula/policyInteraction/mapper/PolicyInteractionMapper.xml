@@ -80,8 +80,8 @@
 
     <!-- 정책 신청 등록 (created_at, updated_at은 DB에서 NOW() 처리) -->
     <insert id="insertApplication" parameterType="org.scoula.policyInteraction.domain.UserPolicyApplicationVO">
-        INSERT INTO user_policy_application (user_id, policy_id, application_url, created_at, updated_at)
-        VALUES (#{userId}, #{policyId}, #{applicationUrl}, NOW(), NOW())
+        INSERT INTO user_policy_application (user_id, policy_id, application_url, is_applied, created_at, updated_at)
+        VALUES (#{userId}, #{policyId}, #{applicationUrl}, #{isApplied}, NOW(), NOW())
     </insert>
 
     <!-- 특정 정책 신청 단건 조회 -->
@@ -91,6 +91,7 @@
             user_id AS userId,
             policy_id AS policyId,
             application_url AS applicationUrl,
+            is_applied AS isApplied,
             created_at AS createdAt,
             updated_at AS updatedAt
         FROM user_policy_application
@@ -101,6 +102,7 @@
     <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
         SELECT 
             a.id as applicationId,
+            a.is_applied as isApplied,
             a.created_at as appliedAt,
             p.id as policyId,
             p.title,
@@ -113,6 +115,39 @@
         LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
         WHERE a.user_id = #{userId}
         ORDER BY a.created_at DESC
+    </select>
+
+    <!-- 정책 신청 완료 처리 (is_applied를 true로 변경) -->
+    <update id="updateApplicationToComplete">
+        UPDATE user_policy_application 
+        SET is_applied = TRUE, updated_at = NOW()
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </update>
+
+    <!-- 정책 신청 기록 삭제 -->
+    <delete id="deleteApplication">
+        DELETE FROM user_policy_application
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </delete>
+
+    <!-- 미완료 신청 정책 하나 조회 (is_applied = false) -->
+    <select id="findIncompleteApplication" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+        SELECT 
+            a.id as applicationId,
+            a.is_applied as isApplied,
+            a.created_at as appliedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM user_policy_application a
+        INNER JOIN youth_policy p ON a.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE a.user_id = #{userId} AND a.is_applied = FALSE
+        ORDER BY a.created_at ASC
+        LIMIT 1
     </select>
 
 </mapper>
