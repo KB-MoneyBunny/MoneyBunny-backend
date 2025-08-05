@@ -37,9 +37,7 @@ public class SyncService {
      */
     @Async
     @Transactional
-    public void syncAccountsAsync(String loginId) {
-        Long userId = connectedAccountMapper.findIdByLoginId(loginId);
-
+    public void syncAccountsAsync(Long userId) {
         // 1. 사용자 보유 계좌 전체 조회
         List<UserAccountVO> accountList = userAccountMapper.findByUserId(userId);
 
@@ -97,9 +95,7 @@ public class SyncService {
      * - 실패시 1초간격 3회 재시도
      */
     @Async
-    public void syncCardsAsync(String loginId) {
-        Long userId = connectedAccountMapper.findIdByLoginId(loginId);
-
+    public void syncCardsAsync(Long userId) {
         // 1. 사용자 보유 카드 전체 조회
         List<UserCardVO> cardList = userCardMapper.findByUserId(userId);
 

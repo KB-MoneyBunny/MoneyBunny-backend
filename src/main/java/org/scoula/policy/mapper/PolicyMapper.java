@@ -10,6 +10,7 @@ import org.scoula.policy.domain.keyword.PolicyKeywordVO;
 import org.scoula.policy.domain.keyword.YouthPolicyKeywordVO;
 import org.scoula.policy.domain.major.PolicyMajorVO;
 import org.scoula.policy.domain.major.YouthPolicyMajorVO;
+import org.scoula.policy.domain.master.*;
 import org.scoula.policy.domain.region.PolicyRegionVO;
 import org.scoula.policy.domain.region.YouthPolicyRegionVO;
 import org.scoula.policy.domain.specialcondition.PolicySpecialConditionVO;
@@ -148,11 +149,17 @@ public interface PolicyMapper {
     /** 정책-특수 조건 연결 저장 */
     void insertYouthPolicySpecialCondition(YouthPolicySpecialConditionVO vo);
 
+    // 정책 상세 분리 조회
+    YouthPolicyVO findYouthPolicyById(Long policyId);
+    YouthPolicyConditionVO findYouthPolicyConditionByPolicyId(Long policyId);
     YouthPolicyPeriodVO findYouthPolicyPeriodByPolicyId(Long policyId);
 
-    YouthPolicyVO findYouthPolicyById(Long policyId);
-
-    PolicyDetailDTO findPolicyDetailById(Long policyId);
+    List<PolicyRegionVO> findRegionsByPolicyId(Long policyId);
+    List<PolicyEducationLevelVO> findEducationLevelsByPolicyId(Long policyId);
+    List<PolicyMajorVO> findMajorsByPolicyId(Long policyId);
+    List<PolicyEmploymentStatusVO> findEmploymentStatusesByPolicyId(Long policyId);
+    List<PolicySpecialConditionVO> findSpecialConditionsByPolicyId(Long policyId);
+    List<PolicyKeywordVO> findKeywordsByPolicyId(Long policyId);
 
     // ────────────────────────────────────────
     // 📌 정책 업데이트 관련
@@ -172,4 +179,17 @@ public interface PolicyMapper {
 
     /** 당일 생성된 신규 정책 조회 */
     List<YouthPolicyVO> findTodayNewPolicies();
+
+    // ────────────────────────────────────────
+    // 📌 마스터 테이블 전체 조회 (Master VO 반환)
+    // ────────────────────────────────────────
+
+    List<MasterPolicyRegionVO> findAllMasterRegions();
+    List<MasterPolicyKeywordVO> findAllMasterKeywords();
+    List<MasterPolicyMajorVO> findAllMasterMajors();
+    List<MasterPolicyEducationLevelVO> findAllMasterEducationLevels();
+    List<MasterPolicyEmploymentStatusVO> findAllMasterEmploymentStatuses();
+    List<MasterPolicySpecialConditionVO> findAllMasterSpecialConditions();
+
+    // ...기존 전체 조회 메서드는 필요시 deprecated 처리 또는 내부용으로 유지...
 }

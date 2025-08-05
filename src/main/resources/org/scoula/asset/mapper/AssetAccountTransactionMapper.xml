@@ -8,11 +8,19 @@
         SELECT *
         FROM account_transaction
         WHERE account_id = #{accountId}
+        <if test="txType != null and txType != ''">
+            AND tx_type = #{txType}
+        </if>
         ORDER BY transaction_date_time DESC
             LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countByAccountId" resultType="int">
-        SELECT COUNT(*) FROM account_transaction WHERE account_id = #{accountId}
+        SELECT COUNT(*)
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+        <if test="txType != null and txType != ''">
+            AND tx_type = #{txType}
+        </if>
     </select>
 </mapper>

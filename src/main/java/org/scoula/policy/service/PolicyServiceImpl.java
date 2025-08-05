@@ -345,7 +345,77 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Override
     public PolicyDetailDTO getPolicyById(String policyId) {
-        return policyMapper.findPolicyDetailById(Long.parseLong(policyId));
+        Long id = Long.parseLong(policyId);
+
+        // 1. 정책 기본 정보
+        YouthPolicyVO policy = policyMapper.findYouthPolicyById(id);
+        if (policy == null) return null;
+
+        // 2. 조건
+        YouthPolicyConditionVO condition = policyMapper.findYouthPolicyConditionByPolicyId(id);
+
+        // 3. 기간
+        YouthPolicyPeriodVO period = policyMapper.findYouthPolicyPeriodByPolicyId(id);
+
+        // 4. 연관 정보
+        List<PolicyRegionVO> regions = policyMapper.findRegionsByPolicyId(id);
+        List<PolicyEducationLevelVO> educationLevels = policyMapper.findEducationLevelsByPolicyId(id);
+        List<PolicyMajorVO> majors = policyMapper.findMajorsByPolicyId(id);
+        List<PolicyEmploymentStatusVO> employmentStatuses = policyMapper.findEmploymentStatusesByPolicyId(id);
+        List<PolicySpecialConditionVO> specialConditions = policyMapper.findSpecialConditionsByPolicyId(id);
+        List<PolicyKeywordVO> keywords = policyMapper.findKeywordsByPolicyId(id);
+
+        // 5. DTO 조립
+        PolicyDetailDTO dto = new PolicyDetailDTO();
+        // 정책 기본 정보
+        dto.setId(policy.getId());
+        dto.setPolicyNo(policy.getPolicyNo());
+        dto.setTitle(policy.getTitle());
+        dto.setDescription(policy.getDescription());
+        dto.setSupportContent(policy.getSupportContent());
+        dto.setApplicationMethod(policy.getApplicationMethod());
+        dto.setScreeningMethod(policy.getScreeningMethod());
+        dto.setSubmitDocuments(policy.getSubmitDocuments());
+        dto.setPolicyBenefitAmount(policy.getPolicyBenefitAmount());
+        dto.setEtcNotes(policy.getEtcNotes());
+        dto.setApplyUrl(policy.getApplyUrl());
+        dto.setRefUrl1(policy.getRefUrl1());
+        dto.setRefUrl2(policy.getRefUrl2());
+        dto.setIsFinancialSupport(policy.getIsFinancialSupport());
+        dto.setPolicyBenefitDescription(policy.getPolicyBenefitDescription());
+        dto.setView(policy.getViews());
+
+        // 조건
+        if (condition != null) {
+            dto.setMinAge(condition.getMinAge());
+            dto.setMaxAge(condition.getMaxAge());
+            dto.setAgeLimitYn(condition.getAgeLimitYn());
+            dto.setMarriageStatus(condition.getMarriageStatus());
+            dto.setIncomeMin(condition.getIncomeMin());
+            dto.setIncomeMax(condition.getIncomeMax());
+            dto.setIncomeConditionCode(condition.getIncomeConditionCode());
+            dto.setIncomeEtc(condition.getIncomeEtc());
+            dto.setAdditionalConditions(condition.getAdditionalConditions());
+            dto.setParticipantTarget(condition.getParticipantTarget());
+        }
+
+        // 기간
+        if (period != null) {
+            dto.setApplyPeriod(period.getApplyPeriod());
+            dto.setBizStartDate(period.getBizStartDate());
+            dto.setBizEndDate(period.getBizEndDate());
+            dto.setBizPeriodEtc(period.getBizPeriodEtc());
+        }
+
+        // 연관 정보
+        dto.setRegions(regions);
+        dto.setEducationLevels(educationLevels);
+        dto.setMajors(majors);
+        dto.setEmploymentStatuses(employmentStatuses);
+        dto.setSpecialConditions(specialConditions);
+        dto.setKeywords(keywords);
+
+        return dto;
     }
     
     @Override
