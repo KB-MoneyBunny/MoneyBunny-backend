@@ -23,14 +23,14 @@ public class PolicyDetailDTO {
     private String applicationMethod;
     private String screeningMethod;
     private String submitDocuments;
-    private String policyBenefitAmount;
+    private Long policyBenefitAmount;
     private String etcNotes;
     private String applyUrl;
     private String refUrl1;
     private String refUrl2;
     private Boolean isFinancialSupport;
     private String policyBenefitDescription;
-    private Integer view;
+    private Long view;
 
     // YouthPolicyConditionVO Fields
     private Integer minAge;
