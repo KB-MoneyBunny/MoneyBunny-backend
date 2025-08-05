@@ -16,6 +16,7 @@ public class ApplicationWithPolicyDTO {
     
     // 신청 정보
     private Long applicationId;
+    private Boolean isApplied;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime appliedAt;
