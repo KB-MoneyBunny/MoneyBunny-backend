@@ -149,11 +149,17 @@ public interface PolicyMapper {
     /** 정책-특수 조건 연결 저장 */
     void insertYouthPolicySpecialCondition(YouthPolicySpecialConditionVO vo);
 
+    // 정책 상세 분리 조회
+    YouthPolicyVO findYouthPolicyById(Long policyId);
+    YouthPolicyConditionVO findYouthPolicyConditionByPolicyId(Long policyId);
     YouthPolicyPeriodVO findYouthPolicyPeriodByPolicyId(Long policyId);
 
-    YouthPolicyVO findYouthPolicyById(Long policyId);
-
-    PolicyDetailDTO findPolicyDetailById(Long policyId);
+    List<PolicyRegionVO> findRegionsByPolicyId(Long policyId);
+    List<PolicyEducationLevelVO> findEducationLevelsByPolicyId(Long policyId);
+    List<PolicyMajorVO> findMajorsByPolicyId(Long policyId);
+    List<PolicyEmploymentStatusVO> findEmploymentStatusesByPolicyId(Long policyId);
+    List<PolicySpecialConditionVO> findSpecialConditionsByPolicyId(Long policyId);
+    List<PolicyKeywordVO> findKeywordsByPolicyId(Long policyId);
 
     // ────────────────────────────────────────
     // 📌 정책 업데이트 관련

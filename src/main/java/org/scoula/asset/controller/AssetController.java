@@ -27,28 +27,33 @@ public class AssetController {
 
     private final AssetService assetService;
 
+
     @ApiOperation(value = "자산 요약 조회", notes = "내 자산(계좌 합), 이번달 카드 사용금액, 계좌/카드 요약을 조회합니다.")
     @GetMapping("/summary")
-    public ResponseEntity<AssetSummaryResponse> getSummary() {
-        String loginId = "hong1";
-        AssetSummaryResponse summary = assetService.getSummary(loginId);
+    public ResponseEntity<AssetSummaryResponse> getSummary(
+                @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+            Long userId = customUser.getMember().getUserId();
+        AssetSummaryResponse summary = assetService.getSummary(userId);
         return ResponseEntity.ok(summary);
     }
 
     // 계좌 전체 목록
     @ApiOperation(value = "전체 계좌 목록", notes = "사용자의 전체 계좌 리스트를 반환합니다.")
     @GetMapping("/accounts")
-    public ResponseEntity<List<AccountSummaryVO>> getAccounts() {
-        String loginId = "hong1";
-        return ResponseEntity.ok(assetService.getAccounts(loginId));
+    public ResponseEntity<List<AccountSummaryVO>> getAccounts(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        System.out.println("customUser = " + customUser);
+        Long userId = customUser.getMember().getUserId();
+        return ResponseEntity.ok(assetService.getAccounts(userId));
     }
 
     // 카드 전체 목록
     @ApiOperation(value = "전체 카드 목록", notes = "사용자의 전체 카드 리스트를 반환합니다.")
     @GetMapping("/cards")
-    public ResponseEntity<List<CardSummaryVO>> getCards() {
-        String loginId = "hong1";
-        List<CardSummaryVO> cards = assetService.getCards(loginId);
+    public ResponseEntity<List<CardSummaryVO>> getCards(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getMember().getUserId();
+        List<CardSummaryVO> cards = assetService.getCards(userId);
         return ResponseEntity.ok(cards);
     }
 
@@ -56,11 +61,14 @@ public class AssetController {
     @ApiOperation(value = "계좌 거래내역 페이징 조회(최근순)", notes = "특정 계좌의 거래내역을 페이지별로 조회합니다. page(0부터), size 지정 가능(default:20)")
     @GetMapping("/accounts/{accountId}/transactions")
     public ResponseEntity<PageResponse<AccountTransactionVO>> getAccountTransactions(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long accountId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String txType
             ) {
-        PageResponse<AccountTransactionVO> resp = assetService.getAccountTransactions(accountId, page, size);
+        Long userId = customUser.getMember().getUserId();
+        PageResponse<AccountTransactionVO> resp = assetService.getAccountTransactions(userId, accountId, page, size, txType);
         return ResponseEntity.ok(resp);
     }
 
@@ -68,11 +76,13 @@ public class AssetController {
     @ApiOperation(value = "카드 거래내역 페이징 조회(최근순)", notes = "특정 카드의 거래내역을 페이지별로 조회합니다. page(0부터), size 지정 가능(default:20)")
     @GetMapping("/cards/{cardId}/transactions")
     public ResponseEntity<PageResponse<CardTransactionVO>> getCardTransactions(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long cardId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
             ) {
-        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(cardId, page, size);
+        Long userId = customUser.getMember().getUserId();
+        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(userId, cardId, page, size);
         return ResponseEntity.ok(resp);
     }
 
