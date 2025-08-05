@@ -72,6 +72,8 @@ public class VectorUtil {
                 .policyBenefitDescription(policyWithVector.getPolicyBenefitDescription())
                 .endDate(policyWithVector.getEndDate())
                 .policyBenefitAmount(policyWithVector.getPolicyBenefitAmount())
+                .largeCategory(policyWithVector.getLargeCategory()) // 추가
+                .applyUrl(policyWithVector.getApplyUrl())           // 추가
                 .build();
     }
 }
