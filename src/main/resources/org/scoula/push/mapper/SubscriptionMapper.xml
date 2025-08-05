@@ -54,6 +54,12 @@
         WHERE user_id = #{userId}
         LIMIT 1
     </select>
+    
+    <!-- 사용자 ID와 토큰으로 특정 기기의 구독 정보 조회 -->
+    <select id="findByUserIdAndToken" resultType="org.scoula.push.domain.SubscriptionVO">
+        SELECT * FROM subscription
+        WHERE user_id = #{userId} AND fcm_token = #{token}
+    </select>
 
     <!-- 사용자의 현재 구독 상태 조회 (하나라도 활성화되어 있으면 true) -->
     <select id="isUserSubscribed" resultType="boolean">
@@ -67,6 +73,42 @@
     <select id="findActiveNewPolicySubscribers" resultType="org.scoula.push.domain.SubscriptionVO">
         SELECT * FROM subscription
         WHERE is_active_new_policy = true
+        AND fcm_token IS NOT NULL
+        AND fcm_token != ''
+    </select>
+    
+    <!-- 특정 사용자의 북마크 알림이 활성화된 모든 토큰 조회 -->
+    <select id="findActiveBookmarkTokensByUserId" resultType="String">
+        SELECT fcm_token FROM subscription
+        WHERE user_id = #{userId}
+        AND is_active_bookmark = true
+        AND fcm_token IS NOT NULL
+        AND fcm_token != ''
+    </select>
+    
+    <!-- 특정 사용자의 TOP3 알림이 활성화된 모든 토큰 조회 -->
+    <select id="findActiveTop3TokensByUserId" resultType="String">
+        SELECT fcm_token FROM subscription
+        WHERE user_id = #{userId}
+        AND is_active_top3 = true
+        AND fcm_token IS NOT NULL
+        AND fcm_token != ''
+    </select>
+    
+    <!-- 특정 사용자의 신규 정책 알림이 활성화된 모든 토큰 조회 -->
+    <select id="findActiveNewPolicyTokensByUserId" resultType="String">
+        SELECT fcm_token FROM subscription
+        WHERE user_id = #{userId}
+        AND is_active_new_policy = true
+        AND fcm_token IS NOT NULL
+        AND fcm_token != ''
+    </select>
+    
+    <!-- 특정 사용자의 피드백 알림이 활성화된 모든 토큰 조회 -->
+    <select id="findActiveFeedbackTokensByUserId" resultType="String">
+        SELECT fcm_token FROM subscription
+        WHERE user_id = #{userId}
+        AND is_active_feedback = true
         AND fcm_token IS NOT NULL
         AND fcm_token != ''
     </select>
