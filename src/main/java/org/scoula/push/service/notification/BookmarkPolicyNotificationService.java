@@ -35,11 +35,11 @@ public class BookmarkPolicyNotificationService {
      */
     @Transactional
     public void checkAndSendBookmarkNotifications() {
-        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 및 발송 시작");
+        log.info("[북마크 알림] 북마크된 정책 알림 체크 및 발송 시작");
         
         // 북마크 알림을 구독한 사용자의 북마크만 조회 (최적화)
         List<YouthPolicyBookmarkVO> allBookmarks = policyInteractionMapper.getBookmarksWithActiveSubscription();
-        log.info("📌 [북마크 알림] 총 {}개의 북마크 발견", allBookmarks.size());
+        log.info("[북마크 알림] 총 {}개의 북마크 발견", allBookmarks.size());
 
         LocalDate today = LocalDate.now();
 
@@ -47,11 +47,11 @@ public class BookmarkPolicyNotificationService {
             try {
                 processPolicyNotification(bookmark, today);
             } catch (Exception e) {
-                log.error("📌 [북마크 알림] 정책 ID {} 처리 중 오류: {}", bookmark.getPolicyId(), e.getMessage());
+                log.error("[북마크 알림] 정책 ID {} 처리 중 오류: {}", bookmark.getPolicyId(), e.getMessage());
             }
         }
         
-        log.info("📌 [북마크 알림] 북마크된 정책 알림 체크 및 발송 완료");
+        log.info("[북마크 알림] 북마크된 정책 알림 체크 및 발송 완료");
     }
 
     /**
@@ -64,21 +64,21 @@ public class BookmarkPolicyNotificationService {
         // 정책 정보 조회
         YouthPolicyVO policy = policyMapper.findYouthPolicyById(policyId);
         if (policy == null) {
-            log.warn("📌 [북마크 알림] 정책을 찾을 수 없음 - 정책 ID: {}", policyId);
+            log.warn("[북마크 알림] 정책을 찾을 수 없음 - 정책 ID: {}", policyId);
             return;
         }
 
         // 정책 기간 정보 조회
         YouthPolicyPeriodVO period = policyMapper.findYouthPolicyPeriodByPolicyId(policyId);
         if (period == null || period.getApplyPeriod() == null) {
-            log.debug("📌 [북마크 알림] 신청 기간 정보 없음 - 정책 ID: {}", policyId);
+            log.debug("[북마크 알림] 신청 기간 정보 없음 - 정책 ID: {}", policyId);
             return;
         }
 
         // 신청 기간 파싱
         PolicyPeriod policyPeriod = parseApplyPeriod(period.getApplyPeriod());
         if (policyPeriod == null) {
-            log.warn("📌 [북마크 알림] 신청 기간 파싱 실패 - 정책 ID: {}, 기간: {}", policyId, period.getApplyPeriod());
+            log.warn("[북마크 알림] 신청 기간 파싱 실패 - 정책 ID: {}, 기간: {}", policyId, period.getApplyPeriod());
             return;
         }
 
@@ -96,19 +96,19 @@ public class BookmarkPolicyNotificationService {
         // 사용자 정보 조회
         MemberVO member = memberMapper.findByUserId(userId);
         if (member == null) {
-            log.warn("📌 [북마크 알림] 사용자 정보를 찾을 수 없음 - userId: {}", userId);
+            log.warn("[북마크 알림] 사용자 정보를 찾을 수 없음 - userId: {}", userId);
             return;
         }
         String displayName = getDisplayName(member);
 
         // 1. 신청 시작일 당일 체크
         if (today.equals(period.getStartDate())) {
-            String title = "🎯 정책 신청 시작!";
-            String message = String.format("%s님, '%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요 💪", displayName, policyTitle);
+            String title = "[북마크] 정책 신청이 시작됐어요!";
+            String message = String.format("%s님, '%s' 정책 신청이 오늘부터 시작됩니다! 놓치지 마세요", displayName, policyTitle);
             String targetUrl = "/policy/detail/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
-            log.info("📌 [북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", displayName, policyTitle);
+            log.info("[북마크 알림] 신청 시작 알림 발송 - 사용자: {}, 정책: {}", displayName, policyTitle);
             return;
         }
 
@@ -121,7 +121,7 @@ public class BookmarkPolicyNotificationService {
             String targetUrl = "/policy/detail/" + policyId;
             
             userNotificationService.createAndSendBookmarkNotification(userId, title, message, targetUrl);
-            log.info("📌 [북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, displayName, policyTitle);
+            log.info("[북마크 알림] 마감 {}일 전 알림 발송 - 사용자: {}, 정책: {}", daysUntilDeadline, displayName, policyTitle);
         }
     }
 
@@ -130,11 +130,11 @@ public class BookmarkPolicyNotificationService {
      */
     private String getDeadlineNotificationTitle(long daysUntilDeadline) {
         return switch ((int) daysUntilDeadline) {
-            case 0 -> "🚨 마감 당일!";
-            case 1 -> "⏰ 마감 하루 전!";
-            case 2 -> "⏰ 마감 이틀 전!";
-            case 3 -> "⏰ 마감 3일 전!";
-            default -> "⏰ 마감 임박!";
+            case 0 -> "[북마크] 마감 당일!";
+            case 1 -> "[북마크] 마감 하루 전!";
+            case 2 -> "[북마크] 마감 이틀 전!";
+            case 3 -> "[북마크] 마감 3일 전!";
+            default -> "[북마크] 마감 임박!";
         };
     }
 
@@ -143,10 +143,10 @@ public class BookmarkPolicyNotificationService {
      */
     private String getDeadlineNotificationMessage(String policyTitle, long daysUntilDeadline, String displayName) {
         return switch ((int) daysUntilDeadline) {
-            case 0 -> String.format("%s님, '%s' 정책이 오늘 마감됩니다! 지금 바로 신청하세요! 🔥", displayName, policyTitle);
-            case 1 -> String.format("%s님, '%s' 정책 마감이 하루 남았습니다! 서둘러 신청하세요! ⚡", displayName, policyTitle);
-            case 2 -> String.format("%s님, '%s' 정책 마감이 이틀 남았습니다! 준비하세요! 📋", displayName, policyTitle);
-            case 3 -> String.format("%s님, '%s' 정책 마감이 3일 남았습니다! 미리 준비하세요! 📝", displayName, policyTitle);
+            case 0 -> String.format("%s님, '%s' 정책이 오늘 마감됩니다! 지금 바로 신청하세요!", displayName, policyTitle);
+            case 1 -> String.format("%s님, '%s' 정책 마감이 하루 남았습니다! 서둘러 신청하세요!", displayName, policyTitle);
+            case 2 -> String.format("%s님, '%s' 정책 마감이 이틀 남았습니다! 준비하세요!", displayName, policyTitle);
+            case 3 -> String.format("%s님, '%s' 정책 마감이 3일 남았습니다! 미리 준비하세요!", displayName, policyTitle);
             default -> String.format("%s님, '%s' 정책 마감이 임박했습니다! 서둘러 신청하세요!", displayName, policyTitle);
         };
     }
@@ -179,7 +179,7 @@ public class BookmarkPolicyNotificationService {
             return new PolicyPeriod(startDate, endDate);
 
         } catch (Exception e) {
-            log.warn("📌 [북마크 알림] 날짜 파싱 오류: {}, 입력값: {}", e.getMessage(), applyPeriod);
+            log.warn("[북마크 알림] 날짜 파싱 오류: {}, 입력값: {}", e.getMessage(), applyPeriod);
             return null;
         }
     }

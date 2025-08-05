@@ -30,11 +30,11 @@ public class PolicyInteractionController {
     // 📌 북마크 관련 API
     // ────────────────────────────────────────
 
-    @PostMapping("/bookmark")
+    @PostMapping("/bookmark/{policyId}")
     @ApiOperation(value = "정책 북마크 추가", notes = "특정 정책을 북마크에 저장합니다. 성공 시 200 OK, 중복/오류 시 400 Bad Request를 반환합니다.")
     public ResponseEntity<Void> addBookmark(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam Long policyId) {
+            @PathVariable Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
         
@@ -44,11 +44,11 @@ public class PolicyInteractionController {
                 ResponseEntity.badRequest().build();
     }
 
-    @DeleteMapping("/bookmark")
+    @DeleteMapping("/bookmark/{policyId}")
     @ApiOperation(value = "정책 북마크 삭제", notes = "북마크된 정책을 삭제합니다. 성공 시 200 OK, 존재하지 않는 북마크인 경우 404 Not Found를 반환합니다.")
     public ResponseEntity<Void> removeBookmark(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam Long policyId) {
+            @PathVariable Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
         boolean success = policyInteractionService.removeBookmark(userId, policyId);
@@ -72,11 +72,11 @@ public class PolicyInteractionController {
     // 📌 신청 관련 API
     // ────────────────────────────────────────
 
-    @PostMapping("/application")
+    @PostMapping("/application/{policyId}")
     @ApiOperation(value = "정책 신청 등록", notes = "특정 정책에 신청 기록을 남깁니다. 성공 시 200 OK, 중복 신청/오류 시 400 Bad Request를 반환합니다.")
     public ResponseEntity<Void> addApplication(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam Long policyId) {
+            @PathVariable Long policyId) {
         
         Long userId = customUser.getMember().getUserId();
         
