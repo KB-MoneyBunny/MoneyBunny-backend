@@ -6,6 +6,7 @@ import org.scoula.push.service.notification.BookmarkPolicyNotificationService;
 import org.scoula.push.service.notification.FeedbackNotificationService;
 import org.scoula.push.service.notification.NewPolicyNotificationService;
 import org.scoula.push.service.notification.Top3NotificationService;
+import org.scoula.push.service.core.TokenCleanupService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public class NotificationScheduler {
     private final NewPolicyNotificationService newPolicyNotificationService;
     private final Top3NotificationService top3NotificationService;
     private final FeedbackNotificationService feedbackNotificationService;
+    private final TokenCleanupService tokenCleanupService;
 
     /**
      * 북마크 알림 실시간 체크 및 발송 스케줄러 - 매일 오후 12시 실행
@@ -81,6 +83,21 @@ public class NotificationScheduler {
             log.info("📅 [피드백 알림 스케줄러] 완료");
         } catch (Exception e) {
             log.error("📅 [피드백 알림 스케줄러] 오류: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 만료된 FCM 토큰 정리 스케줄러 - 매일 자정에 실행
+     */
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    public void cleanupInvalidTokens() {
+        log.info("📅 [토큰 정리 스케줄러] 시작");
+        
+        try {
+            tokenCleanupService.cleanupInvalidTokens();
+            log.info("📅 [토큰 정리 스케줄러] 완료");
+        } catch (Exception e) {
+            log.error("📅 [토큰 정리 스케줄러] 오류: {}", e.getMessage());
         }
     }
 }
