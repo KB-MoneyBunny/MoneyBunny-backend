@@ -753,15 +753,6 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
         }
 
-        // 신청 기간에서 마감일 추출
-        for(SearchResultDTO resultDTO : searchResultDTO){
-            if(resultDTO.getEndDate() != null && resultDTO.getEndDate() != ""){
-                String[] Date=resultDTO.getEndDate().split("~");
-                if(Date.length==2){
-                    resultDTO.setEndDate(Date[1].trim());
-                }
-            }
-        }
         return searchResultDTO;
     }
 
