@@ -8,8 +8,10 @@ import java.util.List;
 public interface AssetAccountTransactionMapper {
     List<AccountTransactionVO> findByAccountIdWithPaging(@Param("accountId") Long accountId,
                                                          @Param("offset") int offset,
-                                                         @Param("size") int size);
+                                                         @Param("size") int size,
+                                                         @Param("txType") String txType);
 
-    int countByAccountId(Long accountId);
+    int countByAccountId(@Param("accountId") Long accountId,
+                         @Param("txType") String txType);
 
 }
