@@ -14,6 +14,7 @@ import org.scoula.push.service.notification.Top3NotificationService;
 import org.scoula.push.service.core.PushNotificationService;
 import org.scoula.push.service.subscription.SubscriptionService;
 import org.scoula.push.service.subscription.UserNotificationService;
+import org.scoula.push.service.core.TokenCleanupService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,6 +42,7 @@ public class PushController {
     private final NewPolicyNotificationService newPolicyNotificationService;
     private final Top3NotificationService top3NotificationService;
     private final FeedbackNotificationService feedbackNotificationService;
+    private final TokenCleanupService tokenCleanupService;
 
     // ===============================
     // 알림 관련 API
@@ -228,6 +230,19 @@ public class PushController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("피드백 알림 발송 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/tokens/cleanup")
+    @ApiOperation(value = "만료된 FCM 토큰 즉시 정리", 
+                  notes = "최근 30일간 'Requested entity was not found' 에러로 3회 이상 실패한 FCM 토큰을 즉시 정리합니다.")
+    public ResponseEntity<String> cleanupInvalidTokens() {
+        try {
+            tokenCleanupService.cleanupInvalidTokens();
+            return ResponseEntity.ok("만료된 FCM 토큰 정리가 성공적으로 완료되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("토큰 정리 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }
