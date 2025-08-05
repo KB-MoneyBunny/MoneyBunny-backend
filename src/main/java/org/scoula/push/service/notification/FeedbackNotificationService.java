@@ -61,7 +61,7 @@ public class FeedbackNotificationService {
             // 4. 알림 전송
             userNotificationService.createAndSendFeedbackNotification(
                 userId, 
-                String.format("💰 %s님의 이번 주 소비 리포트", displayName), 
+                String.format("[피드백] %s님의 이번 주 소비 리포트", displayName), 
                 message, 
                 null // targetUrl 없음
             );
@@ -134,13 +134,6 @@ public class FeedbackNotificationService {
             message.append(peakMessage);
         }
         
-        // 마무리 메시지
-        message.append("\n\n");
-        if (comparison.getIsIncrease()) {
-            message.append("다음 주는 조금 더 절약해보세요! 💪");
-        } else {
-            message.append("훌륭한 절약입니다! 계속 유지해보세요! 🎉");
-        }
         
         return message.toString();
     }
@@ -152,15 +145,13 @@ public class FeedbackNotificationService {
         NumberFormat formatter = NumberFormat.getNumberInstance(Locale.KOREA);
         
         if (comparison.getChangePercentage() == 0) {
-            return String.format("📊 이번 주 지출: %s원\n지난주와 동일한 수준이에요", 
+            return String.format("이번 주 지출: %s원\n지난주와 동일한 수준이에요", 
                     formatter.format(comparison.getThisWeekAmount()));
         }
         
-        String changeIcon = comparison.getIsIncrease() ? "📈" : "📉";
         String changeVerb = comparison.getIsIncrease() ? "증가" : "절약";
         
-        return String.format("%s 지난주 대비 %.1f%% %s했어요!\n(이번 주: %s원)", 
-                changeIcon,
+        return String.format("지난주 대비 %.1f%% %s했어요!\n(이번 주: %s원)", 
                 comparison.getChangePercentage(),
                 changeVerb,
                 formatter.format(comparison.getThisWeekAmount()));
@@ -170,40 +161,25 @@ public class FeedbackNotificationService {
      * 요일별 지출 피크 메시지 생성
      */
     private String createDayOfWeekPeakMessage(DayOfWeekPeak peak) {
-        String dayEmoji = getDayEmoji(peak.getDayOfWeek());
         String contextMessage = getContextMessage(peak);
         
-        return String.format("📅 %s%s에 가장 많이 소비하시는군요%s", 
-                dayEmoji, peak.getDayName(), contextMessage);
+        return String.format("%s에 가장 많이 소비하시는군요%s", 
+                peak.getDayName(), contextMessage);
     }
     
-    /**
-     * 요일별 이모지 반환
-     */
-    private String getDayEmoji(int dayOfWeek) {
-        return switch (dayOfWeek) {
-            case 1, 7 -> "🌴 "; // 주말
-            case 2 -> "🌅 "; // 월요일
-            case 3 -> "💼 "; // 화요일
-            case 4 -> "⚡ "; // 수요일
-            case 5 -> "🚀 "; // 목요일
-            case 6 -> "🎉 "; // 금요일
-            default -> "";
-        };
-    }
     
     /**
      * 요일별 상황에 맞는 추가 메시지
      */
     private String getContextMessage(DayOfWeekPeak peak) {
         if (peak.isWeekend()) {
-            return " (주말 여가 시간이군요! 🛍️)";
+            return " (여가 시간을 잘 보내셨나요?)";
         } else if (peak.getDayOfWeek() == 6) { // 금요일
-            return " (불금의 힘이군요! 🍻)";
+            return " (불금의 힘인가요?)";
         } else if (peak.getDayOfWeek() == 2) { // 월요일
-            return " (월요병과 함께하는 소비? 😅)";
+            return " (월요병이 지갑을 열게 하나요?)";
         } else {
-            return " (평일 소비 패턴을 체크해보세요 📋)";
+            return " (평일 중간의 스트레스 해소용일까요?)";
         }
     }
     

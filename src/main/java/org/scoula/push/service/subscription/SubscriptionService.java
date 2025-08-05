@@ -46,9 +46,12 @@ public class SubscriptionService {
 
     /**
      * 사용자의 구독 상태 조회
+     * @param userId 사용자 ID
+     * @param token FCM 토큰 (필수) - 해당 기기의 설정 조회
      */
-    public SubscriptionStatusResponse getSubscriptionStatus(Long userId) {
-        SubscriptionVO subscription = subscriptionMapper.findByUserId(userId);
+    public SubscriptionStatusResponse getSubscriptionStatus(Long userId, String token) {
+        // 토큰과 userId로 해당 기기의 구독 정보 조회
+        SubscriptionVO subscription = subscriptionMapper.findByUserIdAndToken(userId, token);
         return SubscriptionStatusResponse.from(subscription);
     }
 
