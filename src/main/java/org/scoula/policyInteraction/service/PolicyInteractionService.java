@@ -88,14 +88,10 @@ public class PolicyInteractionService {
                 .userId(userId)
                 .policyId(policyId)
                 .applicationUrl(null)  // 선택적 필드로 null 처리
+                .isApplied(false)      // 신청 등록 시 기본값 false
                 .build();
                 
         int result = policyInteractionMapper.insertApplication(application);
-        
-        // 신청 성공 시 사용자 벡터 갱신 (가중치: 0.7)
-        if (result > 0) {
-            updateUserVectorWithLinearInterpolation(userId, policyId, 0.7);
-        }
         
         return result > 0;
     }
@@ -103,6 +99,57 @@ public class PolicyInteractionService {
     /** 사용자의 신청 목록 조회 (정책 정보 포함) */
     public List<ApplicationWithPolicyDTO> getUserApplications(Long userId) {
         return policyInteractionMapper.selectApplicationsByUserId(userId);
+    }
+    
+    /** 정책 신청 완료 처리 (false -> true) */
+    @Transactional
+    public boolean completeApplication(Long userId, Long policyId) {
+        // 신청 기록이 있는지 확인
+        UserPolicyApplicationVO existing = policyInteractionMapper.selectApplication(userId, policyId);
+        if (existing == null) {
+            log.info("신청 기록이 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 이미 완료된 신청인지 확인
+        if (Boolean.TRUE.equals(existing.getIsApplied())) {
+            log.info("이미 완료된 신청입니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        int result = policyInteractionMapper.updateApplicationToComplete(userId, policyId);
+        
+        // 실제 신청 완료 시 사용자 벡터 갱신 (가중치: 0.7)
+        if (result > 0) {
+            updateUserVectorWithLinearInterpolation(userId, policyId, 0.7);
+        }
+        
+        return result > 0;
+    }
+    
+    /** 정책 신청 기록 삭제 */
+    @Transactional
+    public boolean removeApplication(Long userId, Long policyId) {
+        // 신청 기록이 있는지 확인
+        UserPolicyApplicationVO existing = policyInteractionMapper.selectApplication(userId, policyId);
+        if (existing == null) {
+            log.info("삭제할 신청 기록이 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 완료된 신청은 삭제 불가
+        if (Boolean.TRUE.equals(existing.getIsApplied())) {
+            log.info("완료된 신청은 삭제할 수 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        int result = policyInteractionMapper.deleteApplication(userId, policyId);
+        return result > 0;
+    }
+    
+    /** 미완료 신청 정책 하나 조회 (is_applied = false) */
+    public ApplicationWithPolicyDTO getIncompleteApplication(Long userId) {
+        return policyInteractionMapper.findIncompleteApplication(userId);
     }
     
     // ────────────────────────────────────────
