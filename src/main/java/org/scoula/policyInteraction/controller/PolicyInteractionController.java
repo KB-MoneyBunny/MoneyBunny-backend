@@ -95,4 +95,45 @@ public class PolicyInteractionController {
         List<ApplicationWithPolicyDTO> applications = policyInteractionService.getUserApplications(userId);
         return ResponseEntity.ok(applications);
     }
+
+    @PutMapping("/application/{policyId}/complete")
+    @ApiOperation(value = "정책 신청 완료 처리", notes = "신청 등록된 정책을 실제 신청 완료 상태로 변경합니다. 성공 시 200 OK, 신청 기록이 없거나 이미 완료된 경우 400 Bad Request를 반환합니다.")
+    public ResponseEntity<Void> completeApplication(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.completeApplication(userId, policyId);
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
+    @DeleteMapping("/application/{policyId}")
+    @ApiOperation(value = "정책 신청 기록 삭제", notes = "신청 등록된 정책 기록을 삭제합니다. 성공 시 200 OK, 신청 기록이 없는 경우 404 Not Found를 반환합니다.")
+    public ResponseEntity<Void> removeApplication(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.removeApplication(userId, policyId);
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/application/incomplete")
+    @ApiOperation(value = "미완료 신청 정책 조회", notes = "사용자의 미완료 신청 정책(is_applied=false) 중 하나를 조회합니다. 미완료 신청이 없는 경우 404 Not Found를 반환합니다.")
+    public ResponseEntity<ApplicationWithPolicyDTO> getIncompleteApplication(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        
+        Long userId = customUser.getMember().getUserId();
+        ApplicationWithPolicyDTO application = policyInteractionService.getIncompleteApplication(userId);
+        
+        return application != null ?
+                ResponseEntity.ok(application) :
+                ResponseEntity.notFound().build();
+    }
 }

@@ -16,6 +16,7 @@ public class UserPolicyApplicationVO {
     private Long userId;
     private Long policyId;
     private String applicationUrl;
+    private Boolean isApplied;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
