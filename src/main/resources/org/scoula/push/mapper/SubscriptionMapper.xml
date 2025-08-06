@@ -113,4 +113,10 @@
         AND fcm_token != ''
     </select>
 
+    <!-- FCM 토큰으로 구독 정보 삭제 (만료된 토큰 정리용) -->
+    <delete id="deleteByToken">
+        DELETE FROM subscription
+        WHERE fcm_token = #{token}
+    </delete>
+
 </mapper>
