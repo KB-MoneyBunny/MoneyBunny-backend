@@ -52,4 +52,13 @@ public interface PolicyInteractionMapper {
 
     /** 사용자의 전체 신청 목록 조회 (정책 정보 포함) */
     List<ApplicationWithPolicyDTO> selectApplicationsByUserId(@Param("userId") Long userId);
+
+    /** 정책 신청 완료 처리 (is_applied를 true로 변경) */
+    int updateApplicationToComplete(@Param("userId") Long userId, @Param("policyId") Long policyId);
+
+    /** 정책 신청 기록 삭제 */
+    int deleteApplication(@Param("userId") Long userId, @Param("policyId") Long policyId);
+
+    /** 미완료 신청 정책 하나 조회 (is_applied = false) */
+    ApplicationWithPolicyDTO findIncompleteApplication(@Param("userId") Long userId);
 }

@@ -42,7 +42,7 @@ public interface SubscriptionMapper {
     
     // 특정 사용자의 피드백 알림이 활성화된 모든 토큰 조회
     List<String> findActiveFeedbackTokensByUserId(@Param("userId") Long userId);
-    
+
     // FCM 토큰으로 구독 정보 삭제
     void deleteByToken(@Param("token") String token);
 }

@@ -12,6 +12,7 @@ import org.scoula.asset.mapper.AssetCardTransactionMapper;
 import org.scoula.asset.mapper.AssetUserAccountMapper;
 import org.scoula.asset.mapper.AssetUserCardMapper;
 import org.scoula.common.dto.PageResponse;
+import org.scoula.common.exception.UnauthorizedException;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -25,8 +26,10 @@ public class AssetService {
     private final AssetCardTransactionMapper assetCardTransactionMapper;
     private final AssetAccountTransactionMapper assetAccountTransactionMapper;
 
-    public AssetSummaryResponse getSummary(String loginId) {
-        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
+    public AssetSummaryResponse getSummary(Long userId) {
+//        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
+
+        System.out.println("userId = " + userId);
 
         // 1. 계좌 현황, 총액
         List<AccountSummaryVO> accounts = assetUserAccountMapper.findAccountSummariesByUserId(userId);
@@ -34,7 +37,7 @@ public class AssetService {
                 .mapToLong(AccountSummaryVO::getBalance)
                 .sum();
 
-        log.info("[ASSET] 사용자 {}의 전체 계좌 합산 자산 = {}", loginId, totalAsset);
+        log.info("[ASSET] 사용자 {}의 전체 계좌 합산 자산 = {}", userId, totalAsset);
 
         // 2. 카드 현황(카드별 이번달 사용금액 포함)
         List<CardSummaryVO> cards = assetUserCardMapper.findCardSummariesByUserId(userId);
@@ -58,33 +61,41 @@ public class AssetService {
         return resp;
     }
 
-    public List<AccountSummaryVO> getAccounts(String loginId) {
-        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
+    public List<AccountSummaryVO> getAccounts(Long userId) {
+//        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
         List<AccountSummaryVO> accounts = assetUserAccountMapper.findAccountSummariesByUserId(userId);
-        log.info("[ASSET] 사용자 {}의 계좌 전체 목록 조회 ({}건)", loginId, accounts.size());
+        log.info("[ASSET] 사용자 {}의 계좌 전체 목록 조회 ({}건)", userId, accounts.size());
         return accounts;
     }
 
-    public List<CardSummaryVO> getCards(String loginId) {
-        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
+    public List<CardSummaryVO> getCards(Long userId) {
+//        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
         List<CardSummaryVO> cards = assetUserCardMapper.findCardSummariesByUserId(userId);
         for (CardSummaryVO card : cards) {
             Long cardUsed = assetCardTransactionMapper.sumThisMonthUsedByCardId(card.getId());
             card.setThisMonthUsed(cardUsed != null ? cardUsed : 0L);
             log.info("[ASSET] 카드 {}({})의 이번달 사용액: {}", card.getCardName(), card.getId(), card.getThisMonthUsed());
         }
-        log.info("[ASSET] 사용자 {}의 카드 전체 목록 조회 ({}건)", loginId, cards.size());
+        log.info("[ASSET] 사용자 {}의 카드 전체 목록 조회 ({}건)", userId, cards.size());
         return cards;
     }
 
-    public PageResponse<AccountTransactionVO> getAccountTransactions(Long accountId, int page, int size) {
+    public PageResponse<AccountTransactionVO> getAccountTransactions(Long userId, Long accountId, int page, int size, String txType) {
+        // 계좌 소유자 검증
+        if (!assetUserAccountMapper.isAccountOwner(userId, accountId)) {
+            throw new UnauthorizedException("계좌 소유자만 접근 가능합니다.");
+        }
         int offset = page * size;
-        List<AccountTransactionVO> list = assetAccountTransactionMapper.findByAccountIdWithPaging(accountId, offset, size);
-        int total = assetAccountTransactionMapper.countByAccountId(accountId);
+        List<AccountTransactionVO> list = assetAccountTransactionMapper.findByAccountIdWithPaging(accountId, offset, size, txType);
+        int total = assetAccountTransactionMapper.countByAccountId(accountId, txType);
         log.info("[ASSET] 계좌 {} 거래내역 페이지 조회 - page: {}, size: {}, 총 건수: {}", accountId, page, size, total);
         return new PageResponse<>(list, page, size, total);
     }
-    public PageResponse<CardTransactionVO> getCardTransactions(Long cardId, int page, int size) {
+    public PageResponse<CardTransactionVO> getCardTransactions(Long userId, Long cardId, int page, int size) {
+        // 카드 소유자 검증
+        if (!assetUserCardMapper.isCardOwner(userId, cardId)) {
+            throw new UnauthorizedException("카드 소유자만 접근 가능합니다.");
+        }
         int offset = page * size;
         List<CardTransactionVO> list = assetCardTransactionMapper.findByCardIdWithPaging(cardId, offset, size);
         int total = assetCardTransactionMapper.countByCardId(cardId);
