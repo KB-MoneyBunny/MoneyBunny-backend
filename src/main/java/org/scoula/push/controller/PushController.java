@@ -96,6 +96,24 @@ public class PushController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 알림 삭제
+     */
+    @DeleteMapping("/notifications/{notificationId}")
+    @ApiOperation(value = "알림 삭제", 
+                  notes = "특정 알림을 삭제합니다. 본인의 알림만 삭제 가능합니다. 성공 시 200 OK를 반환합니다.")
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable Long notificationId,
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getMember().getUserId();
+        try {
+            userNotificationService.deleteNotification(notificationId, userId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     // ===============================
     // 구독 관련 API
     // ===============================
@@ -126,6 +144,17 @@ public class PushController {
         Long userId = customUser.getMember().getUserId();
         SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId, token);
         return ResponseEntity.ok(status);
+    }
+
+    /**
+     * FCM 토큰으로 구독 해제
+     */
+    @DeleteMapping("/subscriptions/{token}")
+    @ApiOperation(value = "FCM 토큰으로 구독 해제", 
+                  notes = "특정 FCM 토큰의 모든 구독 정보를 삭제합니다. 성공 시 200 OK를 반환합니다.")
+    public ResponseEntity<Void> unsubscribe(@PathVariable String token) {
+        subscriptionService.unsubscribe(token);
+        return ResponseEntity.ok().build();
     }
 
     // ===============================
