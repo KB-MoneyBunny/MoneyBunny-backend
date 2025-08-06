@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.policyInteraction.mapper.PolicyInteractionMapper">
+
+    <!-- ──────────────────────────────────────── -->
+    <!-- 📌 정책 북마크 관련 -->
+    <!-- ──────────────────────────────────────── -->
+
+    <!-- 북마크 등록 (created_at은 DB에서 NOW() 처리) -->
+    <insert id="insertBookmark" parameterType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
+        INSERT INTO youth_policy_bookmark (user_id, policy_id, created_at)
+        VALUES (#{userId}, #{policyId}, NOW())
+    </insert>
+
+    <!-- 북마크 삭제 -->
+    <delete id="deleteBookmark">
+        DELETE FROM youth_policy_bookmark
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </delete>
+
+    <!-- 특정 북마크 단건 조회 -->
+    <select id="selectBookmark" resultType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
+        SELECT
+            id,
+            user_id AS userId,
+            policy_id AS policyId,
+            created_at AS createdAt
+        FROM youth_policy_bookmark
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </select>
+
+    <!-- 사용자 전체 북마크 목록 조회 (정책 정보 포함) -->
+    <select id="selectBookmarksByUserId" resultType="org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO">
+        SELECT 
+            b.id as bookmarkId,
+            b.created_at as bookmarkedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM youth_policy_bookmark b
+        INNER JOIN youth_policy p ON b.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE b.user_id = #{userId}
+        ORDER BY b.created_at DESC
+    </select>
+
+    <!-- 모든 북마크 목록 조회 (알림 발송용) -->
+    <select id="getAllBookmarks" resultType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
+        SELECT
+            id,
+            user_id AS userId,
+            policy_id AS policyId,
+            created_at AS createdAt
+        FROM youth_policy_bookmark
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 북마크 알림을 구독한 사용자의 북마크만 조회 (최적화된 알림 발송용) -->
+    <select id="getBookmarksWithActiveSubscription" resultType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
+        SELECT
+            b.id,
+            b.user_id AS userId,
+            b.policy_id AS policyId,
+            b.created_at AS createdAt
+        FROM youth_policy_bookmark b
+        INNER JOIN subscription s ON b.user_id = s.user_id
+        WHERE s.is_active_bookmark = true
+        ORDER BY b.created_at DESC
+    </select>
+
+    <!-- ──────────────────────────────────────── -->
+    <!-- 📌 정책 신청 관련 -->
+    <!-- ──────────────────────────────────────── -->
+
+    <!-- 정책 신청 등록 (created_at, updated_at은 DB에서 NOW() 처리) -->
+    <insert id="insertApplication" parameterType="org.scoula.policyInteraction.domain.UserPolicyApplicationVO">
+        INSERT INTO user_policy_application (user_id, policy_id, application_url, is_applied, created_at, updated_at)
+        VALUES (#{userId}, #{policyId}, #{applicationUrl}, #{isApplied}, NOW(), NOW())
+    </insert>
+
+    <!-- 특정 정책 신청 단건 조회 -->
+    <select id="selectApplication" resultType="org.scoula.policyInteraction.domain.UserPolicyApplicationVO">
+        SELECT
+            id,
+            user_id AS userId,
+            policy_id AS policyId,
+            application_url AS applicationUrl,
+            is_applied AS isApplied,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM user_policy_application
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </select>
+
+    <!-- 사용자 전체 신청 목록 조회 (정책 정보 포함) -->
+    <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+        SELECT 
+            a.id as applicationId,
+            a.is_applied as isApplied,
+            a.created_at as appliedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM user_policy_application a
+        INNER JOIN youth_policy p ON a.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE a.user_id = #{userId}
+        ORDER BY a.created_at DESC
+    </select>
+
+    <!-- 정책 신청 완료 처리 (is_applied를 true로 변경) -->
+    <update id="updateApplicationToComplete">
+        UPDATE user_policy_application 
+        SET is_applied = TRUE, updated_at = NOW()
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </update>
+
+    <!-- 정책 신청 기록 삭제 -->
+    <delete id="deleteApplication">
+        DELETE FROM user_policy_application
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </delete>
+
+    <!-- 미완료 신청 정책 하나 조회 (is_applied = false) -->
+    <select id="findIncompleteApplication" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+        SELECT 
+            a.id as applicationId,
+            a.is_applied as isApplied,
+            a.created_at as appliedAt,
+            p.id as policyId,
+            p.title,
+            p.description,
+            p.policy_benefit_description as policyBenefitDescription,
+            pp.apply_period as applyPeriod,
+            p.policy_benefit_amount as policyBenefitAmount
+        FROM user_policy_application a
+        INNER JOIN youth_policy p ON a.policy_id = p.id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE a.user_id = #{userId} AND a.is_applied = FALSE
+        ORDER BY a.created_at ASC
+        LIMIT 1
+    </select>
+
+</mapper>
