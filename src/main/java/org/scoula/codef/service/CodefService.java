@@ -432,6 +432,7 @@ public class CodefService {
                 String addResponse = sendPost(addUrl, addBody);
                 String decodedAddResponse = URLDecoder.decode(addResponse, StandardCharsets.UTF_8);
 
+                System.out.println("[카드] RAW ADD RESPONSE: " + decodedAddResponse);
                 log.debug("[카드] 계정 추가 API 응답: {}", decodedAddResponse);
 
                 if (!CodefUtil.isSuccess(decodedAddResponse)) {
@@ -454,8 +455,12 @@ public class CodefService {
                     }
                     """.formatted(request.getOrganization(), connectedId);
 
+            System.out.println("account/card-lis");
+
             String response = sendPost(cardListUrl, cardListBody);
             String decodedCardListResponse = URLDecoder.decode(response, StandardCharsets.UTF_8);
+
+            System.out.println("decodedCardListResponse = " + decodedCardListResponse);
 
             log.debug("[카드] 카드목록 API 응답: {}", decodedCardListResponse);
 
@@ -470,36 +475,30 @@ public class CodefService {
 
             JsonNode dataNode = root.get("data");
 
-            // 1. 여러장 카드
-            // resCardList 인지는 확인 필요.. 제가 한 은행에 여러장의 카드가 없어요 ㅜㅜ
-            JsonNode cardListNode = dataNode.get("resCardList");
-            if (cardListNode != null && cardListNode.isArray()) {
-                log.info("[카드] 여러장 카드 목록 반환: {}장", cardListNode.size());
-                for (JsonNode node : cardListNode) {
+            // data가 배열(ArrayNode)인 경우
+            if (dataNode.isArray()) {
+                for (JsonNode cardJson : dataNode) {
                     result.add(UserCardVO.builder()
-                            .cardMaskedNumber(node.path("resCardNo").asText())
-                            .cardName(node.path("resCardName").asText())
-                            .cardType(node.path("resCardType").asText())
+                            .cardMaskedNumber(cardJson.path("resCardNo").asText())
+                            .cardName(cardJson.path("resCardName").asText())
+                            .cardType(cardJson.path("resCardType").asText())
                             .issuerCode(request.getOrganization())
-                            .cardImage(node.path("resImageLink").asText())
+                            .cardImage(cardJson.path("resImageLink").asText(null))
                             .createdAt(new Date())
                             .build()
                     );
                 }
-            } else {
-                // 2. 단일 카드
-                if (dataNode.has("resCardNo")) {
-                    log.info("[카드] 단일 카드만 반환됨");
-                    result.add(UserCardVO.builder()
-                            .cardMaskedNumber(dataNode.path("resCardNo").asText())
-                            .cardName(dataNode.path("resCardName").asText())
-                            .cardType(dataNode.path("resCardType").asText())
-                            .issuerCode(request.getOrganization())
-                            .cardImage(dataNode.path("resImageLink").asText())
-                            .createdAt(new Date())
-                            .build()
-                    );
-                }
+            // data가 객체(ObjectNode)인 경우
+            } else if (dataNode.isObject()) {
+                result.add(UserCardVO.builder()
+                        .cardMaskedNumber(dataNode.path("resCardNo").asText())
+                        .cardName(dataNode.path("resCardName").asText())
+                        .cardType(dataNode.path("resCardType").asText())
+                        .issuerCode(request.getOrganization())
+                        .cardImage(dataNode.path("resImageLink").asText(null))
+                        .createdAt(new Date())
+                        .build()
+                );
             }
             log.info("[카드] 카드목록 파싱 완료: userId={}, 반환건수={}", userId, result.size());
             return result;
@@ -815,7 +814,12 @@ public class CodefService {
     * fetchAccountListByConnectedId -> 등록 계좌 조회
     * deleteAccountsRaw -> 등록된 계좌 삭제
     * */
-    public String fetchAccountListByConnectedId(String connectedId) {
+    public String fetchAccountListByConnectedId(Long userId) {
+        ConnectedAccountVO vo = connectedAccountMapper.findConnectedIdByUserId(userId);
+        String connectedId = (vo == null) ? null : vo.getConnectedId();
+        log.debug("connectedId 조회 결과: {}", connectedId);
+
+
         String url = "https://development.codef.io/v1/account/list";
         String body = String.format("""
         {
@@ -845,5 +849,7 @@ public class CodefService {
             throw new RuntimeException("계정 삭제 실패: " + e.getMessage());
         }
     }
+
+
 
 }
