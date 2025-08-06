@@ -70,6 +70,10 @@ public class AuthServiceImpl implements AuthService {
         MemberVO member = userDetailsMapper.get(loginId);
         if (member == null) return false;
 
+        // 기존 비밀번호와 비교
+        if (passwordEncoder.matches(password, member.getPassword())) {
+            throw new IllegalArgumentException("이전에 사용한 비밀번호는 사용할 수 없습니다.");
+        }
         String encrypted = passwordEncoder.encode(password);
         userDetailsMapper.resetPassword(loginId, encrypted);
         return true;
