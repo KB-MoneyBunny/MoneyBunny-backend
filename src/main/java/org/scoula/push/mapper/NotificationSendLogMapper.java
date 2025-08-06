@@ -33,4 +33,21 @@ public interface NotificationSendLogMapper {
      * 재전송 대상 로그 조회 (PENDING 상태이고 생성된 지 일정 시간 경과)
      */
     List<NotificationSendLogVO> findPendingLogsByTime(@Param("minutes") int minutes);
+
+    /**
+     * 특정 에러로 여러 번 실패한 토큰 조회
+     * @param errorMessage 대상 에러 메시지 (예: "Requested entity was not found.")
+     * @param hours 최근 몇 시간 내 로그만 조회
+     * @param minFailureCount 최소 실패 횟수
+     * @return 조건에 맞는 FCM 토큰 목록
+     */
+    List<String> findTokensByFailureCount(@Param("errorMessage") String errorMessage,
+                                         @Param("hours") int hours,
+                                         @Param("minFailureCount") int minFailureCount);
+
+    /**
+     * 특정 FCM 토큰의 모든 로그 삭제
+     * @param token 삭제할 FCM 토큰
+     */
+    void deleteByToken(@Param("token") String token);
 }

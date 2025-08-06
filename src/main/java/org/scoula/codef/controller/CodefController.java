@@ -89,8 +89,9 @@ public class CodefController {
     * test용 API
     * */
 //    @PostMapping("/account-list")
-//    public ResponseEntity<String> getAccountList(@RequestParam String connectedId) {
-//        String result = codefService.fetchAccountListByConnectedId(connectedId);
+//    public ResponseEntity<String> getAccountList() {
+//        Long userId = 13L;
+//        String result = codefService.fetchAccountListByConnectedId(userId);
 //        return ResponseEntity.ok(result);
 //    }
 //
