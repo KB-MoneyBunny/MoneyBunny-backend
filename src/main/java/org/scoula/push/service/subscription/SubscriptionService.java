@@ -125,4 +125,14 @@ public class SubscriptionService {
         return newSubscription;
     }
 
+    /**
+     * FCM 토큰으로 구독 해제
+     */
+    public void unsubscribe(String token) {
+        SubscriptionVO existing = subscriptionMapper.findByToken(token);
+        if (existing != null) {
+            subscriptionMapper.deleteByToken(token);
+        }
+    }
+
 }
