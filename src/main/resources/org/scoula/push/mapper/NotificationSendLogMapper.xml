@@ -63,4 +63,21 @@
         LIMIT 100
     </select>
 
+    <!-- 특정 에러로 여러 번 실패한 토큰 조회 -->
+    <select id="findTokensByFailureCount" resultType="string">
+        SELECT fcm_token
+        FROM notification_send_log
+        WHERE send_status = 'FAILED'
+          AND error_message = #{errorMessage}
+          AND created_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+        GROUP BY fcm_token
+        HAVING COUNT(*) >= #{minFailureCount}
+    </select>
+
+    <!-- 특정 FCM 토큰의 모든 로그 삭제 -->
+    <delete id="deleteByToken">
+        DELETE FROM notification_send_log
+        WHERE fcm_token = #{token}
+    </delete>
+
 </mapper>

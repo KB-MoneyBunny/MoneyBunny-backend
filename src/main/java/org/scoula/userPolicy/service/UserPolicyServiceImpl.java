@@ -504,6 +504,44 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     }
 
     /**
+     * 사용자 정책 조건 및 관련 데이터 전체 삭제
+     * @param username 사용자 이름
+     */
+    @Transactional
+    @Override
+    public void deleteUserPolicyCondition(String username) {
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return;
+        }
+        Long userId = member.getUserId();
+        UserPolicyConditionVO existingCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (existingCondition == null) {
+            log.info("삭제할 사용자 정책 조건이 없습니다: userId={}", userId);
+            return;
+        }
+        Long userPolicyConditionId = existingCondition.getId();
+
+        // 1. 자식 테이블(연관 테이블) 먼저 삭제
+        userPolicyMapper.deleteUserMajorsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserSpecialConditionsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserPolicyKeywordsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserPolicyRegionsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserEmploymentStatusesByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserEducationLevelsByConditionId(userPolicyConditionId);
+        userPolicyMapper.deleteUserFilteredPoliciesByUserId(userId);
+
+        // 2. 벡터 테이블 삭제
+        userPolicyMapper.deleteUserVectorByUserId(userId);
+
+        // 3. 정책 조건 테이블 삭제
+        userPolicyMapper.deleteUserPolicyConditionById(userPolicyConditionId);
+
+        log.info("사용자 정책 조건 및 관련 데이터 삭제 완료: userId={}", userId);
+    }
+
+    /**
      * 사용자 정책 조건에 맞는 정책을 필터링하여 저장합니다.
      * @param userId 사용자 ID
      */
@@ -753,15 +791,6 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
         }
 
-        // 신청 기간에서 마감일 추출
-        for(SearchResultDTO resultDTO : searchResultDTO){
-            if(resultDTO.getEndDate() != null && resultDTO.getEndDate() != ""){
-                String[] Date=resultDTO.getEndDate().split("~");
-                if(Date.length==2){
-                    resultDTO.setEndDate(Date[1].trim());
-                }
-            }
-        }
         return searchResultDTO;
     }
 

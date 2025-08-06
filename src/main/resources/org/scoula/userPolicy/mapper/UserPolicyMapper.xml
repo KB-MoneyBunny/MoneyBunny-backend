@@ -113,7 +113,7 @@
 
             ur.region_id AS region_id,
 
-            ue.education_level_id AS edu_id,
+            ue.education_level_id AS education_level_id,
 
             ues.employment_status_id AS emp_id,
 
@@ -396,4 +396,12 @@
         FROM user_vector
         WHERE user_id = #{userId}
     </select>
+
+    <delete id="deleteUserPolicyConditionById">
+        DELETE FROM user_policy_condition WHERE id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserVectorByUserId">
+        DELETE FROM user_vector WHERE user_id = #{userId}
+    </delete>
 </mapper>
