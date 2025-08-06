@@ -40,6 +40,9 @@ public interface UserPolicyMapper {
     void deleteUserEducationLevelsByConditionId(Long userPolicyConditionId);
     void deleteUserFilteredPoliciesByUserId(Long userId);
 
+    // 사용자 정책 조건 자체 삭제
+    void deleteUserPolicyConditionById(Long userPolicyConditionId);
+
     // 사용자 벡터를 저장
     void saveUserVector(UserVectorVO userVector);
 
@@ -48,4 +51,7 @@ public interface UserPolicyMapper {
 
     // 사용자 ID로 사용자 벡터를 조회
     UserVectorVO findUserVectorByUserId(Long userId);
+
+    // 사용자 벡터 삭제
+    void deleteUserVectorByUserId(Long userId);
 }
