@@ -7,14 +7,14 @@
     <select id="findUnclassifiedId" resultType="long">
         SELECT id
         FROM transaction_category
-        WHERE code = 'unclassified'
+        WHERE name = '미분류'
             LIMIT 1
     </select>
 
     <select id="findIdByCode" parameterType="string" resultType="long">
         SELECT id
         FROM transaction_category
-        WHERE code = #{code}
+        WHERE name = #{name}
             LIMIT 1
     </select>
 

@@ -197,11 +197,15 @@ public class AuthController {
         }
 
         // 정상 처리
-        boolean success = authService.resetPassword(dto.getLoginId(), dto.getPassword());
-        if (success) {
-            return ResponseEntity.ok("password reset");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("user not found");
+        try {
+            boolean success = authService.resetPassword(dto.getLoginId(), dto.getPassword());
+            if (success) {
+                return ResponseEntity.ok("password reset");
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("user not found");
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
 
     }
