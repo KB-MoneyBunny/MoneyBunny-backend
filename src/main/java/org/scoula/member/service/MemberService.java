@@ -14,5 +14,4 @@ public interface MemberService {
   void validateJoinInfo(MemberJoinDTO dto); // 회원가입 관련 유효성 검사
   boolean isEmailExists(String email); // 가입된 이메일 존재 여부
 
-
 }

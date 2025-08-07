@@ -20,6 +20,7 @@ public class MemberDTO {
   private String email;
   private int point;
   private Date createdAt;
+  private String name;
 
   // authList 제거!
   // private List<String> authList;
@@ -30,6 +31,7 @@ public class MemberDTO {
             .email(m.getEmail())
             .point(m.getPoint())
             .createdAt(m.getCreatedAt())
+            .name(m.getName())
             .build();
   }
 }
