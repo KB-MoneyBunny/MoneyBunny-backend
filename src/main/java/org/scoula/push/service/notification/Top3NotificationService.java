@@ -96,7 +96,7 @@ public class Top3NotificationService {
                 // 조건 미설정 사용자에게 설정 유도 알림 발송
                 String title = "[TOP3] 맞춤 정책 추천 설정";
                 String message = String.format("%s님, 맞춤 정책 추천을 받으려면 조건을 설정해주세요!", displayName);
-                String targetUrl = "/condition/setup";
+                String targetUrl = "/policy";
                 
                 // UserNotificationService를 통한 통합 알림 발송 (여러 토큰 지원)
                 userNotificationService.createAndSendTop3Notification(subscriber.getUserId(), title, message, targetUrl);
