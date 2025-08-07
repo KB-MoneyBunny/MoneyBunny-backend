@@ -427,13 +427,15 @@ public class PolicyServiceImpl implements PolicyService {
                 log.warn("정책을 찾을 수 없음 - policyId: {}", policyId);
                 return null;
             }
-            
-            // 2. 일일 조회 기록 (배치 처리를 위해 Redis에 기록만)
-            Long policyIdLong = Long.parseLong(policyId);
-            Long dailyViewCount = redisUtil.recordDailyPolicyView(userId, policyIdLong);
-            
-            log.debug("[일일 조회 기록] userId: {}, policyId: {}, 오늘 조회수: {}", 
-                    userId, policyId, dailyViewCount);
+
+            if (userId != null) {
+                Long policyIdLong = Long.parseLong(policyId);
+                Long dailyViewCount = redisUtil.recordDailyPolicyView(userId, policyIdLong);
+                log.debug("[일일 조회 기록] userId: {}, policyId: {}, 오늘 조회수: {}",
+                        userId, policyId, dailyViewCount);
+            } else {
+                log.debug("[익명 조회] userId 없음, Redis 기록 스킵 - policyId: {}", policyId);
+            }
             
             return policyDetail;
             
