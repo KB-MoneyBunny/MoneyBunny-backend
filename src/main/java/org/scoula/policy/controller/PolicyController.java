@@ -74,16 +74,22 @@ public class PolicyController {
             @PathVariable String policyId,
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
 
+        // customUser가 null이면 userId도 null로 처리
+        Long userId = null;
+        if (customUser != null && customUser.getMember() != null) {
+            userId = customUser.getMember().getUserId();
+        }
+
         try {
-            Long userId = customUser.getMember().getUserId();
-            PolicyDetailDTO policyDetail = policyService.getPolicyDetailWithTracking(policyId, userId);
-            
+            // userId가 null이면 tracking 로직(조회수 증가·벡터 갱신)을 생략하도록 서비스 구현
+            PolicyDetailDTO policyDetail =
+                    policyService.getPolicyDetailWithTracking(policyId, userId);
+
             if (policyDetail == null) {
                 return ResponseEntity.notFound().build();
             }
-            
             return ResponseEntity.ok(policyDetail);
-            
+
         } catch (IllegalArgumentException e) {
             log.error("잘못된 정책 ID 형식 - policyId: {}", policyId);
             return ResponseEntity.badRequest().build();
@@ -92,4 +98,5 @@ public class PolicyController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 }
