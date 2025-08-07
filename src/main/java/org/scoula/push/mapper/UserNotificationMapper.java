@@ -45,4 +45,9 @@ public interface UserNotificationMapper {
      * 알림 ID로 단건 조회
      */
     UserNotificationVO findById(@Param("id") Long id);
+
+    /**
+     * 알림 삭제
+     */
+    void deleteById(@Param("id") Long id);
 }

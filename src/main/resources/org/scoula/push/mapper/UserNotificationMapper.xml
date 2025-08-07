@@ -57,4 +57,10 @@
         WHERE id = #{id}
     </select>
 
+    <!-- 알림 삭제 -->
+    <delete id="deleteById">
+        DELETE FROM user_notification
+        WHERE id = #{id}
+    </delete>
+
 </mapper>
