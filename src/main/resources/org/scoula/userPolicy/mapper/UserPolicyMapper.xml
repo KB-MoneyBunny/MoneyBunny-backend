@@ -396,4 +396,12 @@
         FROM user_vector
         WHERE user_id = #{userId}
     </select>
+
+    <delete id="deleteUserPolicyConditionById">
+        DELETE FROM user_policy_condition WHERE id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserVectorByUserId">
+        DELETE FROM user_vector WHERE user_id = #{userId}
+    </delete>
 </mapper>
