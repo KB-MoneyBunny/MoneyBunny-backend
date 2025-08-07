@@ -226,7 +226,7 @@
                         <foreach collection="educationLevels" item="level" open="(" separator="," close=")">
                             #{level}
                         </foreach>
-                        OR pel.education_level = '제한없음'
+                        OR pel.education_level = '0049010'
                     )
                 )
             </if>
@@ -248,7 +248,7 @@
                         <foreach collection="employmentStatuses" item="status" open="(" separator="," close=")">
                             #{status}
                         </foreach>
-                        OR pes.employment_status = '제한없음'
+                        OR pes.employment_status = '0013010'
                     )
                 )
             </if>
@@ -270,7 +270,7 @@
                         <foreach collection="majors" item="major" open="(" separator="," close=")">
                             #{major}
                         </foreach>
-                        OR pm.major = '제한없음'
+                        OR pm.major = '0011009'
                     )
                 )
             </if>
@@ -292,7 +292,7 @@
                         <foreach collection="specialConditions" item="condition" open="(" separator="," close=")">
                             #{condition}
                         </foreach>
-                        OR psc.special_condition = '제한없음'
+                        OR psc.special_condition = '0014010'
                     )
                 )
             </if>
@@ -396,4 +396,12 @@
         FROM user_vector
         WHERE user_id = #{userId}
     </select>
+
+    <delete id="deleteUserPolicyConditionById">
+        DELETE FROM user_policy_condition WHERE id = #{userPolicyConditionId}
+    </delete>
+
+    <delete id="deleteUserVectorByUserId">
+        DELETE FROM user_vector WHERE user_id = #{userId}
+    </delete>
 </mapper>

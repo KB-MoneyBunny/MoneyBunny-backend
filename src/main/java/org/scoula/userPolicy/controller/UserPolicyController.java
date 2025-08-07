@@ -202,4 +202,25 @@ public class UserPolicyController {
         List<String> recentSearches = userPolicyService.getRecentSearches(username);
         return ResponseEntity.ok(recentSearches);
     }
+
+    /**
+     * 사용자 정책 조건 및 관련 데이터 삭제 API
+     * DELETE: http://localhost:8080/api/userPolicy
+     * @return ResponseEntity
+     *         - 200 OK: 삭제 성공
+     *         - 404 Not Found: 해당 사용자의 정책 조건을 찾을 수 없음
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "사용자 정책 조건 삭제", notes = "사용자 정책 조건 및 관련 데이터를 모두 삭제하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 삭제되었습니다."),
+            @ApiResponse(code = 404, message = "리소스를 찾을 수 없습니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @DeleteMapping("")
+    public ResponseEntity<Void> deleteUserPolicyCondition(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        userPolicyService.deleteUserPolicyCondition(username);
+        return ResponseEntity.ok().build();
+    }
 }
