@@ -296,8 +296,6 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         saveUserFilteredPolicies(userId);
 
-
-
         // 사용자 벡터 값 계산 및 저장 (중복 방지)
         UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
         if (userVector == null) {
@@ -597,9 +595,42 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
 
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+        // 마감일 필터링 로직 추가 (로그 포함)
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatterDot = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+        DateTimeFormatter formatterPlain = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-        // 사용자 정책 조건에 맞는 정책 ID 목록 조회
-        List<Long> matchingPolicyIds = policiesWithVectors.stream().map(PolicyWithVectorDTO::getPolicyId).collect(Collectors.toList());
+        List<Long> matchingPolicyIds = policiesWithVectors.stream()
+            .filter(policy -> {
+                String endDateStr = policy.getEndDate();
+                if (endDateStr == null || !endDateStr.contains("~")) {
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → 마감일 ��보 없음, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+                String[] parts = endDateStr.split("~");
+                if (parts.length < 2) {
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → ~ 이후 정보 없음, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+                String rawEndDate = parts[1].trim();
+                String datePart = rawEndDate.split(" ")[0].trim();
+                LocalDate endDate = null;
+                try {
+                    if (datePart.contains(".")) {
+                        endDate = LocalDate.parse(datePart, formatterDot);
+                    } else {
+                        endDate = LocalDate.parse(datePart, formatterPlain);
+                    }
+                    boolean include = !endDate.isBefore(today);
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → 마감일={}, 오늘={}, 포함여부={}", policy.getPolicyId(), endDateStr, endDate, today, include);
+                    return include;
+                } catch (DateTimeParseException e) {
+                    log.warn("[마감일필터] 정책ID={} endDate='{}' → 날짜 파싱 실패, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+            })
+            .map(PolicyWithVectorDTO::getPolicyId)
+            .collect(Collectors.toList());
 
         if (matchingPolicyIds.isEmpty()) {
             log.info("사용자에게 맞는 정책이 없습니다: userId={}", userId);
@@ -629,7 +660,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         MemberVO member = memberMapper.get(username);
         if (member == null) {
-            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            log.error("사��자를 찾을 수 없습니다: username={}", username);
             return null; // Or throw an exception
         }
         Long userId = member.getUserId();
@@ -683,6 +714,40 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+        // 마감일 필터링 로직 추가 (로그 포함)
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatterDot = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+        DateTimeFormatter formatterPlain = DateTimeFormatter.ofPattern("yyyyMMdd");
+        List<PolicyWithVectorDTO> filteredPoliciesWithVectors = policiesWithVectors.stream()
+            .filter(policy -> {
+                String endDateStr = policy.getEndDate();
+                if (endDateStr == null || !endDateStr.contains("~")) {
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → 마감일 정보 없음, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+                String[] parts = endDateStr.split("~");
+                if (parts.length < 2) {
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → ~ 이후 정보 없음, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+                String rawEndDate = parts[1].trim();
+                String datePart = rawEndDate.split(" ")[0].trim();
+                LocalDate endDate = null;
+                try {
+                    if (datePart.contains(".")) {
+                        endDate = LocalDate.parse(datePart, formatterDot);
+                    } else {
+                        endDate = LocalDate.parse(datePart, formatterPlain);
+                    }
+                    boolean include = !endDate.isBefore(today);
+                    log.debug("[마감일필터] 정책ID={} endDate='{}' → 마감일={}, 오늘={}, 포함여부={}", policy.getPolicyId(), endDateStr, endDate, today, include);
+                    return include;
+                } catch (DateTimeParseException e) {
+                    log.warn("[마감일필터] 정책ID={} endDate='{}' → 날짜 파싱 실패, 포함", policy.getPolicyId(), endDateStr);
+                    return true;
+                }
+            })
+            .collect(Collectors.toList());
 
         // 2. 사용자 벡터 조회
         UserVectorVO userVector = userPolicyMapper.findUserVectorByUserId(userId);
@@ -692,23 +757,23 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         if (userVector == null) {
             // 사용자 벡터가 없으면 기본 정렬 (벡터 없이 반환)
             log.info("사용자 벡터 없음 - 기본 정렬 적용, userId: {}", userId);
-            searchResultDTO = policiesWithVectors.stream()
+            searchResultDTO = filteredPoliciesWithVectors.stream()
                     .map(VectorUtil::toSearchResultDTO)
                     .collect(Collectors.toList());
         } else {
             // 3. 코사인 유사도 계산 및 정렬
-            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, policiesWithVectors.size());
+            log.info("벡터 기반 추천 시작 - userId: {}, 정책 수: {}", userId, filteredPoliciesWithVectors.size());
 
-            searchResultDTO = policiesWithVectors.stream()
-                    .filter(policy -> policy.getVecBenefitAmount() != null) // 벡터가 있는 정책만
+            searchResultDTO = filteredPoliciesWithVectors.stream()
+                    .filter(policy -> policy.getVecBenefitAmount() != null)
                     .map(policy -> {
                         // 코사인 유사도 계산
                         double similarity = VectorUtil.calculateCosineSimilarity(userVector, policy);
                         policy.setSimilarity(similarity);
                         return policy;
                     })
-                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity())) // 유사도 내림차순
-                    .map(VectorUtil::toSearchResultDTO) // SearchResultDTO로 변환
+                    .sorted((p1, p2) -> Double.compare(p2.getSimilarity(), p1.getSimilarity()))
+                    .map(VectorUtil::toSearchResultDTO)
                     .collect(Collectors.toList());
 
             log.info("벡터 기반 추천 완료 - 추천 정책 수: {}", searchResultDTO.size());
@@ -797,7 +862,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
     /**
      * 주어진 리스트에서 빈 문자열을 제거하는 유틸리티 메소드.
      * @param list 문자열 리스트
-     * @return 빈 문자열이 제거된 리스트
+     * @return 빈 문자열��� 제거된 리스트
      */
     private List<String> removeEmptyStrings(List<String> list) {
         if (list == null) return null;
