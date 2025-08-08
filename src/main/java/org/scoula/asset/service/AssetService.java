@@ -14,7 +14,10 @@ import org.scoula.asset.mapper.AssetUserCardMapper;
 import org.scoula.common.dto.PageResponse;
 import org.scoula.common.exception.UnauthorizedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -91,15 +94,24 @@ public class AssetService {
         log.info("[ASSET] 계좌 {} 거래내역 페이지 조회 - page: {}, size: {}, 총 건수: {}", accountId, page, size, total);
         return new PageResponse<>(list, page, size, total);
     }
-    public PageResponse<CardTransactionVO> getCardTransactions(Long userId, Long cardId, int page, int size) {
+    public PageResponse<CardTransactionVO> getCardTransactions(Long userId, Long cardId, int page, int size, String txType) {
         // 카드 소유자 검증
         if (!assetUserCardMapper.isCardOwner(userId, cardId)) {
             throw new UnauthorizedException("카드 소유자만 접근 가능합니다.");
         }
         int offset = page * size;
-        List<CardTransactionVO> list = assetCardTransactionMapper.findByCardIdWithPaging(cardId, offset, size);
-        int total = assetCardTransactionMapper.countByCardId(cardId);
+        List<CardTransactionVO> list = assetCardTransactionMapper.findByCardIdWithPaging(cardId, offset, size, txType);
+        int total = assetCardTransactionMapper.countByCardId(cardId, txType);
         log.info("[ASSET] 카드 {} 거래내역 페이지 조회 - page: {}, size: {}, 총 건수: {}", cardId, page, size, total);
         return new PageResponse<>(list, total, page, size);
+    }
+
+
+    public void updateCardTransactionMemo(Long transactionId, String memo) {
+        assetCardTransactionMapper.updateMemo(transactionId, memo);
+    }
+
+    public void updateAccountTransactionMemo(Long transactionId, String memo) {
+        assetAccountTransactionMapper.updateMemo(transactionId, memo);
     }
 }
