@@ -10,13 +10,14 @@
         <result property="password" column="password" />
         <result property="email" column="email" />
         <result property="createdAt" column="create_at" />
+        <result property="name"      column="name"/>
     </resultMap>
 
 
     <!-- SQL -->
     <!-- 회원 정보 조회 (LEFT JOIN으로 권한 정보 포함) -->
     <select id="get" resultMap="memberMap">
-        SELECT user_id, login_id, password, email, create_at
+        SELECT user_id, login_id, password, email, create_at, name
         FROM users
         WHERE login_id = #{username}
     </select>

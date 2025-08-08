@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.asset.mapper.AssetCategoryMapper">
+
+    <!-- 글로벌 카테고리 조회 -->
+    <select id="findIdByNameAndGlobal" parameterType="string" resultType="long">
+        SELECT id
+        FROM transaction_category
+        WHERE user_id IS NULL
+          AND name = #{name}
+            LIMIT 1
+    </select>
+
+</mapper>
