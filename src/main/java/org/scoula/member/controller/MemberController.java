@@ -10,6 +10,7 @@ import org.scoula.member.dto.*;
 import org.scoula.security.service.MailService;
 import org.scoula.member.service.MemberService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.scoula.security.util.PasswordValidator;
 
@@ -82,6 +83,14 @@ public class MemberController {
     return ResponseEntity.ok(exists);
   }
 
+  @ApiOperation(value = "내 프로필 조회", notes = "로그인된 사용자의 username, name, email 반환")
+  @GetMapping("/information")
+  public ResponseEntity<MemberDTO> get(Authentication auth) {
+    // auth.getName() 으로 username 꺼내서 기존 service.get() 호출
+    MemberDTO dto = service.get(auth.getName());
+
+    return ResponseEntity.ok(dto);
+  }
 
 
 }
