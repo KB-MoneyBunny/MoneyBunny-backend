@@ -4,6 +4,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="org.scoula.asset.mapper.AssetCardTransactionMapper">
+    <update id="updateMemo">
+        UPDATE card_transaction
+        SET memo = #{memo}
+        WHERE id = #{transactionId}
+    </update>
 
     <select id="sumThisMonthUsedByUserId" resultType="long">
         SELECT COALESCE(SUM(amount), 0)
@@ -27,14 +32,30 @@
         SELECT *
         FROM card_transaction
         WHERE card_id = #{cardId}
+        <if test="txType == null or txType == ''">
+        </if>
+        <if test="txType == 'expense'">
+            AND (cancel_status IS NULL OR cancel_status = '')
+        </if>
+        <if test="txType == 'refund'">
+            AND cancel_status = 'normal'
+        </if>
         ORDER BY transaction_date DESC
-            LIMIT #{size} OFFSET #{offset}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countByCardId" resultType="int">
         SELECT COUNT(*)
         FROM card_transaction
         WHERE card_id = #{cardId}
+        <if test="txType == null or txType == ''">
+        </if>
+        <if test="txType == 'expense'">
+            AND (cancel_status IS NULL OR cancel_status = '')
+        </if>
+        <if test="txType == 'refund'">
+            AND cancel_status = 'normal'
+        </if>
     </select>
 
 </mapper>
