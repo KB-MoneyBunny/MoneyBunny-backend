@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scoula.asset.service.TransactionCategorizer;
 import org.scoula.codef.common.exception.AlreadyRegisteredCardException;
 import org.scoula.codef.common.exception.CodefApiException;
 import org.scoula.codef.domain.*;
@@ -39,6 +40,8 @@ public class CodefService {
     private final CodefTokenService tokenService;
     @Value("${codef.public_key}")
     private String publicKey;
+
+    private final TransactionCategorizer transactionCategorizer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConnectedAccountMapper connectedAccountMapper;
@@ -527,7 +530,9 @@ public class CodefService {
         LocalDate today = LocalDate.now();
         String endDate = today.format(DateTimeFormatter.BASIC_ISO_DATE);
         String startDate = today.minusYears(1).format(DateTimeFormatter.BASIC_ISO_DATE);
-        Long categoryId = categoryMapper.findUnclassifiedId();
+
+        // 기본 미분류 카테고리 ID
+        Long defaultCatId = categoryMapper.findUnclassifiedId();
 
         for (UserCardVO card : selectedCards) {
             // 1. 이미 등록된 카드면 skip
@@ -559,7 +564,9 @@ public class CodefService {
                 List<CardTransactionVO> batch = txList.subList(i, Math.min(i + 500, txList.size()));
                 for (CardTransactionVO tx : batch) {
                     tx.setCardId(cardId);
-                    tx.setCategoryId(categoryId);
+
+                    Long globalCat = transactionCategorizer.categorizeGlobal(tx);
+                    tx.setCategoryId(globalCat != null ? globalCat : defaultCatId);
                 }
                 cardTransactionMapper.insertCardTransactions(batch);
                 log.debug("[카드등록] 배치 insert: cardId={}, batchStart={}, batchEnd={}", cardId, i, Math.min(i + 500, txList.size()));
@@ -747,6 +754,7 @@ public class CodefService {
         Set<String> dbTxKeySet = cardTransactionMapper.findAllTxKeyByCardIdFromDate(cardId, startDate);
         log.debug("[DB] 기존 승인번호+카드ID 키 개수: {}", dbTxKeySet.size());
 
+        Long defaultCatId = categoryMapper.findUnclassifiedId();
         int insertCount = 0;
 
         for (CardTransactionVO tx : apiTxList) {
@@ -757,6 +765,9 @@ public class CodefService {
                 log.debug("⏭[중복] {} → skip", key);
                 continue;
             }
+
+            Long globalCat = transactionCategorizer.categorizeGlobal(tx);
+            tx.setCategoryId(globalCat != null ? globalCat : defaultCatId);
 
             log.debug("  신규 삽입: {}", key);
             tx.setCardId(cardId);
