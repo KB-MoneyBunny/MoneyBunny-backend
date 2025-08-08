@@ -8,6 +8,7 @@ import org.scoula.asset.domain.AccountTransactionVO;
 import org.scoula.asset.domain.CardSummaryVO;
 import org.scoula.asset.domain.CardTransactionVO;
 import org.scoula.asset.dto.AssetSummaryResponse;
+import org.scoula.asset.dto.MemoRequest;
 import org.scoula.asset.service.AssetService;
 import org.scoula.common.dto.PageResponse;
 import org.scoula.push.dto.response.NotificationResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/asset")
@@ -79,11 +81,34 @@ public class AssetController {
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long cardId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String txType
             ) {
         Long userId = customUser.getMember().getUserId();
-        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(userId, cardId, page, size);
+        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(userId, cardId, page, size, txType);
         return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/cards/{transactionId}/memo")
+    public ResponseEntity<String> updateCardTransactionMemo(
+            @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long transactionId,
+            @RequestBody MemoRequest request
+    ) {
+        assetService.updateCardTransactionMemo(transactionId, request.getMemo());
+        String updatedMemo = request.getMemo();
+        return ResponseEntity.ok(updatedMemo);
+    }
+
+    @PostMapping("/accounts/{transactionId}/memo")
+    public ResponseEntity<String> updateAccountTransactionMemo(
+            @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long transactionId,
+            @RequestBody MemoRequest request
+    ) {
+        assetService.updateAccountTransactionMemo(transactionId, request.getMemo());
+        String updatedMemo = request.getMemo();
+        return ResponseEntity.ok(updatedMemo);
     }
 
 }
