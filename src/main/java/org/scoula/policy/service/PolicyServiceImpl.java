@@ -5,6 +5,7 @@ import org.scoula.common.util.RedisUtil;
 import org.scoula.external.gpt.GptApiClient;
 import org.scoula.external.gpt.dto.GptRequestDto;
 import org.scoula.external.gpt.dto.GptResponseDto;
+import org.scoula.external.gpt.service.PromptBuilderService;
 import org.scoula.external.youthapi.YouthPolicyApiClient;
 import org.scoula.policy.domain.*;
 import org.scoula.policy.domain.education.PolicyEducationLevelVO;
@@ -50,6 +51,9 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Autowired
     private GptApiClient gptApiClient;
+    
+    @Autowired
+    private PromptBuilderService promptBuilderService;
     
     @Autowired
     private RedisUtil redisUtil;
@@ -99,9 +103,10 @@ public class PolicyServiceImpl implements PolicyService {
                 // 새로운 정책 추가
                 log.info("[새 정책] 정책번호 {} 저장 시작", dto.getPolicyNo());
 
-                // GPT 분석
-                GptRequestDto gptRequest = new GptRequestDto(dto.getSupportContent());
-                log.info("\n📤 [GPT 프롬프트 요청]\n{}", gptRequest.toPrompt());
+                // GPT 분석 (동적 프롬프트)
+                String dynamicPrompt = promptBuilderService.buildPromptOptimized(dto.getSupportContent());
+                GptRequestDto gptRequest = GptRequestDto.of(dynamicPrompt);
+                log.info("\n📤 [GPT 프롬프트 요청]\n{}", gptRequest.getPrompt());
                 GptResponseDto gptResponseDto = gptApiClient.analyzePolicy(gptRequest);
                 log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {},\n  \"policyBenefitDescription\": \"{}\"\n}}",
                         gptResponseDto.isFinancialSupport(),
@@ -319,9 +324,10 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     private double normalizeDeadlineScore(YouthPolicyPeriodVO policyPeriod) {
-        if (policyPeriod == null || policyPeriod.getApplyPeriod() == null) return 0.0;
+        // 마감일 정보가 없으면 상시 모집으로 간주하여 최고점(1.0) 부여
+        if (policyPeriod == null || policyPeriod.getApplyPeriod() == null) return 1.0;
         String[] dates = policyPeriod.getApplyPeriod().split("~");
-        if (dates.length != 2) return 0.0;
+        if (dates.length != 2) return 1.0;  // 날짜 형식이 맞지 않으면 상시 모집으로 간주
 
         try {
             String endDateStr = dates[1].trim();
@@ -329,10 +335,15 @@ public class PolicyServiceImpl implements PolicyService {
             LocalDate endDate = LocalDate.parse(endDateStr, formatter);
             long daysUntilEnd = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
 
-            if (daysUntilEnd <= 0 || daysUntilEnd >= SCORE_RANGE_DAYS) return 0.0;
+            // 마감일이 지난 경우 -1.0 (지원 불가)
+            if (daysUntilEnd <= 0) return -1.0;
+            // 마감일이 너무 먼 경우 0.0 (중립)
+            if (daysUntilEnd >= SCORE_RANGE_DAYS) return 0.0;
+            // 마감일이 가까울수록 1.0에 가까운 값
             return 1.0 - ((double) daysUntilEnd / SCORE_RANGE_DAYS);
         } catch (DateTimeParseException e) {
-            return 0.0;
+            // 날짜 파싱 실패 시 상시 모집으로 간주
+            return 1.0;
         }
     }
 
