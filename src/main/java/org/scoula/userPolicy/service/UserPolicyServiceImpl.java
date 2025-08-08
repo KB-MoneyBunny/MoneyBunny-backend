@@ -975,4 +975,36 @@ public class UserPolicyServiceImpl implements UserPolicyService {
             return Collections.emptyList();
         }
     }
+
+    /**
+     * 최근 검색어 전체 삭제
+     * @param username 사용자 이름
+     */
+    @Override
+    public void deleteRecentSearches(String username) {
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+        try {
+            redisTemplate.delete(key);
+            log.info("최근 검색어 전체 삭제: username={}", username);
+        } catch (Exception e) {
+            log.error("최근 검색어 전체 삭제 실패: username={}", username, e);
+        }
+    }
+
+    /**
+     * 선택한 최근 검색어 삭제
+     * @param username 사용자 이름
+     * @param keyword 삭제할 검색어
+     */
+    @Override
+    public void deleteRecentSearch(String username, String keyword) {
+        String key = RECENT_KEYWORDS_KEY_PREFIX + username;
+        try {
+            ListOperations<String, String> listOperations = redisTemplate.opsForList();
+            listOperations.remove(key, 0, keyword);
+            log.info("선택한 최근 검색어 삭제: username={}, keyword={}", username, keyword);
+        } catch (Exception e) {
+            log.error("선택한 최근 검색어 삭제 실패: username={}, keyword={}", username, keyword, e);
+        }
+    }
 }
