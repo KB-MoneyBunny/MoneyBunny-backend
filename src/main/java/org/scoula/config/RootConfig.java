@@ -38,7 +38,8 @@ import java.util.concurrent.Executor;
         "org.scoula.codef.mapper",
         "org.scoula.push.mapper", // push 매퍼 스캔 추가
         "org.scoula.policyInteraction.mapper", // 정책 상호작용 매퍼 스캔 추가
-        "org.scoula.asset.mapper"
+        "org.scoula.asset.mapper",
+        "org.scoula.external.gpt.mapper" // GPT 프롬프트 매퍼 스캔 추가
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",

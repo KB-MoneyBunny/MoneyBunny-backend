@@ -3,7 +3,6 @@ package org.scoula.external.gpt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.external.gpt.dto.GptRequestDto;
 import org.scoula.external.gpt.dto.GptResponseDto;
@@ -14,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class GptApiClient {
 
     private final RestTemplate restTemplate = new RestTemplate(); // 나중에 Bean 주입으로 바꾸면 더 좋음
@@ -25,7 +23,8 @@ public class GptApiClient {
 
     public GptResponseDto analyzePolicy(GptRequestDto dto) {
         try {
-            String prompt = dto.toPrompt();
+            String prompt = dto.getPrompt();
+            log.info("[GPT 분석] 프롬프트 길이: {}", prompt.length());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -55,6 +54,16 @@ public class GptApiClient {
             String json = response.getBody();
             JsonNode root = objectMapper.readTree(json);
             String content = root.path("choices").get(0).path("message").path("content").asText();
+            
+            // 토큰 사용량 로그 출력
+            JsonNode usage = root.path("usage");
+            if (!usage.isMissingNode()) {
+                int promptTokens = usage.path("prompt_tokens").asInt(0);
+                int completionTokens = usage.path("completion_tokens").asInt(0);
+                int totalTokens = usage.path("total_tokens").asInt(0);
+                log.info("[GPT 토큰 사용량] Request: {} tokens, Response: {} tokens, Total: {} tokens", 
+                        promptTokens, completionTokens, totalTokens);
+            }
 
             // 세 키를 모두 포함하는 JSON 블록만 추출
             content = content.replaceAll("(?s).*?(\\{[^}]*\"isFinancialSupport\"[^}]*\"estimatedAmount\"[^}]*\"policyBenefitDescription\"[^}]*\\}).*", "$1");
@@ -65,6 +74,7 @@ public class GptApiClient {
             long estimated = resultNode.path("estimatedAmount").asLong(0);
             String description = resultNode.path("policyBenefitDescription").asText("금전적 지원 없음");
 
+            log.info("[GPT 분석 완료] isFinancial: {}, estimated: {}", isFinancial, estimated);
             return new GptResponseDto(isFinancial, estimated, description);
 
         } catch (Exception e) {
@@ -72,4 +82,5 @@ public class GptApiClient {
             return new GptResponseDto(false, 0, "금전적 지원 없음") ;
         }
     }
+
 }

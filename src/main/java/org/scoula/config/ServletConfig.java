@@ -26,6 +26,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.push.controller", // push 컨트롤러 스캔 추가
         "org.scoula.policyInteraction.controller", // 정책 상호작용 컨트롤러 스캔 추가
         "org.scoula.asset.controller",
+        "org.scoula.external.gpt.controller" // GPT 프롬프트 관리자 컨트롤러 스캔 추가
 }) // Spring MVC용 컴포넌트 등록을 위한 스캔 패키지
 public class ServletConfig implements WebMvcConfigurer {
 
