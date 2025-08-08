@@ -11,8 +11,12 @@ public interface AssetCardTransactionMapper {
 
     List<CardTransactionVO> findByCardIdWithPaging(@Param("cardId") Long cardId,
                                                    @Param("offset") int offset,
-                                                   @Param("size") int size);
+                                                   @Param("size") int size,
+                                                   @Param("txType") String txType);
 
-    int countByCardId(Long cardId);
+    int countByCardId(@Param("cardId") Long cardId,
+                      @Param("txType") String txType);
 
+
+    void updateMemo(@Param("transactionId") Long transactionId, @Param("memo") String memo);
 }
