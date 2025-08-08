@@ -14,4 +14,6 @@ public interface AssetAccountTransactionMapper {
     int countByAccountId(@Param("accountId") Long accountId,
                          @Param("txType") String txType);
 
+    void updateMemo(@Param("transactionId") Long transactionId, @Param("memo") String memo);
+
 }
