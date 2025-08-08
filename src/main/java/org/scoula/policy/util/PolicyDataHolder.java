@@ -11,6 +11,7 @@ import org.scoula.policy.mapper.PolicyMapper;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -166,5 +167,18 @@ public class PolicyDataHolder {
 
     public void putSpecialCondition(String name, Long id) {
         specialConditionMap.put(name, id);
+    }
+
+    /**
+     * 주어진 prefix(예: "41")로 시작하는 모든 지역코드 반환
+     */
+    public List<String> getRegionCodesByPrefix(String prefix) {
+        List<String> result = new ArrayList<>();
+        for (String code : regionMap.keySet()) {
+            if (code.startsWith(prefix)) {
+                result.add(code);
+            }
+        }
+        return result;
     }
 }
