@@ -87,6 +87,29 @@ public class UserNotificationService {
     }
 
     /**
+     * 알림 삭제 (사용자 권한 확인 포함)
+     */
+    @Transactional
+    public void deleteNotification(Long notificationId, Long userId) {
+        // 먼저 알림이 해당 사용자의 것인지 확인
+        UserNotificationVO notification = userNotificationMapper.findById(notificationId);
+        
+        if (notification == null) {
+            log.warn("[알림 삭제 실패] 알림을 찾을 수 없음 - 알림 ID: {}", notificationId);
+            throw new IllegalArgumentException("알림을 찾을 수 없습니다.");
+        }
+        
+        if (!notification.getUserId().equals(userId)) {
+            log.warn("[알림 삭제 실패] 권한 없음 - 알림 ID: {}, 요청 사용자 ID: {}, 실제 소유자 ID: {}", 
+                     notificationId, userId, notification.getUserId());
+            throw new IllegalArgumentException("해당 알림을 삭제할 권한이 없습니다.");
+        }
+        
+        userNotificationMapper.deleteById(notificationId);
+        log.info("[알림 삭제] 알림 ID: {}, 사용자 ID: {}", notificationId, userId);
+    }
+
+    /**
      * 북마크 알림을 동기 생성 후 비동기 FCM 발송 (개선된 버전)
      */
     @Transactional
