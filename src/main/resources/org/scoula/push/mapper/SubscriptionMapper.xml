@@ -21,7 +21,8 @@
     <!-- 알림 유형별 구독 설정 업데이트 -->
     <update id="updateNotificationSettings">
         UPDATE subscription
-        SET is_active_bookmark = #{isActiveBookmark},
+        SET user_id = #{userId},
+            is_active_bookmark = #{isActiveBookmark},
             is_active_top3 = #{isActiveTop3},
             is_active_new_policy = #{isActiveNewPolicy},
             is_active_feedback = #{isActiveFeedback}

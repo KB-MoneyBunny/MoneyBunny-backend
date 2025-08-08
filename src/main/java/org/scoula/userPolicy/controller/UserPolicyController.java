@@ -223,4 +223,44 @@ public class UserPolicyController {
         userPolicyService.deleteUserPolicyCondition(username);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 최근 검색어 전체 삭제 API
+     * DELETE: http://localhost:8080/api/userPolicy/recent-keywords
+     * @return ResponseEntity
+     *         - 200 OK: 삭제 성공
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "최근 검색어 전체 삭제", notes = "사용자의 최근 검색어를 모두 삭제하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 삭제되었습니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @DeleteMapping("/recent-keywords")
+    public ResponseEntity<Void> deleteRecentSearches(@ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        userPolicyService.deleteRecentSearches(username);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 선택한 최근 검색어 삭제 API
+     * DELETE: http://localhost:8080/api/userPolicy/recent-keywords/{keyword}
+     * @param keyword 삭제할 검색어
+     * @return ResponseEntity
+     *         - 200 OK: 삭제 성공
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "선택한 최근 검색어 삭제", notes = "사용자가 선택한 최근 검색어를 삭제하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 삭제되었습니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @DeleteMapping("/recent-keywords/{keyword}")
+    public ResponseEntity<Void> deleteRecentSearch(@ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+                                                  @PathVariable String keyword) {
+        String username = customUser.getUsername();
+        userPolicyService.deleteRecentSearch(username, keyword);
+        return ResponseEntity.ok().build();
+    }
 }
