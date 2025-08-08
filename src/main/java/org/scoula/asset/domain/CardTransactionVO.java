@@ -20,4 +20,5 @@ public class CardTransactionVO {
     private String storeType;
     private String cancelStatus; // normal/cancel/partial_cancel/reject
     private Long cancelAmount;
+    private String memo;
 }
