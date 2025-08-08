@@ -11,13 +11,14 @@
         <result property="email" column="email" />
         <result property="createdAt" column="create_at" />
         <result property="name"      column="name"/>
+        <result property="profileImageId"    column="profile_image_id"/>
     </resultMap>
 
 
     <!-- SQL -->
     <!-- 회원 정보 조회 (LEFT JOIN으로 권한 정보 포함) -->
     <select id="get" resultMap="memberMap">
-        SELECT user_id, login_id, password, email, create_at, name
+        SELECT user_id, login_id, password, email, create_at, name, profile_image_id
         FROM users
         WHERE login_id = #{username}
     </select>
@@ -27,8 +28,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO users (login_id, email, password, name, create_at, point)
-        VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0)
+        INSERT INTO users (login_id, email, password, name, create_at, point, profile_image_id)
+        VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0, #{profileImage})
     </insert>
 
     <!-- 이메일 중복 검사  -->
@@ -37,7 +38,7 @@
     </select>
     <!-- 사용자 ID로 회원 정보 조회 -->
     <select id="findByUserId" resultMap="memberMap">
-        SELECT user_id, login_id, password, email, create_at, name
+        SELECT user_id, login_id, password, email, create_at, name, profile_image_id
         FROM users
         WHERE user_id = #{userId}
     </select>
