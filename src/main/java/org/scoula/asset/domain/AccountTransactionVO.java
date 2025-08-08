@@ -16,4 +16,5 @@ public class AccountTransactionVO {
     private Long balanceAfter;
     private String storeName;
     private String branchName;
+    private String memo;
 }
