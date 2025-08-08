@@ -60,4 +60,8 @@ public interface UserPolicyService {
     List<String> getRecentSearches(String username);
 
     void deleteUserPolicyCondition(String username);
+
+    void deleteRecentSearches(String username);
+
+    void deleteRecentSearch(String username, String keyword);
 }
