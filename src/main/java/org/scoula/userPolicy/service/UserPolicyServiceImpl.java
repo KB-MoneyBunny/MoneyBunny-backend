@@ -602,16 +602,24 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 추가
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
-        Set<String> extendedRegions = new HashSet<>(originalRegions);
-        for (String region : originalRegions) {
-            if (region.length() >= 2) {
-                String generalizedRegion = region.substring(0, 2) + "000";
-                extendedRegions.add(generalizedRegion);
+        Set<String> expandedRegionNames = new HashSet<>();
+        for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
+            if (name.length() == 5 && name.endsWith("000")) {
+                String prefix = name.substring(0, 2);
+                expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
-        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
         // 마감일 필터링 로직 추가 (로그 포함)
@@ -719,16 +727,24 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 추가
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
-        Set<String> extendedRegions = new HashSet<>(originalRegions);
-        for (String region : originalRegions) {
-            if (region.length() >= 2) {
-                String generalizedRegion = region.substring(0, 2) + "000";
-                extendedRegions.add(generalizedRegion);
+        Set<String> expandedRegionNames = new HashSet<>();
+        for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
+            if (name.length() == 5 && name.endsWith("000")) {
+                String prefix = name.substring(0, 2);
+                expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
-        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
 
         // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
@@ -829,16 +845,22 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 (prefix가 "XX000"인 경우 전체 지역 포함)
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
         Set<String> expandedRegionNames = new HashSet<>();
         for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
             if (name.length() == 5 && name.endsWith("000")) {
                 String prefix = name.substring(0, 2);
                 expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
-            } else {
-                expandedRegionNames.add(name);
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
         searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
