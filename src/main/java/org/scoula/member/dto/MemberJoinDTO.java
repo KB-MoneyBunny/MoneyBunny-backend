@@ -16,7 +16,7 @@ public class MemberJoinDTO {
   private String password;
   private String email;
   private String name;
-  private MultipartFile avatar;
+  private int profileImageId;
 
   public MemberVO toVO() {
     return MemberVO.builder()
@@ -24,6 +24,7 @@ public class MemberJoinDTO {
             .password(password)
             .email(email)
             .name(name)
+            .profileImageId(profileImageId)
             .build();
   }
 }

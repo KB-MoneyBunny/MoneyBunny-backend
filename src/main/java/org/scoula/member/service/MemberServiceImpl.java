@@ -74,9 +74,6 @@ public class MemberServiceImpl implements MemberService {
     // 회원 저장
     mapper.insert(member);
 
-    // 아바타 저장
-    saveAvatar(dto.getAvatar(), member.getLoginId());
-
     // 저장된 회원 정보 반환
     return get(member.getLoginId());
   }
