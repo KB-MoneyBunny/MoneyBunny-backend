@@ -108,7 +108,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/member/**").permitAll()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/api/asset/**").permitAll()
-                .antMatchers("/api/application/incomplete").permitAll()
+                .antMatchers("/api/policy-interaction/application/incomplete").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/policy/*").permitAll() // 공유 URL 로그인 X
                 .antMatchers(HttpMethod.GET, "/api/policy/detail/**").permitAll()
                 .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
