@@ -173,13 +173,13 @@ public class FeedbackNotificationService {
      */
     private String getContextMessage(DayOfWeekPeak peak) {
         if (peak.isWeekend()) {
-            return " (여가 시간을 잘 보내셨나요?)";
+            return "\n(여가 시간을 잘 보내셨나요?)";
         } else if (peak.getDayOfWeek() == 6) { // 금요일
-            return " (불금의 힘인가요?)";
+            return "\n(불금의 힘인가요?)";
         } else if (peak.getDayOfWeek() == 2) { // 월요일
-            return " (월요병이 지갑을 열게 하나요?)";
+            return "\n(월요병이 지갑을 열게 하나요?)";
         } else {
-            return " (평일 중간의 스트레스 해소용일까요?)";
+            return "\n(평일 중간의 스트레스 해소용일까요?)";
         }
     }
     
