@@ -151,7 +151,7 @@ public class NewPolicyNotificationService {
      */
     private List<SubscriptionVO> getNewPolicySubscribers() {
         try {
-            return subscriptionMapper.findActiveNewPolicySubscribers();
+            return subscriptionMapper.findActiveByNotificationType("NEW_POLICY");
         } catch (Exception e) {
             log.error("[신규 정책 알림] 구독자 조회 중 오류", e);
             return List.of();
