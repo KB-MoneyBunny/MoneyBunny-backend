@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.scoula.policy.domain.PolicyVectorVO;
 import org.scoula.policy.mapper.PolicyMapper;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
+import org.scoula.policyInteraction.domain.UserPolicyReviewVO;
 import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.ReviewWithUserDTO;
+import org.scoula.policyInteraction.dto.ReviewWithPolicyDTO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.scoula.userPolicy.util.UserVectorUtil;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
@@ -233,6 +236,106 @@ public class PolicyInteractionService {
         
         log.debug("[선형보간] t: {}, 결과: [{}, {}, {}]", 
             t, newBenefit, newDeadline, newViews);
+    }
+    
+    // ────────────────────────────────────────
+    // 📌 리뷰 관련
+    // ────────────────────────────────────────
+    
+    /** 리뷰 작성 */
+    @Transactional
+    public boolean addReview(Long userId, Long policyId, Short rating, String content) {
+        // 신청 완료 여부 확인
+        UserPolicyApplicationVO application = policyInteractionMapper.selectApplication(userId, policyId);
+        if (application == null || !Boolean.TRUE.equals(application.getIsApplied())) {
+            log.info("신청을 완료하지 않은 정책입니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 이미 리뷰를 작성했는지 확인
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        if (existing != null) {
+            log.info("이미 리뷰를 작성한 정책입니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 유효성 검사
+        if (rating < 1 || rating > 5) {
+            log.error("잘못된 별점입니다. rating: {}", rating);
+            return false;
+        }
+        
+        UserPolicyReviewVO review = UserPolicyReviewVO.builder()
+                .userId(userId)
+                .policyId(policyId)
+                .rating(rating)
+                .content(content)
+                .build();
+                
+        int result = policyInteractionMapper.insertReview(review);
+        return result > 0;
+    }
+    
+    /** 리뷰 수정 */
+    @Transactional
+    public boolean updateReview(Long userId, Long policyId, Short rating, String content) {
+        // 리뷰가 존재하는지 확인
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        if (existing == null) {
+            log.info("수정할 리뷰가 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 유효성 검사
+        if (rating < 1 || rating > 5) {
+            log.error("잘못된 별점입니다. rating: {}", rating);
+            return false;
+        }
+        
+        UserPolicyReviewVO review = UserPolicyReviewVO.builder()
+                .userId(userId)
+                .policyId(policyId)
+                .rating(rating)
+                .content(content)
+                .build();
+                
+        int result = policyInteractionMapper.updateReview(review);
+        return result > 0;
+    }
+    
+    /** 리뷰 삭제 */
+    @Transactional
+    public boolean deleteReview(Long userId, Long policyId) {
+        // 리뷰가 존재하는지 확인
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        if (existing == null) {
+            log.info("삭제할 리뷰가 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        int result = policyInteractionMapper.deleteReview(userId, policyId);
+        return result > 0;
+    }
+    
+    /** 내 리뷰 조회 */
+    public UserPolicyReviewVO getMyReview(Long userId, Long policyId) {
+        return policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+    }
+    
+    /** 정책별 리뷰 목록 조회 */
+    public List<ReviewWithUserDTO> getPolicyReviews(Long policyId) {
+        return policyInteractionMapper.selectReviewsByPolicyId(policyId);
+    }
+    
+    /** 정책 평균 별점 조회 */
+    public Double getPolicyAverageRating(Long policyId) {
+        Double averageRating = policyInteractionMapper.selectAverageRatingByPolicyId(policyId);
+        return averageRating != null ? averageRating : 0.0;
+    }
+    
+    /** 사용자가 작성한 모든 리뷰 조회 */
+    public List<ReviewWithPolicyDTO> getUserReviews(Long userId) {
+        return policyInteractionMapper.selectReviewsByUserId(userId);
     }
     
 }
