@@ -31,7 +31,9 @@
 
     <!-- 특정 알림 타입의 활성 구독자 조회 -->
     <select id="findActiveByNotificationType" resultType="org.scoula.push.domain.SubscriptionVO">
-        SELECT * FROM subscription
+        SELECT DISTINCT
+            user_id AS userId
+        FROM subscription
         WHERE 
         <choose>
             <when test="notificationType == 'BOOKMARK'">
@@ -70,14 +72,6 @@
         AND (is_active_bookmark = true OR is_active_top3 = true OR is_active_new_policy = true OR is_active_feedback = true)
     </select>
 
-    <!-- 신규 정책 알림 활성 구독자 조회 -->
-    <select id="findActiveNewPolicySubscribers" resultType="org.scoula.push.domain.SubscriptionVO">
-        SELECT * FROM subscription
-        WHERE is_active_new_policy = true
-        AND fcm_token IS NOT NULL
-        AND fcm_token != ''
-    </select>
-    
     <!-- 특정 사용자의 북마크 알림이 활성화된 모든 토큰 조회 -->
     <select id="findActiveBookmarkTokensByUserId" resultType="String">
         SELECT fcm_token FROM subscription
