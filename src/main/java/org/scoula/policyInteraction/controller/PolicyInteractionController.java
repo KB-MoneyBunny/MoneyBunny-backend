@@ -5,9 +5,13 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
+import org.scoula.policyInteraction.domain.UserPolicyReviewVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
 import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
 import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.ReviewRequestDTO;
+import org.scoula.policyInteraction.dto.ReviewWithUserDTO;
+import org.scoula.policyInteraction.dto.ReviewWithPolicyDTO;
 import org.scoula.policyInteraction.service.PolicyInteractionService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +19,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -135,5 +141,98 @@ public class PolicyInteractionController {
         return application != null ?
                 ResponseEntity.ok(application) :
                 ResponseEntity.notFound().build();
+    }
+
+    // ────────────────────────────────────────
+    // 📌 리뷰 관련 API
+    // ────────────────────────────────────────
+
+    @PostMapping("/review/{policyId}")
+    @ApiOperation(value = "정책 리뷰 작성", notes = "특정 정책에 대한 리뷰를 작성합니다. 별점은 1-5점, 중복 작성 불가")
+    public ResponseEntity<Void> addReview(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId,
+            @RequestBody ReviewRequestDTO request) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.addReview(
+                userId, policyId, request.getRating(), request.getContent());
+        
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
+    @PutMapping("/review/{policyId}")
+    @ApiOperation(value = "정책 리뷰 수정", notes = "작성한 리뷰를 수정합니다. 본인이 작성한 리뷰만 수정 가능")
+    public ResponseEntity<Void> updateReview(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId,
+            @RequestBody ReviewRequestDTO request) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.updateReview(
+                userId, policyId, request.getRating(), request.getContent());
+        
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
+    @DeleteMapping("/review/{policyId}")
+    @ApiOperation(value = "정책 리뷰 삭제", notes = "작성한 리뷰를 삭제합니다. 본인이 작성한 리뷰만 삭제 가능")
+    public ResponseEntity<Void> deleteReview(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.deleteReview(userId, policyId);
+        
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/review/{policyId}/my")
+    @ApiOperation(value = "내 리뷰 조회", notes = "특정 정책에 대한 내 리뷰를 조회합니다")
+    public ResponseEntity<UserPolicyReviewVO> getMyReview(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        UserPolicyReviewVO review = policyInteractionService.getMyReview(userId, policyId);
+        
+        return review != null ?
+                ResponseEntity.ok(review) :
+                ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/review/{policyId}/list")
+    @ApiOperation(value = "정책 리뷰 목록 조회", notes = "특정 정책의 모든 리뷰를 조회합니다 (작성자 정보 포함)")
+    public ResponseEntity<Map<String, Object>> getPolicyReviews(@PathVariable Long policyId) {
+        
+        List<ReviewWithUserDTO> reviews = policyInteractionService.getPolicyReviews(policyId);
+        Double averageRating = policyInteractionService.getPolicyAverageRating(policyId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("reviews", reviews);
+        response.put("averageRating", averageRating);
+        response.put("totalCount", reviews.size());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/review/my-list")
+    @ApiOperation(value = "내가 작성한 리뷰 목록 조회", notes = "사용자가 작성한 모든 리뷰를 정책 정보와 함께 조회합니다")
+    public ResponseEntity<List<ReviewWithPolicyDTO>> getMyReviews(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        
+        Long userId = customUser.getMember().getUserId();
+        List<ReviewWithPolicyDTO> reviews = policyInteractionService.getUserReviews(userId);
+        
+        return ResponseEntity.ok(reviews);
     }
 }
