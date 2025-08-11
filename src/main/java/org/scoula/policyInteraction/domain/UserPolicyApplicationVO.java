@@ -17,6 +17,7 @@ public class UserPolicyApplicationVO {
     private Long policyId;
     private String applicationUrl;
     private Boolean isApplied;
+    private String benefitStatus; // ENUM: RECEIVED, PENDING, NOT_ELIGIBLE
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

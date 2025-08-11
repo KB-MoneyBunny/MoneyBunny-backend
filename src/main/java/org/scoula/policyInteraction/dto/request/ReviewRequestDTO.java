@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ReviewRequestDTO {
     
-    private Short rating;
+    private String benefitStatus; // 혜택 상태: RECEIVED, PENDING, NOT_ELIGIBLE
     private String content;
 }
