@@ -12,5 +12,7 @@ public interface MemberMapper {
   MemberVO findByUserId(@Param("userId") Long userId);  // 사용자 ID로 조회
   int insert(MemberVO member);                      // 회원정보 저장
   MemberVO getByEmail(String email);                // 이메일 중복 검사
+  int updateProfileImage(@Param("username") String username,
+                         @Param("profileImageId") int profileImageId);
 
 }

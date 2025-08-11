@@ -29,7 +29,7 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
         INSERT INTO users (login_id, email, password, name, create_at, point, profile_image_id)
-        VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0, #{profileImage})
+        VALUES (#{loginId}, #{email}, #{password}, #{name}, now(), 0, #{profileImageId})
     </insert>
 
     <!-- 이메일 중복 검사  -->
@@ -42,5 +42,12 @@
         FROM users
         WHERE user_id = #{userId}
     </select>
+
+<!--    프로필 이미지 변경-->
+    <update id="updateProfileImage">
+        UPDATE users
+        SET profile_image_id = #{profileImageId}
+        WHERE login_id = #{username}
+    </update>
 
 </mapper>
