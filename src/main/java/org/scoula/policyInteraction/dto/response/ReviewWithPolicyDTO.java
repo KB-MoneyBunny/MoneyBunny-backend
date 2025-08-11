@@ -1,4 +1,4 @@
-package org.scoula.policyInteraction.dto;
+package org.scoula.policyInteraction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
