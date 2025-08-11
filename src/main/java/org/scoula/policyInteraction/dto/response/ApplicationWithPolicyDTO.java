@@ -1,4 +1,4 @@
-package org.scoula.policyInteraction.dto;
+package org.scoula.policyInteraction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -17,6 +17,7 @@ public class ApplicationWithPolicyDTO {
     // 신청 정보
     private Long applicationId;
     private Boolean isApplied;
+    private String benefitStatus; // 혜택 수령 상태: RECEIVED, PENDING, NOT_ELIGIBLE
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime appliedAt;
