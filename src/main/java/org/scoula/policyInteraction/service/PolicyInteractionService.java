@@ -8,10 +8,10 @@ import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.UserPolicyReviewVO;
 import org.scoula.userPolicy.domain.UserVectorVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
-import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
-import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
-import org.scoula.policyInteraction.dto.ReviewWithUserDTO;
-import org.scoula.policyInteraction.dto.ReviewWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithUserDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO;
 import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.scoula.userPolicy.util.UserVectorUtil;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
@@ -92,6 +92,7 @@ public class PolicyInteractionService {
                 .policyId(policyId)
                 .applicationUrl(null)  // 선택적 필드로 null 처리
                 .isApplied(false)      // 신청 등록 시 기본값 false
+                .benefitStatus("PENDING") // 기본값: 처리 중
                 .build();
                 
         int result = policyInteractionMapper.insertApplication(application);
@@ -153,6 +154,28 @@ public class PolicyInteractionService {
     /** 미완료 신청 정책 하나 조회 (is_applied = false) */
     public ApplicationWithPolicyDTO getIncompleteApplication(Long userId) {
         return policyInteractionMapper.findIncompleteApplication(userId);
+    }
+    
+    /** 혜택 수령 상태 업데이트 */
+    @Transactional
+    public boolean updateBenefitStatus(Long userId, Long policyId, String benefitStatus) {
+        // 신청 기록이 있는지 확인
+        UserPolicyApplicationVO existing = policyInteractionMapper.selectApplication(userId, policyId);
+        if (existing == null) {
+            log.info("신청 기록이 없습니다. userId: {}, policyId: {}", userId, policyId);
+            return false;
+        }
+        
+        // 유효한 상태값인지 확인
+        if (!benefitStatus.equals("RECEIVED") && !benefitStatus.equals("PENDING") && !benefitStatus.equals("NOT_ELIGIBLE")) {
+            log.error("잘못된 혜택 상태입니다. benefitStatus: {}", benefitStatus);
+            return false;
+        }
+        
+        int result = policyInteractionMapper.updateBenefitStatus(userId, policyId, benefitStatus);
+        log.info("혜택 상태 업데이트 완료 - userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
+        
+        return result > 0;
     }
     
     // ────────────────────────────────────────
@@ -244,7 +267,7 @@ public class PolicyInteractionService {
     
     /** 리뷰 작성 */
     @Transactional
-    public boolean addReview(Long userId, Long policyId, Short rating, String content) {
+    public boolean addReview(Long userId, Long policyId, String benefitStatus, String content) {
         // 신청 완료 여부 확인
         UserPolicyApplicationVO application = policyInteractionMapper.selectApplication(userId, policyId);
         if (application == null || !Boolean.TRUE.equals(application.getIsApplied())) {
@@ -252,23 +275,25 @@ public class PolicyInteractionService {
             return false;
         }
         
-        // 이미 리뷰를 작성했는지 확인
-        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        // 이미 해당 혜택 상태로 리뷰를 작성했는지 확인
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
         if (existing != null) {
-            log.info("이미 리뷰를 작성한 정책입니다. userId: {}, policyId: {}", userId, policyId);
+            log.info("이미 해당 혜택 상태로 리뷰를 작성한 정책입니다. userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
             return false;
         }
         
         // 유효성 검사
-        if (rating < 1 || rating > 5) {
-            log.error("잘못된 별점입니다. rating: {}", rating);
+        if (!benefitStatus.equals("RECEIVED") && !benefitStatus.equals("PENDING") && !benefitStatus.equals("NOT_ELIGIBLE")) {
+            log.error("잘못된 혜택 상태입니다. benefitStatus: {}", benefitStatus);
             return false;
         }
         
         UserPolicyReviewVO review = UserPolicyReviewVO.builder()
                 .userId(userId)
                 .policyId(policyId)
-                .rating(rating)
+                .nickName(null) // 닉네임은 NULL로 저장 (나중에 결정)
+                .likeCount(0) // 초기값 0
+                .benefitStatus(benefitStatus)
                 .content(content)
                 .build();
                 
@@ -278,24 +303,18 @@ public class PolicyInteractionService {
     
     /** 리뷰 수정 */
     @Transactional
-    public boolean updateReview(Long userId, Long policyId, Short rating, String content) {
+    public boolean updateReview(Long userId, Long policyId, String benefitStatus, String content) {
         // 리뷰가 존재하는지 확인
-        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
         if (existing == null) {
-            log.info("수정할 리뷰가 없습니다. userId: {}, policyId: {}", userId, policyId);
-            return false;
-        }
-        
-        // 유효성 검사
-        if (rating < 1 || rating > 5) {
-            log.error("잘못된 별점입니다. rating: {}", rating);
+            log.info("수정할 리뷰가 없습니다. userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
             return false;
         }
         
         UserPolicyReviewVO review = UserPolicyReviewVO.builder()
                 .userId(userId)
                 .policyId(policyId)
-                .rating(rating)
+                .benefitStatus(benefitStatus)
                 .content(content)
                 .build();
                 
@@ -305,21 +324,21 @@ public class PolicyInteractionService {
     
     /** 리뷰 삭제 */
     @Transactional
-    public boolean deleteReview(Long userId, Long policyId) {
+    public boolean deleteReview(Long userId, Long policyId, String benefitStatus) {
         // 리뷰가 존재하는지 확인
-        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+        UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
         if (existing == null) {
-            log.info("삭제할 리뷰가 없습니다. userId: {}, policyId: {}", userId, policyId);
+            log.info("삭제할 리뷰가 없습니다. userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
             return false;
         }
         
-        int result = policyInteractionMapper.deleteReview(userId, policyId);
+        int result = policyInteractionMapper.deleteReview(userId, policyId, benefitStatus);
         return result > 0;
     }
     
     /** 내 리뷰 조회 */
-    public UserPolicyReviewVO getMyReview(Long userId, Long policyId) {
-        return policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId);
+    public UserPolicyReviewVO getMyReview(Long userId, Long policyId, String benefitStatus) {
+        return policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
     }
     
     /** 정책별 리뷰 목록 조회 */
@@ -327,10 +346,10 @@ public class PolicyInteractionService {
         return policyInteractionMapper.selectReviewsByPolicyId(policyId);
     }
     
-    /** 정책 평균 별점 조회 */
-    public Double getPolicyAverageRating(Long policyId) {
-        Double averageRating = policyInteractionMapper.selectAverageRatingByPolicyId(policyId);
-        return averageRating != null ? averageRating : 0.0;
+    /** 정책별 리뷰 수 조회 */
+    public Integer getPolicyReviewCount(Long policyId) {
+        Integer reviewCount = policyInteractionMapper.selectReviewCountByPolicyId(policyId);
+        return reviewCount != null ? reviewCount : 0;
     }
     
     /** 사용자가 작성한 모든 리뷰 조회 */
