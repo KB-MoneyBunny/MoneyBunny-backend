@@ -1,4 +1,4 @@
-package org.scoula.policyInteraction.dto;
+package org.scoula.policyInteraction.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
