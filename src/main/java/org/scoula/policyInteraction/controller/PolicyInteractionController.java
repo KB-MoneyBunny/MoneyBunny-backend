@@ -4,14 +4,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
 import org.scoula.policyInteraction.domain.UserPolicyReviewVO;
-import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
-import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
-import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
-import org.scoula.policyInteraction.dto.ReviewRequestDTO;
-import org.scoula.policyInteraction.dto.ReviewWithUserDTO;
-import org.scoula.policyInteraction.dto.ReviewWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.request.ReviewRequestDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithUserDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO;
 import org.scoula.policyInteraction.service.PolicyInteractionService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +17,13 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/policy-interaction")
 @RequiredArgsConstructor
-@Api(tags = "유저 정책 북마크 및 신청 API", description = "유저가 정책 북마크 및 신청 CRUD API")
+@Api(tags = "유저 정책 상호작용 API", description = "유저가 정책 북마크, 신청, 리뷰 CRUD API")
 public class PolicyInteractionController {
 
     private final PolicyInteractionService policyInteractionService;
@@ -143,12 +139,28 @@ public class PolicyInteractionController {
                 ResponseEntity.notFound().build();
     }
 
+    @PutMapping("/application/{policyId}/benefit-status")
+    @ApiOperation(value = "혜택 수령 상태 업데이트", notes = "신청한 정책의 혜택 수령 상태를 업데이트합니다. 상태값: RECEIVED(수령 완료), PENDING(처리 중), NOT_ELIGIBLE(수령 불가)")
+    public ResponseEntity<Void> updateBenefitStatus(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId,
+            @RequestParam String benefitStatus) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.updateBenefitStatus(userId, policyId, benefitStatus);
+        
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
     // ────────────────────────────────────────
     // 📌 리뷰 관련 API
     // ────────────────────────────────────────
 
     @PostMapping("/review/{policyId}")
-    @ApiOperation(value = "정책 리뷰 작성", notes = "특정 정책에 대한 리뷰를 작성합니다. 별점은 1-5점, 중복 작성 불가")
+    @ApiOperation(value = "정책 리뷰 작성", notes = "특정 정책에 대한 리뷰를 작성합니다. 혜택 상태별로 작성 가능")
     public ResponseEntity<Void> addReview(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long policyId,
@@ -157,7 +169,7 @@ public class PolicyInteractionController {
         Long userId = customUser.getMember().getUserId();
         
         boolean success = policyInteractionService.addReview(
-                userId, policyId, request.getRating(), request.getContent());
+                userId, policyId, request.getBenefitStatus(), request.getContent());
         
         return success ?
                 ResponseEntity.ok().build() :
@@ -174,7 +186,7 @@ public class PolicyInteractionController {
         Long userId = customUser.getMember().getUserId();
         
         boolean success = policyInteractionService.updateReview(
-                userId, policyId, request.getRating(), request.getContent());
+                userId, policyId, request.getBenefitStatus(), request.getContent());
         
         return success ?
                 ResponseEntity.ok().build() :
@@ -185,11 +197,12 @@ public class PolicyInteractionController {
     @ApiOperation(value = "정책 리뷰 삭제", notes = "작성한 리뷰를 삭제합니다. 본인이 작성한 리뷰만 삭제 가능")
     public ResponseEntity<Void> deleteReview(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @PathVariable Long policyId) {
+            @PathVariable Long policyId,
+            @RequestParam String benefitStatus) {
         
         Long userId = customUser.getMember().getUserId();
         
-        boolean success = policyInteractionService.deleteReview(userId, policyId);
+        boolean success = policyInteractionService.deleteReview(userId, policyId, benefitStatus);
         
         return success ?
                 ResponseEntity.ok().build() :
@@ -200,10 +213,11 @@ public class PolicyInteractionController {
     @ApiOperation(value = "내 리뷰 조회", notes = "특정 정책에 대한 내 리뷰를 조회합니다")
     public ResponseEntity<UserPolicyReviewVO> getMyReview(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
-            @PathVariable Long policyId) {
+            @PathVariable Long policyId,
+            @RequestParam String benefitStatus) {
         
         Long userId = customUser.getMember().getUserId();
-        UserPolicyReviewVO review = policyInteractionService.getMyReview(userId, policyId);
+        UserPolicyReviewVO review = policyInteractionService.getMyReview(userId, policyId, benefitStatus);
         
         return review != null ?
                 ResponseEntity.ok(review) :
@@ -212,17 +226,11 @@ public class PolicyInteractionController {
 
     @GetMapping("/review/{policyId}/list")
     @ApiOperation(value = "정책 리뷰 목록 조회", notes = "특정 정책의 모든 리뷰를 조회합니다 (작성자 정보 포함)")
-    public ResponseEntity<Map<String, Object>> getPolicyReviews(@PathVariable Long policyId) {
+    public ResponseEntity<List<ReviewWithUserDTO>> getPolicyReviews(@PathVariable Long policyId) {
         
         List<ReviewWithUserDTO> reviews = policyInteractionService.getPolicyReviews(policyId);
-        Double averageRating = policyInteractionService.getPolicyAverageRating(policyId);
         
-        Map<String, Object> response = new HashMap<>();
-        response.put("reviews", reviews);
-        response.put("averageRating", averageRating);
-        response.put("totalCount", reviews.size());
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/review/my-list")
