@@ -16,6 +16,9 @@ import org.scoula.policyInteraction.mapper.PolicyInteractionMapper;
 import org.scoula.userPolicy.util.UserVectorUtil;
 import org.scoula.userPolicy.mapper.UserPolicyMapper;
 import org.scoula.policyInteraction.util.NameMaskingUtil;
+import org.scoula.policyInteraction.util.ProfanityFilter;
+import org.scoula.policyInteraction.exception.ReviewException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,9 @@ public class PolicyInteractionService {
     private final PolicyMapper policyMapper;
     private final UserPolicyMapper userPolicyMapper;
     private final org.scoula.common.util.RedisUtil redisUtil;
+    
+    @Autowired
+    private ProfanityFilter profanityFilter;
     
     // ────────────────────────────────────────
     // 📌 북마크 관련
@@ -267,13 +273,19 @@ public class PolicyInteractionService {
     
     /** 리뷰 작성 */
     @Transactional
-    public boolean addReview(Long userId, Long policyId, String benefitStatus, String content) {
+    public void addReview(Long userId, Long policyId, String benefitStatus, String content) {
+        // 욕설 필터링 검사
+        if (profanityFilter.containsProfanity(content)) {
+            log.warn("욕설이 포함된 리뷰 작성 시도 - userId: {}, policyId: {}", userId, policyId);
+            throw ReviewException.profanityDetected();
+        }
+        
         // NOT_ELIGIBLE 리뷰는 신청 기록 없어도 OK
         if (!benefitStatus.equals("NOT_ELIGIBLE")) {
             UserPolicyApplicationVO application = policyInteractionMapper.selectApplication(userId, policyId);
             if (application == null || !Boolean.TRUE.equals(application.getIsApplied())) {
                 log.info("신청을 완료하지 않은 정책입니다. userId: {}, policyId: {}", userId, policyId);
-                return false;
+                throw ReviewException.notApplied();
             }
         }
         
@@ -281,13 +293,13 @@ public class PolicyInteractionService {
         UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
         if (existing != null) {
             log.info("이미 해당 혜택 상태로 리뷰를 작성한 정책입니다. userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
-            return false;
+            throw ReviewException.alreadyReviewed();
         }
         
         // 유효성 검사
         if (!benefitStatus.equals("RECEIVED") && !benefitStatus.equals("PENDING") && !benefitStatus.equals("NOT_ELIGIBLE")) {
             log.error("잘못된 혜택 상태입니다. benefitStatus: {}", benefitStatus);
-            return false;
+            throw ReviewException.invalidBenefitStatus();
         }
         
         UserPolicyReviewVO review = UserPolicyReviewVO.builder()
@@ -299,17 +311,25 @@ public class PolicyInteractionService {
                 .build();
                 
         int result = policyInteractionMapper.insertReview(review);
-        return result > 0;
+        if (result <= 0) {
+            throw new RuntimeException("리뷰 작성에 실패했습니다.");
+        }
     }
     
     /** 리뷰 수정 */
     @Transactional
-    public boolean updateReview(Long userId, Long policyId, String benefitStatus, String content) {
+    public void updateReview(Long userId, Long policyId, String benefitStatus, String content) {
+        // 욕설 필터링 검사
+        if (profanityFilter.containsProfanity(content)) {
+            log.warn("욕설이 포함된 리뷰 수정 시도 - userId: {}, policyId: {}", userId, policyId);
+            throw ReviewException.profanityDetected();
+        }
+        
         // 리뷰가 존재하는지 확인
         UserPolicyReviewVO existing = policyInteractionMapper.selectReviewByUserAndPolicy(userId, policyId, benefitStatus);
         if (existing == null) {
             log.info("수정할 리뷰가 없습니다. userId: {}, policyId: {}, benefitStatus: {}", userId, policyId, benefitStatus);
-            return false;
+            throw ReviewException.reviewNotFound();
         }
         
         UserPolicyReviewVO review = UserPolicyReviewVO.builder()
@@ -320,7 +340,9 @@ public class PolicyInteractionService {
                 .build();
                 
         int result = policyInteractionMapper.updateReview(review);
-        return result > 0;
+        if (result <= 0) {
+            throw new RuntimeException("리뷰 수정에 실패했습니다.");
+        }
     }
     
     /** 리뷰 삭제 */
