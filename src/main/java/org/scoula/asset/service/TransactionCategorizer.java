@@ -28,7 +28,7 @@ public class TransactionCategorizer {
             Map.entry("온라인 쇼핑", List.of("전자상거래", "인터넷PG", "옥션")),
             Map.entry("커피와 디저트", List.of("커피", "카페", "투썸", "스타벅스", "디저트")),
             Map.entry("뷰티", List.of("뷰티", "화장품", "미용실")),
-            Map.entry("식비", List.of("한식", "일식", "패스트푸드", "스넥/휴게음식점", "버거", "맘스터치", "치킨", "아이스크림")),
+            Map.entry("식비", List.of("한식", "일식", "패스트푸드", "스넥/휴게음식점", "버거", "맘스터치", "치킨", "아이스크림", "음식")),
             Map.entry("보험과 금융", List.of("보험", "금융", "이체", "송금")),
             Map.entry("건강과 의료", List.of("약국", "의원", "병원", "진료")),
             Map.entry("교육", List.of("학원", "교육", "강의")),
@@ -70,9 +70,11 @@ public class TransactionCategorizer {
         }
 
         // 2) store_type 기반 매핑
-        Long cat = typeMap.get(tx.getStoreType());
-        if (cat != null) {
-            return cat;
+        String type = tx.getStoreType() != null ? tx.getStoreType() : "";
+        for (Entry<String, Long> e : typeMap.entrySet()) {
+            if (type.contains(e.getKey())) {
+                return e.getValue();
+            }
         }
 
         // 3) 둘 다 매칭 안 되면 null → 서비스 레이어에서 미분류 처리

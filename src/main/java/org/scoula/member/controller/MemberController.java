@@ -1,6 +1,8 @@
 package org.scoula.member.controller;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.scoula.security.util.PasswordValidator;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -91,6 +95,27 @@ public class MemberController {
 
     return ResponseEntity.ok(dto);
   }
+
+  // 프로필 이미지 아이디 변경
+  @ApiOperation(
+          value = "프로필 이미지 아이디 변경",
+          notes = "로그인된 사용자의 프로필 이미지 아이디(0~3)만 숫자 하나로 변경합니다."
+  )
+  @ApiImplicitParams({
+          @ApiImplicitParam(name = "imageId", value = "프로필 이미지 아이디(0~3)", required = true, dataType = "int", paramType = "path", example = "2")
+  })
+  @PatchMapping("/profile-image/{imageId}")
+  public ResponseEntity<MemberDTO> updateProfileImageByPath(
+          @ApiIgnore Authentication auth,     // 스웨거 문서에서 숨김
+          @PathVariable int imageId
+  ) {
+    if (imageId < 0 || imageId > 3) {
+      return ResponseEntity.badRequest().build();
+    }
+    MemberDTO updated = service.updateProfileImage(auth.getName(), imageId);
+    return ResponseEntity.ok(updated);
+  }
+
 
 
 }
