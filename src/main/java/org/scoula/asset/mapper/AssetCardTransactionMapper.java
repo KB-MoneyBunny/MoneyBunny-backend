@@ -39,4 +39,6 @@ public interface AssetCardTransactionMapper {
     List<CardTransactionVO> findAllByUserId(@Param("userId") Long userId);
 
     List<CardTransactionVO> findRecent6MonthsByUserId(@Param("userId") Long userId);
+
+    boolean existsHrdKoreaCardTransactionByUserId(@Param("userId") Long userId);
 }
