@@ -20,7 +20,6 @@ public interface AssetCardTransactionMapper {
     int countByCardId(@Param("cardId") Long cardId,
                       @Param("txType") String txType);
 
-
     void updateMemo(@Param("transactionId") Long transactionId, @Param("memo") String memo);
 
     List<CategorySpending> findMonthlyCategorySpending(
@@ -36,4 +35,8 @@ public interface AssetCardTransactionMapper {
     int updateTransactionCategory(@Param("transactionId") Long transactionId, @Param("categoryId") Long categoryId);
 
     long findMonthlyTotal(@Param("userId") Long userId, @Param("year") int year, @Param("month") int month);
+
+    List<CardTransactionVO> findAllByUserId(@Param("userId") Long userId);
+
+    List<CardTransactionVO> findRecent6MonthsByUserId(@Param("userId") Long userId);
 }
