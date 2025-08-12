@@ -11,6 +11,8 @@ import org.scoula.policyInteraction.dto.request.ReviewRequestDTO;
 import org.scoula.policyInteraction.dto.response.ReviewWithUserDTO;
 import org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO;
 import org.scoula.policyInteraction.service.PolicyInteractionService;
+import org.scoula.policyInteraction.exception.ReviewException;
+import org.scoula.common.dto.ErrorResponse;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -161,36 +163,50 @@ public class PolicyInteractionController {
 
     @PostMapping("/review/{policyId}")
     @ApiOperation(value = "정책 리뷰 작성", notes = "특정 정책에 대한 리뷰를 작성합니다. 혜택 상태별로 작성 가능")
-    public ResponseEntity<Void> addReview(
+    public ResponseEntity<?> addReview(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long policyId,
             @RequestBody ReviewRequestDTO request) {
         
         Long userId = customUser.getMember().getUserId();
         
-        boolean success = policyInteractionService.addReview(
-                userId, policyId, request.getBenefitStatus(), request.getContent());
-        
-        return success ?
-                ResponseEntity.ok().build() :
-                ResponseEntity.badRequest().build();
+        try {
+            policyInteractionService.addReview(
+                    userId, policyId, request.getBenefitStatus(), request.getContent());
+            return ResponseEntity.ok().build();
+        } catch (ReviewException e) {
+            log.info("리뷰 작성 실패 - {}: {}", e.getErrorCode(), e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of(e.getMessage(), e.getErrorCode()));
+        } catch (Exception e) {
+            log.error("리뷰 작성 중 오류 발생", e);
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of("리뷰 작성에 실패했습니다."));
+        }
     }
 
     @PutMapping("/review/{policyId}")
     @ApiOperation(value = "정책 리뷰 수정", notes = "작성한 리뷰를 수정합니다. 본인이 작성한 리뷰만 수정 가능")
-    public ResponseEntity<Void> updateReview(
+    public ResponseEntity<?> updateReview(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long policyId,
             @RequestBody ReviewRequestDTO request) {
         
         Long userId = customUser.getMember().getUserId();
         
-        boolean success = policyInteractionService.updateReview(
-                userId, policyId, request.getBenefitStatus(), request.getContent());
-        
-        return success ?
-                ResponseEntity.ok().build() :
-                ResponseEntity.badRequest().build();
+        try {
+            policyInteractionService.updateReview(
+                    userId, policyId, request.getBenefitStatus(), request.getContent());
+            return ResponseEntity.ok().build();
+        } catch (ReviewException e) {
+            log.info("리뷰 수정 실패 - {}: {}", e.getErrorCode(), e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of(e.getMessage(), e.getErrorCode()));
+        } catch (Exception e) {
+            log.error("리뷰 수정 중 오류 발생", e);
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of("리뷰 수정에 실패했습니다."));
+        }
     }
 
     @DeleteMapping("/review/{policyId}")
