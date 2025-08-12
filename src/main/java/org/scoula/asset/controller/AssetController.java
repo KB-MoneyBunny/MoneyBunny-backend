@@ -170,4 +170,13 @@ public class AssetController {
         return ResponseEntity.ok(exists);
     }
 
+    @ApiOperation(value = "한국산업인력공단 카드 결제내역 존재 여부", notes = "카드 결제내역 중 store_name이 '한국산업인력공단'인 거래가 있는지 여부를 반환합니다.")
+    @GetMapping("/cards/hrdkorea-exists")
+    public ResponseEntity<Boolean> existsHrdKoreaCardTransaction(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getMember().getUserId();
+        boolean exists = assetService.existsHrdKoreaCardTransaction(userId);
+        return ResponseEntity.ok(exists);
+    }
+
 }
