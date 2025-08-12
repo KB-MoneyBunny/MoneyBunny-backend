@@ -114,4 +114,11 @@ public class AssetService {
     public void updateAccountTransactionMemo(Long transactionId, String memo) {
         assetAccountTransactionMapper.updateMemo(transactionId, memo);
     }
+
+    public List<CardTransactionVO> getTransportationFees(Long userId) {
+        List<CardTransactionVO> transactions = assetCardTransactionMapper.findRecent6MonthsByUserId(userId);
+        return transactions.stream()
+                .filter(tx -> "후불교통대금".equals(tx.getStoreName()))
+                .toList();
+    }
 }

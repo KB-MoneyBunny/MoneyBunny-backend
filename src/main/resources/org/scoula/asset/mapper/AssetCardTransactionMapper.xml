@@ -58,4 +58,19 @@
         </if>
     </select>
 
+    <select id="findAllByUserId" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT t.*
+        FROM card_transaction t
+        JOIN user_card c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+    </select>
+
+    <select id="findRecent6MonthsByUserId" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT t.*
+        FROM card_transaction t
+        JOIN user_card c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+          AND t.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    </select>
+
 </mapper>
