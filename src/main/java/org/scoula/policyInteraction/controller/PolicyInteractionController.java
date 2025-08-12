@@ -232,6 +232,18 @@ public class PolicyInteractionController {
         
         return ResponseEntity.ok(reviews);
     }
+    
+    @GetMapping("/review/{policyId}/list/with-like-status")
+    @ApiOperation(value = "정책 리뷰 목록 조회 (좋아요 상태 포함)", notes = "특정 정책의 모든 리뷰를 현재 사용자의 좋아요 상태와 함께 조회합니다")
+    public ResponseEntity<List<ReviewWithUserDTO>> getPolicyReviewsWithLikeStatus(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long policyId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        List<ReviewWithUserDTO> reviews = policyInteractionService.getPolicyReviews(policyId, userId);
+        
+        return ResponseEntity.ok(reviews);
+    }
 
     @GetMapping("/review/my-list")
     @ApiOperation(value = "내가 작성한 리뷰 목록 조회", notes = "사용자가 작성한 모든 리뷰를 정책 정보와 함께 조회합니다")
@@ -282,5 +294,17 @@ public class PolicyInteractionController {
         
         Long likeCount = policyInteractionService.getReviewLikeCount(reviewId);
         return ResponseEntity.ok(likeCount);
+    }
+
+    @GetMapping("/review/{reviewId}/like/status")
+    @ApiOperation(value = "사용자 좋아요 상태 조회", notes = "현재 사용자가 특정 리뷰에 좋아요했는지 확인합니다.")
+    public ResponseEntity<Boolean> getUserLikeStatus(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long reviewId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean isLiked = policyInteractionService.isUserLikedReview(userId, reviewId);
+        return ResponseEntity.ok(isLiked);
     }
 }
