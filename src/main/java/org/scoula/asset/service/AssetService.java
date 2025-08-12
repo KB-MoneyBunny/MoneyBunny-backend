@@ -6,7 +6,7 @@ import org.scoula.asset.domain.AccountSummaryVO;
 import org.scoula.asset.domain.AccountTransactionVO;
 import org.scoula.asset.domain.CardSummaryVO;
 import org.scoula.asset.domain.CardTransactionVO;
-import org.scoula.asset.dto.AssetSummaryResponse;
+import org.scoula.asset.dto.*;
 import org.scoula.asset.mapper.AssetAccountTransactionMapper;
 import org.scoula.asset.mapper.AssetCardTransactionMapper;
 import org.scoula.asset.mapper.AssetUserAccountMapper;
@@ -16,8 +16,10 @@ import org.scoula.common.exception.UnauthorizedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -113,5 +115,115 @@ public class AssetService {
 
     public void updateAccountTransactionMemo(Long transactionId, String memo) {
         assetAccountTransactionMapper.updateMemo(transactionId, memo);
+    }
+
+
+    public List<MonthlyTrendDTO> getSpendingTrend(Long userId, int baseYear, int baseMonth, int monthCount) {
+        // 1. 기준월에서 5개월 전까지 구하기 (즉, baseMonth - 5)
+        LocalDate base = LocalDate.of(baseYear, baseMonth, 1);
+        LocalDate start = base.minusMonths(monthCount - 1);
+
+        int startYear = start.getYear();
+        int startMonth = start.getMonthValue();
+
+        // 2. MyBatis 파라미터 맵 만들기
+        Map<String, Object> param = new HashMap<>();
+        param.put("userId", userId);
+        param.put("year", baseYear);
+        param.put("month", baseMonth);
+        param.put("startYear", startYear);
+        param.put("startMonth", startMonth);
+
+        // 3. 쿼리 호출 (mapper에서 LIMIT 6 사용, 최신순 정렬)
+        return assetCardTransactionMapper.findMonthlyTrend(param);
+    }
+
+
+    public List<CardTransactionVO> getCategoryTransactions(Long userId, Long categoryId, int year, int month) {
+        return assetCardTransactionMapper.findCategoryTransactions(userId, categoryId, year, month);
+    }
+
+    @Transactional
+    public void updateTransactionCategory(Long transactionId, Long newCategoryId) {
+        int updated = assetCardTransactionMapper.updateTransactionCategory(transactionId, newCategoryId);
+        if (updated != 1) {
+            throw new RuntimeException("카테고리 변경 실패! 거래내역을 확인하세요.");
+        }
+    }
+
+    public SpendingOverviewDTO getSpendingOverview(Long userId, int year, int month, int trendMonths) {
+        // 기준월 & 전월 계산
+        LocalDate selected = LocalDate.of(year, month, 1);
+        LocalDate prev = selected.minusMonths(1);
+
+        // 1) 이번 달 총액
+        long totalNow = assetCardTransactionMapper.findMonthlyTotal(userId, year, month); // 없으면 0 반환하도록
+
+        // 2) 전월 총액
+        long totalPrev = assetCardTransactionMapper.findMonthlyTotal(userId, prev.getYear(), prev.getMonthValue());
+
+        // 3) 카테고리 합계
+        List<CategorySpending> rawCats = assetCardTransactionMapper.findMonthlyCategorySpending(userId, year, month);
+
+        // 퍼센트 계산
+        double denom = (totalNow > 0) ? totalNow : 1.0;
+        List<SpendingOverviewDTO.Category> categories = rawCats.stream()
+                .map(c -> SpendingOverviewDTO.Category.builder()
+                        .categoryId(c.getCategoryId())
+                        .amount(c.getAmount())
+                        .percentage(round1(c.getAmount() * 100.0 / denom))
+                        .build())
+                .toList();
+
+        // 4) MoM 계산
+        long diff = totalNow - totalPrev;
+        Double percent = (totalPrev == 0)
+                ? null                              // 전월이 0이면 %는 null(프론트에서 “—” 처리 추천)
+                : round1(diff * 100.0 / totalPrev); // 소수1자리
+
+        // 5) 트렌드 (최근 trendMonths개월, 기준월 포함)
+        List<MonthlyTrendDTO> trendRows = getSpendingTrend(userId, year, month, trendMonths);
+        // DB에 빈 달이 있으면 0으로 메우기
+        List<SpendingOverviewDTO.Trend> trend = fillMonthlySeries(selected, trendMonths, trendRows);
+
+        return SpendingOverviewDTO.builder()
+                .selected(new SpendingOverviewDTO.Selected(year, month))
+                .totalSpending(totalNow)
+                .prevMonth(new SpendingOverviewDTO.PrevMonth(prev.getYear(), prev.getMonthValue(), totalPrev))
+                .momChange(new SpendingOverviewDTO.MomChange(diff, percent))
+                .categories(categories)
+                .trend(trend)
+                .build();
+    }
+
+    private static double round1(double v) {
+        return Math.round(v * 10.0) / 10.0;
+    }
+
+    private List<SpendingOverviewDTO.Trend> fillMonthlySeries(
+            LocalDate anchor, int months, List<MonthlyTrendDTO> rows) {
+
+        // rows → map(year-month → totalAmount)
+        Map<String, Long> map = rows.stream().collect(Collectors.toMap(
+                r -> r.getYear() + "-" + r.getMonth(),
+                MonthlyTrendDTO::getTotalAmount,
+                (a, b) -> a
+        ));
+
+        List<SpendingOverviewDTO.Trend> out = new ArrayList<>();
+        for (int i = months - 1; i >= 0; i--) {
+            LocalDate d = anchor.minusMonths(i);
+            String key = d.getYear() + "-" + d.getMonthValue();
+            long amt = map.getOrDefault(key, 0L);
+            out.add(new SpendingOverviewDTO.Trend(d.getYear(), d.getMonthValue(), amt));
+        }
+        return out;
+    }
+
+    public List<CardTransactionVO> getTransportationFees(Long userId) {
+        List<CardTransactionVO> transactions = assetCardTransactionMapper.findRecent6MonthsByUserId(userId);
+        return transactions.stream()
+                .filter(tx -> "후불교통대금".equals(tx.getStoreName()))
+                .toList();
     }
 }
