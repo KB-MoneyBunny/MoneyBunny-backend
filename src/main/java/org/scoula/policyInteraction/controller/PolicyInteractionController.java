@@ -243,4 +243,44 @@ public class PolicyInteractionController {
         
         return ResponseEntity.ok(reviews);
     }
+
+    // ────────────────────────────────────────
+    // 📌 좋아요 관련 API (Redis 기반)
+    // ────────────────────────────────────────
+
+    @PostMapping("/review/{reviewId}/like")
+    @ApiOperation(value = "리뷰 좋아요 추가", notes = "특정 리뷰에 좋아요를 추가합니다. 이미 좋아요한 경우 400 Bad Request를 반환합니다.")
+    public ResponseEntity<Void> addReviewLike(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long reviewId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.addReviewLike(userId, reviewId);
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
+    @DeleteMapping("/review/{reviewId}/like")
+    @ApiOperation(value = "리뷰 좋아요 취소", notes = "특정 리뷰의 좋아요를 취소합니다. 좋아요하지 않은 상태인 경우 400 Bad Request를 반환합니다.")
+    public ResponseEntity<Void> removeReviewLike(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long reviewId) {
+        
+        Long userId = customUser.getMember().getUserId();
+        
+        boolean success = policyInteractionService.removeReviewLike(userId, reviewId);
+        return success ?
+                ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().build();
+    }
+
+    @GetMapping("/review/{reviewId}/like/count")
+    @ApiOperation(value = "리뷰 좋아요 수 조회", notes = "특정 리뷰의 총 좋아요 수를 조회합니다.")
+    public ResponseEntity<Long> getReviewLikeCount(@PathVariable Long reviewId) {
+        
+        Long likeCount = policyInteractionService.getReviewLikeCount(reviewId);
+        return ResponseEntity.ok(likeCount);
+    }
 }

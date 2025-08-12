@@ -19,8 +19,7 @@ public class ReviewWithUserDTO {
     
     // 리뷰 정보
     private Long reviewId;
-    private String nickName;      // 리뷰 작성 시 닉네임 (NULL 가능)
-    private Integer likeCount;    // 좋아요 수
+    private Integer likeCount;    // 좋아요 수 (Redis 실시간 데이터로 업데이트)
     private String benefitStatus; // 혜택 상태: RECEIVED, PENDING, NOT_ELIGIBLE
     private String content;
     
@@ -32,6 +31,6 @@ public class ReviewWithUserDTO {
     
     // 사용자 정보 (users 테이블에서 조회)
     private Long userId;
-    private String userName;      // users 테이블의 name
-    private String userNickname;  // users 테이블의 nickname (있을 경우)
+    private String userName;      // users 테이블의 name (마스킹 처리됨)
+    private Integer profileImageId;  // users 테이블의 profile_image_id
 }
