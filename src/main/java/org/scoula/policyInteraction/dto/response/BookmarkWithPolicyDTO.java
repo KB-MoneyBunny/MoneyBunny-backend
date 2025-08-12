@@ -1,4 +1,4 @@
-package org.scoula.policyInteraction.dto;
+package org.scoula.policyInteraction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -12,14 +12,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ApplicationWithPolicyDTO {
+public class BookmarkWithPolicyDTO {
     
-    // 신청 정보
-    private Long applicationId;
-    private Boolean isApplied;
+    // 북마크 정보
+    private Long bookmarkId;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime appliedAt;
+    private LocalDateTime bookmarkedAt;
     
     // 정책 기본 정보
     private Long policyId;
