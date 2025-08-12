@@ -210,4 +210,73 @@ public class RedisUtil {
         return null;
     }
 
+    // ────────────────────────────────────────
+    // 📌 좋아요 시스템 관련 (Redis Set 활용) - 핵심 기능만
+    // ────────────────────────────────────────
+
+    /**
+     * 리뷰에 좋아요 추가
+     * @param userId 사용자 ID
+     * @param reviewId 리뷰 ID
+     * @return true: 새로 추가됨, false: 이미 좋아요 상태
+     */
+    public boolean addLikeToReview(Long userId, Long reviewId) {
+        String reviewLikesKey = String.format("review:likes:%d", reviewId);
+        
+        // Redis에 좋아요 추가 (Set에 userId 추가)
+        Long added = redisTemplate.opsForSet().add(reviewLikesKey, userId.toString());
+        
+        if (added > 0) {
+            log.info("좋아요 추가 완료 - userId: {}, reviewId: {}", userId, reviewId);
+            return true;
+        } else {
+            log.debug("이미 좋아요한 리뷰입니다. userId: {}, reviewId: {}", userId, reviewId);
+            return false;
+        }
+    }
+
+    /**
+     * 리뷰 좋아요 취소
+     * @param userId 사용자 ID
+     * @param reviewId 리뷰 ID
+     * @return true: 취소됨, false: 좋아요 상태가 아니었음
+     */
+    public boolean removeLikeFromReview(Long userId, Long reviewId) {
+        String reviewLikesKey = String.format("review:likes:%d", reviewId);
+        
+        // Redis에서 좋아요 제거 (Set에서 userId 제거)
+        Long removed = redisTemplate.opsForSet().remove(reviewLikesKey, userId.toString());
+        
+        if (removed > 0) {
+            log.info("좋아요 취소 완료 - userId: {}, reviewId: {}", userId, reviewId);
+            return true;
+        } else {
+            log.debug("좋아요 상태가 아닌 리뷰입니다. userId: {}, reviewId: {}", userId, reviewId);
+            return false;
+        }
+    }
+
+    /**
+     * 리뷰의 좋아요 수 조회 (Set 크기로 계산)
+     * @param reviewId 리뷰 ID
+     * @return 좋아요 수
+     */
+    public Long getLikeCount(Long reviewId) {
+        String reviewLikesKey = String.format("review:likes:%d", reviewId);
+        Long setSize = redisTemplate.opsForSet().size(reviewLikesKey);
+        return setSize != null ? setSize : 0L;
+    }
+
+    /**
+     * 사용자가 특정 리뷰에 좋아요했는지 확인
+     * @param userId 사용자 ID
+     * @param reviewId 리뷰 ID
+     * @return true: 좋아요한 상태, false: 좋아요하지 않은 상태
+     */
+    public boolean isUserLikedReview(Long userId, Long reviewId) {
+        String reviewLikesKey = String.format("review:likes:%d", reviewId);
+        Boolean isMember = redisTemplate.opsForSet().isMember(reviewLikesKey, userId.toString());
+        return isMember != null && isMember;
+    }
+
 }
