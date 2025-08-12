@@ -161,4 +161,13 @@ public class AssetController {
         return ResponseEntity.ok(fees);
     }
 
+    @ApiOperation(value = "월세 거래내역 존재 여부", notes = "사용자의 전체 계좌 거래내역 중 memo가 '월세'인 거래가 있는지 여부를 반환합니다.")
+    @GetMapping("/accounts/rent-exists")
+    public ResponseEntity<Boolean> existsRentTransaction(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getMember().getUserId();
+        boolean exists = assetService.existsRentTransaction(userId);
+        return ResponseEntity.ok(exists);
+    }
+
 }

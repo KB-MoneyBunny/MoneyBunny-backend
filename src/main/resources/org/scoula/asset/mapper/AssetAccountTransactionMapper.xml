@@ -28,4 +28,12 @@
             AND tx_type = #{txType}
         </if>
     </select>
+
+    <select id="existsRentTransactionByUserId" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM account_transaction t
+        JOIN user_account a ON t.account_id = a.id
+        WHERE a.user_id = #{userId}
+          AND t.memo = '월세'
+    </select>
 </mapper>
