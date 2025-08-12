@@ -267,4 +267,16 @@ public class RedisUtil {
         return setSize != null ? setSize : 0L;
     }
 
+    /**
+     * 사용자가 특정 리뷰에 좋아요했는지 확인
+     * @param userId 사용자 ID
+     * @param reviewId 리뷰 ID
+     * @return true: 좋아요한 상태, false: 좋아요하지 않은 상태
+     */
+    public boolean isUserLikedReview(Long userId, Long reviewId) {
+        String reviewLikesKey = String.format("review:likes:%d", reviewId);
+        Boolean isMember = redisTemplate.opsForSet().isMember(reviewLikesKey, userId.toString());
+        return isMember != null && isMember;
+    }
+
 }

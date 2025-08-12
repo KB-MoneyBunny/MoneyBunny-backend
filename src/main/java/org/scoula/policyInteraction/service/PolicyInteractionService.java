@@ -344,9 +344,14 @@ public class PolicyInteractionService {
     
     /** 정책별 리뷰 목록 조회 (실시간 좋아요 수 포함) */
     public List<ReviewWithUserDTO> getPolicyReviews(Long policyId) {
+        return getPolicyReviews(policyId, null);
+    }
+    
+    /** 정책별 리뷰 목록 조회 (실시간 좋아요 수 및 사용자 좋아요 상태 포함) */
+    public List<ReviewWithUserDTO> getPolicyReviews(Long policyId, Long currentUserId) {
         List<ReviewWithUserDTO> reviews = policyInteractionMapper.selectReviewsByPolicyId(policyId);
         
-        // 각 리뷰에 실시간 좋아요 수 적용
+        // 각 리뷰에 실시간 좋아요 수 및 사용자 좋아요 상태 적용
         reviews.forEach(review -> {
             // 이름 마스킹 처리
             if (review.getUserName() != null) {
@@ -356,6 +361,14 @@ public class PolicyInteractionService {
             // Redis에서 실시간 좋아요 수로 업데이트
             Long redisLikeCount = redisUtil.getLikeCount(review.getReviewId());
             review.setLikeCount(redisLikeCount.intValue());
+            
+            // 현재 사용자의 좋아요 상태 설정 (로그인한 사용자만)
+            if (currentUserId != null) {
+                boolean isLiked = redisUtil.isUserLikedReview(currentUserId, review.getReviewId());
+                review.setIsLikedByCurrentUser(isLiked);
+            } else {
+                review.setIsLikedByCurrentUser(null); // 비로그인 사용자는 null
+            }
         });
         
         return reviews;
@@ -426,6 +439,11 @@ public class PolicyInteractionService {
     /** 리뷰의 좋아요 수 조회 */
     public Long getReviewLikeCount(Long reviewId) {
         return redisUtil.getLikeCount(reviewId);
+    }
+    
+    /** 사용자의 특정 리뷰 좋아요 상태 확인 */
+    public boolean isUserLikedReview(Long userId, Long reviewId) {
+        return redisUtil.isUserLikedReview(userId, reviewId);
     }
     
 }
