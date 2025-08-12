@@ -7,8 +7,7 @@ import org.scoula.asset.domain.AccountSummaryVO;
 import org.scoula.asset.domain.AccountTransactionVO;
 import org.scoula.asset.domain.CardSummaryVO;
 import org.scoula.asset.domain.CardTransactionVO;
-import org.scoula.asset.dto.AssetSummaryResponse;
-import org.scoula.asset.dto.MemoRequest;
+import org.scoula.asset.dto.*;
 import org.scoula.asset.service.AssetService;
 import org.scoula.common.dto.PageResponse;
 import org.scoula.push.dto.response.NotificationResponse;
@@ -89,6 +88,8 @@ public class AssetController {
         return ResponseEntity.ok(resp);
     }
 
+
+    @ApiOperation(value = "카드 거래 메모 수정", notes = "특정 카드 거래내역의 메모를 수정합니다.")
     @PostMapping("/cards/{transactionId}/memo")
     public ResponseEntity<String> updateCardTransactionMemo(
             @AuthenticationPrincipal CustomUser customUser,
@@ -100,6 +101,7 @@ public class AssetController {
         return ResponseEntity.ok(updatedMemo);
     }
 
+    @ApiOperation(value = "계좌 거래 메모 수정", notes = "특정 계좌 거래내역의 메모를 수정합니다.")
     @PostMapping("/accounts/{transactionId}/memo")
     public ResponseEntity<String> updateAccountTransactionMemo(
             @AuthenticationPrincipal CustomUser customUser,
@@ -110,5 +112,44 @@ public class AssetController {
         String updatedMemo = request.getMemo();
         return ResponseEntity.ok(updatedMemo);
     }
+
+
+    @ApiOperation(value = "월간 지출 개요", notes = "선택 월의 총지출, 전월 대비 증감, 카테고리 합계, 최근 6개월 추세를 한 번에 제공합니다.")
+    @GetMapping("/spending/overview")
+    public ResponseEntity<SpendingOverviewDTO> getSpendingOverview(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam(defaultValue = "6") int trendMonths
+    ) {
+        Long userId = customUser.getMember().getUserId();
+        SpendingOverviewDTO dto = assetService.getSpendingOverview(userId, year, month, trendMonths);
+        return ResponseEntity.ok(dto);
+    }
+
+
+    @ApiOperation(value = "카테고리별 거래내역(월별)", notes = "특정 카테고리의 해당 월 카드 거래내역을 반환합니다.")
+    @GetMapping("/spending/category/{categoryId}")
+    public ResponseEntity<List<CardTransactionVO>> getCategoryTransactions(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long categoryId,
+            @RequestParam int year,
+            @RequestParam int month) {
+        Long userId = customUser.getMember().getUserId();
+        List<CardTransactionVO> txs = assetService.getCategoryTransactions(userId, categoryId, year, month);
+        return ResponseEntity.ok(txs);
+    }
+
+
+    @ApiOperation(value = "거래 카테고리 수정", notes = "단일 거래의 카테고리를 업데이트합니다.")
+    @PatchMapping("/transactions/{transactionId}/category")
+    public ResponseEntity<Void> updateTransactionCategory(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
+            @PathVariable Long transactionId,
+            @RequestBody CategoryUpdateRequest request) {
+        assetService.updateTransactionCategory(transactionId, request.getCategoryId());
+        return ResponseEntity.ok().build();
+    }
+
 
 }
