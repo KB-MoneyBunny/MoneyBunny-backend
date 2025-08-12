@@ -91,4 +91,14 @@ public interface PolicyInteractionMapper {
 
     /** 사용자가 작성한 모든 리뷰 조회 */
     List<ReviewWithPolicyDTO> selectReviewsByUserId(@Param("userId") Long userId);
+    
+    // ────────────────────────────────────────
+    // 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화)
+    // ────────────────────────────────────────
+    
+    /** 리뷰 좋아요 수 증가 (DB 동기화용) */
+    int incrementReviewLikeCount(@Param("reviewId") Long reviewId);
+    
+    /** 리뷰 좋아요 수 감소 (DB 동기화용) */
+    int decrementReviewLikeCount(@Param("reviewId") Long reviewId);
 }

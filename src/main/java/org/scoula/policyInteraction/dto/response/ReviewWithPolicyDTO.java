@@ -21,7 +21,9 @@ public class ReviewWithPolicyDTO {
     
     // 리뷰 정보
     private Long reviewId;
-    private String nickName;      // 리뷰 작성 시 닉네임 (NULL 가능)
+    private Long userId;          // 리뷰 작성자 ID
+    private String userName;      // 리뷰 작성자 이름 (마스킹 처리됨)
+    private Integer profileImageId; // 리뷰 작성자 프로필 이미지 ID
     private Integer likeCount;    // 좋아요 수
     private String benefitStatus; // 혜택 상태: RECEIVED, PENDING, NOT_ELIGIBLE
     private String content;
