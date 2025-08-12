@@ -23,7 +23,8 @@ public class SubscriptionService {
         SubscriptionVO existing = subscriptionMapper.findByToken(request.getToken());
 
         if (existing != null) {
-            // 기존 구독이 있으면 알림 설정 업데이트
+            // 기존 구독이 있으면 userId 및 알림 설정 업데이트
+            existing.setUserId(userId);
             existing.setIsActiveBookmark(request.isActiveBookmark());
             existing.setIsActiveTop3(request.isActiveTop3());
             existing.setIsActiveNewPolicy(request.isActiveNewPolicy());
@@ -50,8 +51,23 @@ public class SubscriptionService {
      * @param token FCM 토큰 (필수) - 해당 기기의 설정 조회
      */
     public SubscriptionStatusResponse getSubscriptionStatus(Long userId, String token) {
-        // 토큰과 userId로 해당 기기의 구독 정보 조회
-        SubscriptionVO subscription = subscriptionMapper.findByUserIdAndToken(userId, token);
+        // 토큰으로 해당 기기의 구독 정보 조회
+        SubscriptionVO subscription = subscriptionMapper.findByToken(token);
+        
+        if (subscription == null) {
+            return SubscriptionStatusResponse.from(null);
+        }
+        
+        // 구독정보의 userId가 현재 사용자와 다르면 새로운 사용자로 초기화
+        if (!subscription.getUserId().equals(userId)) {
+            subscription.setUserId(userId);
+            subscription.setIsActiveBookmark(false);
+            subscription.setIsActiveTop3(false);
+            subscription.setIsActiveNewPolicy(false);
+            subscription.setIsActiveFeedback(false);
+            subscriptionMapper.updateNotificationSettings(subscription);
+        }
+        
         return SubscriptionStatusResponse.from(subscription);
     }
 
