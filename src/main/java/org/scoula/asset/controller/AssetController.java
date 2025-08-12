@@ -111,4 +111,13 @@ public class AssetController {
         return ResponseEntity.ok(updatedMemo);
     }
 
+    @ApiOperation(value = "최근 6개월 후불교통대금 거래내역 조회", notes = "로그인한 사용자의 모든 카드 거래내역 중 최근 6개월간 후불교통대금 거래내역을 리스트로 반환합니다.")
+    @GetMapping("/cards/transportation-fees")
+    public ResponseEntity<List<CardTransactionVO>> getTransportationFees(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getMember().getUserId();
+        List<CardTransactionVO> fees = assetService.getTransportationFees(userId);
+        return ResponseEntity.ok(fees);
+    }
+
 }

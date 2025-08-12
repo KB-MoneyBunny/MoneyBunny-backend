@@ -17,6 +17,9 @@ public interface AssetCardTransactionMapper {
     int countByCardId(@Param("cardId") Long cardId,
                       @Param("txType") String txType);
 
-
     void updateMemo(@Param("transactionId") Long transactionId, @Param("memo") String memo);
+
+    List<CardTransactionVO> findAllByUserId(@Param("userId") Long userId);
+
+    List<CardTransactionVO> findRecent6MonthsByUserId(@Param("userId") Long userId);
 }
