@@ -1,5 +1,6 @@
 package org.scoula.userPolicy.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.scoula.userPolicy.domain.*;
 import org.scoula.userPolicy.dto.PolicyWithVectorDTO;
 import org.scoula.userPolicy.dto.SearchRequestDTO;
@@ -24,6 +25,12 @@ public interface UserPolicyMapper {
 
     // 벡터 정보를 포함한 정책 조회 (N+1 문제 해결용)
     List<PolicyWithVectorDTO> findFilteredPoliciesWithVectors(SearchRequestDTO searchRequestDTO);
+    
+    // 맞춤형 정책 조회 (신청 완료한 정책 제외)
+    List<PolicyWithVectorDTO> findMatchingPoliciesExcludingApplied(
+        @Param("searchRequestDTO") SearchRequestDTO searchRequestDTO, 
+        @Param("userId") Long userId
+    );
 
     // 필터링된 정책 목록을 저장
     void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
