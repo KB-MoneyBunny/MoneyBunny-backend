@@ -112,6 +112,12 @@ public class MemberServiceImpl implements MemberService {
     return member != null;
   }
 
+  @Override
+  public MemberDTO updateProfileImage(String loginId, int profileImageId) {
+    int updated = mapper.updateProfileImage(loginId, profileImageId);
+    log.info("profile_image_id updated rows={}", updated);
+    return MemberDTO.of(mapper.findByUsername(loginId)); // DB에서 다시 읽어서 반환
+  }
 
 
 
