@@ -16,4 +16,6 @@ public interface AssetAccountTransactionMapper {
 
     void updateMemo(@Param("transactionId") Long transactionId, @Param("memo") String memo);
 
+    boolean existsRentTransactionByUserId(@Param("userId") Long userId);
+
 }
