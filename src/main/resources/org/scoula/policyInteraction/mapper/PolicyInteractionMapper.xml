@@ -166,8 +166,8 @@
 
     <!-- 리뷰 등록 -->
     <insert id="insertReview" parameterType="org.scoula.policyInteraction.domain.UserPolicyReviewVO">
-        INSERT INTO user_policy_review (policy_id, user_id, nick_name, like_count, benefit_status, content, created_at, updated_at)
-        VALUES (#{policyId}, #{userId}, #{nickName}, 0, #{benefitStatus}, #{content}, NOW(), NOW())
+        INSERT INTO user_policy_review (policy_id, user_id, like_count, benefit_status, content, created_at, updated_at)
+        VALUES (#{policyId}, #{userId}, 0, #{benefitStatus}, #{content}, NOW(), NOW())
     </insert>
 
     <!-- 리뷰 수정 -->
@@ -190,7 +190,6 @@
             id,
             policy_id AS policyId,
             user_id AS userId,
-            nick_name AS nickName,
             like_count AS likeCount,
             benefit_status AS benefitStatus,
             content,
@@ -204,7 +203,6 @@
     <select id="selectReviewsByPolicyId" resultType="org.scoula.policyInteraction.dto.response.ReviewWithUserDTO">
         SELECT
             r.id AS reviewId,
-            r.nick_name AS nickName,
             r.like_count AS likeCount,
             r.benefit_status AS benefitStatus,
             r.content,
@@ -212,7 +210,7 @@
             r.updated_at AS updatedAt,
             r.user_id AS userId,
             u.name AS userName,
-            u.nickname AS userNickname
+            u.profile_image_id AS profileImageId
         FROM user_policy_review r
         INNER JOIN users u ON r.user_id = u.user_id
         WHERE r.policy_id = #{policyId}
@@ -230,7 +228,9 @@
     <select id="selectReviewsByUserId" resultType="org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO">
         SELECT
             r.id AS reviewId,
-            r.nick_name AS nickName,
+            r.user_id AS userId,
+            u.name AS userName,
+            u.profile_image_id AS profileImageId,
             r.like_count AS likeCount,
             r.benefit_status AS benefitStatus,
             r.content,
@@ -244,9 +244,30 @@
             p.policy_benefit_amount AS policyBenefitAmount
         FROM user_policy_review r
         INNER JOIN youth_policy p ON r.policy_id = p.id
+        INNER JOIN users u ON r.user_id = u.user_id
         LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
         WHERE r.user_id = #{userId}
         ORDER BY r.created_at DESC
     </select>
+
+    <!-- ──────────────────────────────────────── -->
+    <!-- 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화) -->
+    <!-- ──────────────────────────────────────── -->
+
+    <!-- 리뷰 좋아요 수 증가 (DB 동기화용) -->
+    <update id="incrementReviewLikeCount">
+        UPDATE user_policy_review 
+        SET like_count = like_count + 1,
+            updated_at = NOW()
+        WHERE id = #{reviewId}
+    </update>
+
+    <!-- 리뷰 좋아요 수 감소 (DB 동기화용, 0 미만으로 내려가지 않도록 처리) -->
+    <update id="decrementReviewLikeCount">
+        UPDATE user_policy_review 
+        SET like_count = GREATEST(like_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = #{reviewId}
+    </update>
 
 </mapper>
