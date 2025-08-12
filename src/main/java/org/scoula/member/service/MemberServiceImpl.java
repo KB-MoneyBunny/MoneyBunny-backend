@@ -74,9 +74,6 @@ public class MemberServiceImpl implements MemberService {
     // 회원 저장
     mapper.insert(member);
 
-    // 아바타 저장
-    saveAvatar(dto.getAvatar(), member.getLoginId());
-
     // 저장된 회원 정보 반환
     return get(member.getLoginId());
   }
@@ -115,6 +112,12 @@ public class MemberServiceImpl implements MemberService {
     return member != null;
   }
 
+  @Override
+  public MemberDTO updateProfileImage(String loginId, int profileImageId) {
+    int updated = mapper.updateProfileImage(loginId, profileImageId);
+    log.info("profile_image_id updated rows={}", updated);
+    return MemberDTO.of(mapper.findByUsername(loginId)); // DB에서 다시 읽어서 반환
+  }
 
 
 

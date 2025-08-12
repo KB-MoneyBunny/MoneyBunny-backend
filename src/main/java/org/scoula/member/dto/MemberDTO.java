@@ -20,16 +20,21 @@ public class MemberDTO {
   private String email;
   private int point;
   private Date createdAt;
+  private String name;
+  private int profileImageId;
 
   // authList 제거!
   // private List<String> authList;
 
   public static MemberDTO of(MemberVO m) {
     return MemberDTO.builder()
+            .userId(String.valueOf(m.getUserId()))
             .loginId(m.getLoginId())
             .email(m.getEmail())
             .point(m.getPoint())
             .createdAt(m.getCreatedAt())
+            .name(m.getName())
+            .profileImageId(m.getProfileImageId())
             .build();
   }
 }

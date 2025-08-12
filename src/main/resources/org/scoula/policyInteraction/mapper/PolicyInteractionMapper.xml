@@ -63,7 +63,7 @@
 
     <!-- 북마크 알림을 구독한 사용자의 북마크만 조회 (최적화된 알림 발송용) -->
     <select id="getBookmarksWithActiveSubscription" resultType="org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO">
-        SELECT
+        SELECT DISTINCT
             b.id,
             b.user_id AS userId,
             b.policy_id AS policyId,
