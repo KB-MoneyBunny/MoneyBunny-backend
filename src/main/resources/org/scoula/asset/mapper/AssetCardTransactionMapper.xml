@@ -131,20 +131,30 @@
     </select>
 
     <select id="findMonthlyTotal" resultType="long">
-  <![CDATA[
-        SELECT COALESCE(SUM(ct.amount), 0) AS total
-        FROM card_transaction ct
-            JOIN user_card uc ON uc.id = ct.card_id
-        WHERE uc.user_id = #{userId}
-          AND ct.cancel_status = ''
-          AND ct.transaction_date >= CONCAT(#{year}, '-', LPAD(#{month},2,'0'), '-01')
-          AND ct.transaction_date <  DATE_ADD(CONCAT(#{year}, '-', LPAD(#{month},2,'0'), '-01'), INTERVAL 1 MONTH)
-        ]]>
-</select>
+      <![CDATA[
+            SELECT COALESCE(SUM(ct.amount), 0) AS total
+            FROM card_transaction ct
+                JOIN user_card uc ON uc.id = ct.card_id
+            WHERE uc.user_id = #{userId}
+              AND ct.cancel_status = ''
+              AND ct.transaction_date >= CONCAT(#{year}, '-', LPAD(#{month},2,'0'), '-01')
+              AND ct.transaction_date <  DATE_ADD(CONCAT(#{year}, '-', LPAD(#{month},2,'0'), '-01'), INTERVAL 1 MONTH)
+            ]]>
+    </select>
 
+    <select id="findAllByUserId" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT t.*
+        FROM card_transaction t
+        JOIN user_card c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+    </select>
 
-
-
-
+    <select id="findRecent6MonthsByUserId" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT t.*
+        FROM card_transaction t
+        JOIN user_card c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+          AND t.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    </select>
 
 </mapper>

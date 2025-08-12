@@ -220,5 +220,10 @@ public class AssetService {
         return out;
     }
 
+    public List<CardTransactionVO> getTransportationFees(Long userId) {
+        List<CardTransactionVO> transactions = assetCardTransactionMapper.findRecent6MonthsByUserId(userId);
+        return transactions.stream()
+                .filter(tx -> "후불교통대금".equals(tx.getStoreName()))
+                .toList();
+    }
 }
-
