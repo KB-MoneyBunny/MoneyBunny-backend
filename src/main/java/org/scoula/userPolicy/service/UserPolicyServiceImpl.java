@@ -747,8 +747,8 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
 
-        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
-        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+        // 1. 맞춤형 정책 목록 조회 (신청 완료한 정책 제외)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findMatchingPoliciesExcludingApplied(searchRequestDTO, userId);
         // 마감일 필터링 로직 추가 (로그 포함)
         LocalDate today = LocalDate.now();
         DateTimeFormatter formatterDot = DateTimeFormatter.ofPattern("yyyy.MM.dd");
