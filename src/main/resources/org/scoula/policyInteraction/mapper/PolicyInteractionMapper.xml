@@ -33,7 +33,7 @@
     </select>
 
     <!-- 사용자 전체 북마크 목록 조회 (정책 정보 포함) -->
-    <select id="selectBookmarksByUserId" resultType="org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO">
+    <select id="selectBookmarksByUserId" resultType="org.scoula.policyInteraction.dto.response.BookmarkWithPolicyDTO">
         SELECT 
             b.id as bookmarkId,
             b.created_at as bookmarkedAt,
@@ -80,8 +80,8 @@
 
     <!-- 정책 신청 등록 (created_at, updated_at은 DB에서 NOW() 처리) -->
     <insert id="insertApplication" parameterType="org.scoula.policyInteraction.domain.UserPolicyApplicationVO">
-        INSERT INTO user_policy_application (user_id, policy_id, application_url, is_applied, created_at, updated_at)
-        VALUES (#{userId}, #{policyId}, #{applicationUrl}, #{isApplied}, NOW(), NOW())
+        INSERT INTO user_policy_application (user_id, policy_id, application_url, is_applied, benefit_status, created_at, updated_at)
+        VALUES (#{userId}, #{policyId}, #{applicationUrl}, #{isApplied}, #{benefitStatus}, NOW(), NOW())
     </insert>
 
     <!-- 특정 정책 신청 단건 조회 -->
@@ -92,6 +92,7 @@
             policy_id AS policyId,
             application_url AS applicationUrl,
             is_applied AS isApplied,
+            benefit_status AS benefitStatus,
             created_at AS createdAt,
             updated_at AS updatedAt
         FROM user_policy_application
@@ -99,10 +100,11 @@
     </select>
 
     <!-- 사용자 전체 신청 목록 조회 (정책 정보 포함) -->
-    <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+    <select id="selectApplicationsByUserId" resultType="org.scoula.policyInteraction.dto.response.ApplicationWithPolicyDTO">
         SELECT 
             a.id as applicationId,
             a.is_applied as isApplied,
+            a.benefit_status as benefitStatus,
             a.created_at as appliedAt,
             p.id as policyId,
             p.title,
@@ -130,11 +132,19 @@
         WHERE user_id = #{userId} AND policy_id = #{policyId}
     </delete>
 
+    <!-- 혜택 수령 상태 업데이트 -->
+    <update id="updateBenefitStatus">
+        UPDATE user_policy_application
+        SET benefit_status = #{benefitStatus}, updated_at = NOW()
+        WHERE user_id = #{userId} AND policy_id = #{policyId}
+    </update>
+
     <!-- 미완료 신청 정책 하나 조회 (is_applied = false) -->
-    <select id="findIncompleteApplication" resultType="org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO">
+    <select id="findIncompleteApplication" resultType="org.scoula.policyInteraction.dto.response.ApplicationWithPolicyDTO">
         SELECT 
             a.id as applicationId,
             a.is_applied as isApplied,
+            a.benefit_status as benefitStatus,
             a.created_at as appliedAt,
             p.id as policyId,
             p.title,
@@ -149,5 +159,115 @@
         ORDER BY a.created_at ASC
         LIMIT 1
     </select>
+
+    <!-- ──────────────────────────────────────── -->
+    <!-- 📌 정책 리뷰 관련 -->
+    <!-- ──────────────────────────────────────── -->
+
+    <!-- 리뷰 등록 -->
+    <insert id="insertReview" parameterType="org.scoula.policyInteraction.domain.UserPolicyReviewVO">
+        INSERT INTO user_policy_review (policy_id, user_id, like_count, benefit_status, content, created_at, updated_at)
+        VALUES (#{policyId}, #{userId}, 0, #{benefitStatus}, #{content}, NOW(), NOW())
+    </insert>
+
+    <!-- 리뷰 수정 -->
+    <update id="updateReview" parameterType="org.scoula.policyInteraction.domain.UserPolicyReviewVO">
+        UPDATE user_policy_review
+        SET content = #{content},
+            updated_at = NOW()
+        WHERE user_id = #{userId} AND policy_id = #{policyId} AND benefit_status = #{benefitStatus}
+    </update>
+
+    <!-- 리뷰 삭제 -->
+    <delete id="deleteReview">
+        DELETE FROM user_policy_review
+        WHERE user_id = #{userId} AND policy_id = #{policyId} AND benefit_status = #{benefitStatus}
+    </delete>
+
+    <!-- 사용자의 특정 정책 리뷰 조회 -->
+    <select id="selectReviewByUserAndPolicy" resultType="org.scoula.policyInteraction.domain.UserPolicyReviewVO">
+        SELECT
+            id,
+            policy_id AS policyId,
+            user_id AS userId,
+            like_count AS likeCount,
+            benefit_status AS benefitStatus,
+            content,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM user_policy_review
+        WHERE user_id = #{userId} AND policy_id = #{policyId} AND benefit_status = #{benefitStatus}
+    </select>
+
+    <!-- 정책별 모든 리뷰 조회 (사용자 정보 포함) -->
+    <select id="selectReviewsByPolicyId" resultType="org.scoula.policyInteraction.dto.response.ReviewWithUserDTO">
+        SELECT
+            r.id AS reviewId,
+            r.like_count AS likeCount,
+            r.benefit_status AS benefitStatus,
+            r.content,
+            r.created_at AS createdAt,
+            r.updated_at AS updatedAt,
+            r.user_id AS userId,
+            u.name AS userName,
+            u.profile_image_id AS profileImageId
+        FROM user_policy_review r
+        INNER JOIN users u ON r.user_id = u.user_id
+        WHERE r.policy_id = #{policyId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <!-- 정책별 리뷰 수 조회 -->
+    <select id="selectReviewCountByPolicyId" resultType="java.lang.Integer">
+        SELECT COUNT(*) AS reviewCount
+        FROM user_policy_review
+        WHERE policy_id = #{policyId}
+    </select>
+
+    <!-- 사용자가 작성한 모든 리뷰 조회 (정책 정보 포함) -->
+    <select id="selectReviewsByUserId" resultType="org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO">
+        SELECT
+            r.id AS reviewId,
+            r.user_id AS userId,
+            u.name AS userName,
+            u.profile_image_id AS profileImageId,
+            r.like_count AS likeCount,
+            r.benefit_status AS benefitStatus,
+            r.content,
+            r.created_at AS createdAt,
+            r.updated_at AS updatedAt,
+            p.id AS policyId,
+            p.title AS policyTitle,
+            p.description AS policyDescription,
+            p.policy_benefit_description AS policyBenefitDescription,
+            pp.apply_period AS applyPeriod,
+            p.policy_benefit_amount AS policyBenefitAmount
+        FROM user_policy_review r
+        INNER JOIN youth_policy p ON r.policy_id = p.id
+        INNER JOIN users u ON r.user_id = u.user_id
+        LEFT JOIN youth_policy_period pp ON p.id = pp.policy_id
+        WHERE r.user_id = #{userId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <!-- ──────────────────────────────────────── -->
+    <!-- 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화) -->
+    <!-- ──────────────────────────────────────── -->
+
+    <!-- 리뷰 좋아요 수 증가 (DB 동기화용) -->
+    <update id="incrementReviewLikeCount">
+        UPDATE user_policy_review 
+        SET like_count = like_count + 1,
+            updated_at = NOW()
+        WHERE id = #{reviewId}
+    </update>
+
+    <!-- 리뷰 좋아요 수 감소 (DB 동기화용, 0 미만으로 내려가지 않도록 처리) -->
+    <update id="decrementReviewLikeCount">
+        UPDATE user_policy_review 
+        SET like_count = GREATEST(like_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = #{reviewId}
+    </update>
 
 </mapper>
