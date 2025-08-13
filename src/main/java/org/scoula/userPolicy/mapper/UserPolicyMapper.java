@@ -32,6 +32,9 @@ public interface UserPolicyMapper {
         @Param("userId") Long userId
     );
 
+    // 조건 없이 is_financial_support=1 정책 조회 (조회수 포함)
+    List<PolicyWithVectorDTO> findFinancialPoliciesWithVectors();
+
     // 필터링된 정책 목록을 저장
     void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
 

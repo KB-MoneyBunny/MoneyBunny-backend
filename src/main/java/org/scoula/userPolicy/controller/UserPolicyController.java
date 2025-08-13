@@ -263,4 +263,47 @@ public class UserPolicyController {
         userPolicyService.deleteRecentSearch(username, keyword);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 사용자 조건으로 필터링한 정책 목록을 조회수 순으로 top3 반환 API
+     * GET: http://localhost:8080/api/userPolicy/search/top3-views
+     * @return ResponseEntity
+     *         - 200 OK: 조회수 기준 상위 3개 정책 반환
+     *         - 400 Bad Request: 잘못된 요청 데이터 (조건 누락 등)
+     *         - 500 Internal Server Error: 서버 내부 오류 발생 시
+     */
+    @ApiOperation(value = "사용자 조건으로 필터링한 정책 목록을 조회수 순으로 top3 반환", notes = "조회수 기준 상위 3개 정책 반환")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = SearchResultDTO.class, responseContainer = "List"),
+            @ApiResponse(code = 400, message = "잘못된 요청입니다."),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("/search/top3-views")
+    public ResponseEntity<List<SearchResultDTO>> searchTop3PoliciesByViews(
+            @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
+        String username = customUser.getUsername();
+        List<SearchResultDTO> result = userPolicyService.searchTop3PoliciesByViews(username);
+        if (result == null || result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 조건 없이 is_financial_support가 1인 정책을 조회수 순으로 topN 반환 API
+     * GET: http://localhost:8080/api/userPolicy/search/top-views/all?count=5
+     */
+    @ApiOperation(value = "조건 없이 is_financial_support=1 정책을 조회수 순으로 topN 반환", notes = "조건 없이 조회수 기준 상위 N개 정책 반환")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = SearchResultDTO.class, responseContainer = "List"),
+            @ApiResponse(code = 500, message = "서버에서 오류가 발생했습니다.")
+    })
+    @GetMapping("/search/top-views/all")
+    public ResponseEntity<List<SearchResultDTO>> searchTopPoliciesByViewsAll(@RequestParam(defaultValue = "3") int count) {
+        List<SearchResultDTO> result = userPolicyService.searchTopPoliciesByViewsAll(count);
+        if (result == null || result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
+    }
 }
