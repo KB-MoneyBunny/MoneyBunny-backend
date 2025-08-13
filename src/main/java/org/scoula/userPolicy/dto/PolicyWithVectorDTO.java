@@ -35,6 +35,8 @@ public class PolicyWithVectorDTO {
     private String largeCategory;
     private String applyUrl;
 
+    private Integer views; // 조회수 필드 추가
+
     /**
      * 벡터를 double 배열로 변환 (null 안전)
      * 기존 UserVectorVO, PolicyVectorVO와 동일한 방식
@@ -46,5 +48,13 @@ public class PolicyWithVectorDTO {
                 vecDeadline != null ? vecDeadline.doubleValue() : 0.0,
                 vecViews != null ? vecViews.doubleValue() : 0.0
         };
+    }
+
+    public Integer getViews() {
+        return views;
+    }
+
+    public void setViews(Integer views) {
+        this.views = views;
     }
 }
