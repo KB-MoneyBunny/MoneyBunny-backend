@@ -226,4 +226,13 @@ public class AssetService {
                 .filter(tx -> "후불교통대금".equals(tx.getStoreName()))
                 .toList();
     }
+
+    public boolean existsRentTransaction(Long userId) {
+        // userId로 바로 월세 거래내역 존재 여부 확인
+        return assetAccountTransactionMapper.existsRentTransactionByUserId(userId);
+    }
+
+    public boolean existsHrdKoreaCardTransaction(Long userId) {
+        return assetCardTransactionMapper.existsHrdKoreaCardTransactionByUserId(userId);
+    }
 }

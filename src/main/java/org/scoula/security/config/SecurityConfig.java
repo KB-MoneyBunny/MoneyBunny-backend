@@ -108,9 +108,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/member/**").permitAll()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/api/asset/**").permitAll()
+                .antMatchers("/api/guestPolicy/**").permitAll()
                 .antMatchers("/api/policy-interaction/application/incomplete").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/policy/*").permitAll() // 공유 URL 로그인 X
                 .antMatchers(HttpMethod.GET, "/api/policy/detail/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/policy-interaction/review/*/list").permitAll() // 💪(상일) 정책 리뷰 목록 조회 허용
                 .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
                 .antMatchers("/api/push/**").authenticated()
                 .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용
@@ -131,6 +133,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/*",
                 "/admin/policy/**",
                 "/api/admin/prompt/**",
+                "/policy/*/reviews", // 💪(상일) 정책 리뷰 페이지 허용
                 "/swagger-ui.html", "/webjars/**",
                 "/swagger-resources/**", "/v2/api-docs"
         );

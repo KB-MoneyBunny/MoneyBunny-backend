@@ -3,10 +3,12 @@ package org.scoula.policyInteraction.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.policyInteraction.domain.UserPolicyApplicationVO;
-import org.scoula.userPolicy.domain.UserVectorVO;
+import org.scoula.policyInteraction.domain.UserPolicyReviewVO;
 import org.scoula.policyInteraction.domain.YouthPolicyBookmarkVO;
-import org.scoula.policyInteraction.dto.ApplicationWithPolicyDTO;
-import org.scoula.policyInteraction.dto.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.ApplicationWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.BookmarkWithPolicyDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithUserDTO;
+import org.scoula.policyInteraction.dto.response.ReviewWithPolicyDTO;
 
 import java.util.List;
 
@@ -61,4 +63,42 @@ public interface PolicyInteractionMapper {
 
     /** 미완료 신청 정책 하나 조회 (is_applied = false) */
     ApplicationWithPolicyDTO findIncompleteApplication(@Param("userId") Long userId);
+
+    /** 혜택 수령 상태 업데이트 */
+    int updateBenefitStatus(@Param("userId") Long userId, @Param("policyId") Long policyId, @Param("benefitStatus") String benefitStatus);
+
+    // ────────────────────────────────────────
+    // 📌 정책 리뷰 관련
+    // ────────────────────────────────────────
+
+    /** 리뷰 등록 */
+    int insertReview(UserPolicyReviewVO review);
+
+    /** 리뷰 수정 */
+    int updateReview(UserPolicyReviewVO review);
+
+    /** 리뷰 삭제 */
+    int deleteReview(@Param("userId") Long userId, @Param("policyId") Long policyId, @Param("benefitStatus") String benefitStatus);
+
+    /** 사용자의 특정 정책 리뷰 조회 */
+    UserPolicyReviewVO selectReviewByUserAndPolicy(@Param("userId") Long userId, @Param("policyId") Long policyId, @Param("benefitStatus") String benefitStatus);
+
+    /** 정책별 모든 리뷰 조회 (사용자 정보 포함) */
+    List<ReviewWithUserDTO> selectReviewsByPolicyId(@Param("policyId") Long policyId);
+
+    /** 정책별 리뷰 수 조회 */
+    Integer selectReviewCountByPolicyId(@Param("policyId") Long policyId);
+
+    /** 사용자가 작성한 모든 리뷰 조회 */
+    List<ReviewWithPolicyDTO> selectReviewsByUserId(@Param("userId") Long userId);
+    
+    // ────────────────────────────────────────
+    // 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화)
+    // ────────────────────────────────────────
+    
+    /** 리뷰 좋아요 수 증가 (DB 동기화용) */
+    int incrementReviewLikeCount(@Param("reviewId") Long reviewId);
+    
+    /** 리뷰 좋아요 수 감소 (DB 동기화용) */
+    int decrementReviewLikeCount(@Param("reviewId") Long reviewId);
 }

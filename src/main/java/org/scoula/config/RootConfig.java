@@ -52,9 +52,11 @@ import java.util.concurrent.Executor;
         "org.scoula.push.service", // push 서비스 스캔 추가
         "org.scoula.push.config", // push config 스캔 추가
         "org.scoula.policyInteraction.service", // 정책 상호작용 서비스 스캔 추가
+        "org.scoula.policyInteraction.util", // 정책 상호작용 유틸리티 스캔 추가
         "org.scoula.policy.util", // 정책 데이터 홀더 스캔 추가
         "org.scoula.asset",
-        "org.scoula.userPolicy.util" // 사용자 정책 유틸리티 스캔 추가
+        "org.scoula.userPolicy.util", // 사용자 정책 유틸리티 스캔 추가
+        "org.scoula.guest.service", // 비로그인 사용자 정책 조회 서비스 스캔 추가
 })
 @EnableScheduling // 스케줄링 기능 활성화
 @EnableRetry // 재시도(@Retryable) 기능 활성화
