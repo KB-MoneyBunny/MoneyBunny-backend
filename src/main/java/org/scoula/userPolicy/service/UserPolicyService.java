@@ -51,6 +51,16 @@ public interface UserPolicyService {
      */
     List<SearchResultDTO> searchFilteredPolicy(String username, SearchRequestDTO searchRequestDTO);
 
+    /**
+     * 사용자 조건으로 필터링한 정책 목록을 조회수 순으로 top3 반환
+     */
+    List<SearchResultDTO> searchTop3PoliciesByViews(String username);
+
+    /**
+     * 조건 없이 is_financial_support=1 정책을 조회수 순으로 topN 반환
+     */
+    List<SearchResultDTO> searchTopPoliciesByViewsAll(int count);
+
     void saveSearchText(String searchText);
 
     List<String> getPopularKeywords(int count);
