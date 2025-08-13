@@ -36,7 +36,6 @@ public class SyncService {
      * - 실패시 1초간격 3회 재시도
      */
     @Async
-    @Transactional
     public void syncAccountsAsync(Long userId) {
         // 1. 사용자 보유 계좌 전체 조회
         List<UserAccountVO> accountList = userAccountMapper.findByUserId(userId);

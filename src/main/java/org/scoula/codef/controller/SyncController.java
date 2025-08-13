@@ -3,6 +3,8 @@ package org.scoula.codef.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.scoula.asset.dto.AssetSummaryResponse;
+import org.scoula.asset.service.AssetService;
 import org.scoula.codef.service.SyncService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class SyncController {
 
     private final SyncService syncService;
+    private final AssetService assetService;
 
     // 1. 계좌 전체 동기화
     @ApiOperation(
@@ -27,11 +30,11 @@ public class SyncController {
             notes = "현재 로그인된 사용자의 모든 계좌 거래내역을 CODEF에서 최신화합니다. (비동기 동작, 202 Accepted 반환)"
     )
     @PostMapping("/accounts")
-    public ResponseEntity<Void> syncAccounts(
+    public ResponseEntity<AssetSummaryResponse> syncAccounts(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         syncService.syncAccountsAsync(userId);
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.ok(assetService.getSummary(userId));
     }
 
     // 2. 카드 전체 동기화
@@ -40,11 +43,11 @@ public class SyncController {
             notes = "현재 로그인된 사용자의 모든 카드 승인내역을 CODEF에서 최신화합니다. (비동기 동작, 202 Accepted 반환)"
     )
     @PostMapping("/cards")
-    public ResponseEntity<Void> syncCards(
+    public ResponseEntity<AssetSummaryResponse> syncCards(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         syncService.syncCardsAsync(userId);
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.ok(assetService.getSummary(userId));
     }
 }
 
