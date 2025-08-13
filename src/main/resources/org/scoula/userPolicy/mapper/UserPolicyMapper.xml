@@ -149,7 +149,8 @@
             pv.vec_views as vecViews,
             -- 대분류 카테고리와 신청 URL 추가
             yp.large_category as largeCategory,
-            yp.apply_url as applyUrl
+            yp.apply_url as applyUrl,
+            yp.views as views   <!-- 조회수 컬럼 추가 -->
         FROM youth_policy yp
         JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
         LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id
@@ -404,4 +405,24 @@
     <delete id="deleteUserVectorByUserId">
         DELETE FROM user_vector WHERE user_id = #{userId}
     </delete>
+
+    <!-- 조건 없이 is_financial_support=1 정책 조회 (조회수 포함) -->
+    <select id="findFinancialPoliciesWithVectors" resultType="org.scoula.userPolicy.dto.PolicyWithVectorDTO">
+        SELECT
+            yp.id as policyId,
+            yp.title as title,
+            yp.policy_benefit_description as policyBenefitDescription,
+            ypp.apply_period as endDate,
+            yp.policy_benefit_amount as policyBenefitAmount,
+            pv.vec_benefit_amount as vecBenefitAmount,
+            pv.vec_deadline as vecDeadline,
+            pv.vec_views as vecViews,
+            yp.large_category as largeCategory,
+            yp.apply_url as applyUrl,
+            yp.views as views
+        FROM youth_policy yp
+        LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id
+        LEFT JOIN policy_vector pv ON yp.id = pv.policy_id
+        WHERE yp.is_financial_support = 1
+    </select>
 </mapper>
