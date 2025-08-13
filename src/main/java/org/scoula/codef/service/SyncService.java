@@ -35,7 +35,7 @@ public class SyncService {
      * - 각 계좌의 가장 최근 거래일 이후(없으면 1년 전부터) CODEF 거래내역을 불러와 DB에 추가
      * - 실패시 1초간격 3회 재시도
      */
-    @Async
+    @Transactional
     public void syncAccountsAsync(Long userId) {
         // 1. 사용자 보유 계좌 전체 조회
         List<UserAccountVO> accountList = userAccountMapper.findByUserId(userId);
@@ -93,7 +93,7 @@ public class SyncService {
      * - 각 카드의 가장 최근 거래일 이후(없으면 1년 전부터) CODEF 승인내역을 불러와 DB에 추가
      * - 실패시 1초간격 3회 재시도
      */
-    @Async
+    @Transactional
     public void syncCardsAsync(Long userId) {
         // 1. 사용자 보유 카드 전체 조회
         List<UserCardVO> cardList = userCardMapper.findByUserId(userId);
