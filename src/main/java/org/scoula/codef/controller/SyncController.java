@@ -34,7 +34,8 @@ public class SyncController {
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         syncService.syncAccountsAsync(userId);
-        return ResponseEntity.ok(assetService.getSummary(userId));
+        AssetSummaryResponse summary = assetService.getSummary(userId);
+        return ResponseEntity.ok(summary);
     }
 
     // 2. 카드 전체 동기화
@@ -47,7 +48,8 @@ public class SyncController {
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
         Long userId = customUser.getMember().getUserId();
         syncService.syncCardsAsync(userId);
-        return ResponseEntity.ok(assetService.getSummary(userId));
+        AssetSummaryResponse summary = assetService.getSummary(userId);
+        return ResponseEntity.ok(summary);
     }
 }
 
