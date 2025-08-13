@@ -25,6 +25,9 @@ public interface UserPolicyMapper {
     // 벡터 정보를 포함한 정책 조회 (N+1 문제 해결용)
     List<PolicyWithVectorDTO> findFilteredPoliciesWithVectors(SearchRequestDTO searchRequestDTO);
 
+    // 조건 없이 is_financial_support=1 정책 조회 (조회수 포함)
+    List<PolicyWithVectorDTO> findFinancialPoliciesWithVectors();
+
     // 필터링된 정책 목록을 저장
     void saveUserFilteredPolicies(List<UserFilteredPoliciesVO> filteredPolicies);
 
