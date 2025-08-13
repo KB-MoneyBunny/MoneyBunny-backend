@@ -330,6 +330,202 @@
         </if>
     </select>
 
+    <!-- 맞춤형 정책 조회 (신청 완료한 정책 제외) -->
+    <select id="findMatchingPoliciesExcludingApplied" resultType="org.scoula.userPolicy.dto.PolicyWithVectorDTO">
+        SELECT
+            yp.id as policyId,
+            yp.title as title,
+            yp.policy_benefit_description as policyBenefitDescription,
+            ypp.apply_period as endDate,
+            yp.policy_benefit_amount as policyBenefitAmount,
+            -- 벡터 정보 추가 (LEFT JOIN으로 벡터가 없어도 조회 가능)
+            pv.vec_benefit_amount as vecBenefitAmount,
+            pv.vec_deadline as vecDeadline,
+            pv.vec_views as vecViews,
+            -- 대분류 카테고리와 신청 URL 추가
+            yp.large_category as largeCategory,
+            yp.apply_url as applyUrl
+        FROM youth_policy yp
+        JOIN youth_policy_condition ypc ON yp.id = ypc.policy_id
+        LEFT JOIN youth_policy_period ypp ON yp.id = ypp.policy_id
+        LEFT JOIN policy_vector pv ON yp.id = pv.policy_id  -- 벡터 조인 추가
+        LEFT JOIN user_policy_application upa ON yp.id = upa.policy_id AND upa.user_id = #{userId} AND upa.is_applied = true -- 실제 신청 완료한 정책 제외
+        WHERE yp.is_financial_support = 1
+        AND upa.policy_id IS NULL  -- 실제 신청 완료하지 않은 정책만 조회
+        AND (
+        ypc.age_limit_yn = 1
+        OR (
+        (ypc.max_age IS NULL AND #{searchRequestDTO.age} >= ypc.min_age)
+        OR
+        (ypc.max_age IS NOT NULL AND #{searchRequestDTO.age} >= ypc.min_age AND ypc.max_age >= #{searchRequestDTO.age})
+        )
+        OR #{searchRequestDTO.age} = 0
+        )
+
+        <!-- 혼인 여부 조건 -->
+        AND (
+        #{searchRequestDTO.marriage} = ""
+        OR ypc.marriage_status IS NULL
+        OR TRIM(ypc.marriage_status) = ''
+        OR ypc.marriage_status = '0055003'
+        OR ypc.marriage_status = #{searchRequestDTO.marriage}
+        )
+
+        <!-- 소득 조건 -->
+        AND (
+        #{searchRequestDTO.income} = 0
+        OR ypc.income_condition_code IS NULL
+        OR TRIM(ypc.income_condition_code) = ''
+        OR ypc.income_condition_code = '0043001'
+        OR ypc.income_condition_code = '0043003'
+        OR (
+        ypc.income_condition_code = '0043002'
+        AND (ypc.income_min IS NULL OR #{searchRequestDTO.income} >= ypc.income_min)
+        AND (ypc.income_max IS NULL OR ypc.income_max >= #{searchRequestDTO.income})
+        )
+        )
+
+        <!-- 지역 조건 -->
+        AND (
+            <if test="searchRequestDTO.regions == null or searchRequestDTO.regions.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.regions != null and !searchRequestDTO.regions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_region ypr
+                    JOIN policy_region pr ON ypr.region_id = pr.id
+                    WHERE ypr.policy_id = yp.id
+                    AND (
+                        pr.region_code IN
+                        <foreach collection="searchRequestDTO.regions" item="region" open="(" separator="," close=")">
+                            #{region}
+                        </foreach>
+                        OR pr.region_code = '0000000'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 학력 조건 -->
+        AND (
+            <if test="searchRequestDTO.educationLevels == null or searchRequestDTO.educationLevels.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.educationLevels != null and !searchRequestDTO.educationLevels.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_education_level ypel
+                    JOIN policy_education_level pel ON ypel.education_level_id = pel.id
+                    WHERE ypel.policy_id = yp.id
+                    AND (
+                        pel.education_level IN
+                        <foreach collection="searchRequestDTO.educationLevels" item="level" open="(" separator="," close=")">
+                            #{level}
+                        </foreach>
+                        OR pel.education_level = '0049010'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 취업 상태 조건 -->
+        AND (
+            <if test="searchRequestDTO.employmentStatuses == null or searchRequestDTO.employmentStatuses.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.employmentStatuses != null and !searchRequestDTO.employmentStatuses.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_employment_status ypes
+                    JOIN policy_employment_status pes ON ypes.employment_status_id = pes.id
+                    WHERE ypes.policy_id = yp.id
+                    AND (
+                        pes.employment_status IN
+                        <foreach collection="searchRequestDTO.employmentStatuses" item="status" open="(" separator="," close=")">
+                            #{status}
+                        </foreach>
+                        OR pes.employment_status = '0013010'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 전공 조건 -->
+        AND (
+            <if test="searchRequestDTO.majors == null or searchRequestDTO.majors.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.majors != null and !searchRequestDTO.majors.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_major ypm
+                    JOIN policy_major pm ON ypm.major_id = pm.id
+                    WHERE ypm.policy_id = yp.id
+                    AND (
+                        pm.major IN
+                        <foreach collection="searchRequestDTO.majors" item="major" open="(" separator="," close=")">
+                            #{major}
+                        </foreach>
+                        OR pm.major = '0011009'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 특수 조건 -->
+        AND (
+            <if test="searchRequestDTO.specialConditions == null or searchRequestDTO.specialConditions.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.specialConditions != null and !searchRequestDTO.specialConditions.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_special_condition ypsc
+                    JOIN policy_special_condition psc ON ypsc.special_condition_id = psc.id
+                    WHERE ypsc.policy_id = yp.id
+                    AND (
+                        psc.special_condition IN
+                        <foreach collection="searchRequestDTO.specialConditions" item="condition" open="(" separator="," close=")">
+                            #{condition}
+                        </foreach>
+                        OR psc.special_condition = '0014010'
+                    )
+                )
+            </if>
+        )
+
+        <!-- 키워드 조건 -->
+        AND (
+            <if test="searchRequestDTO.keywords == null or searchRequestDTO.keywords.isEmpty()">
+                1=1
+            </if>
+            <if test="searchRequestDTO.keywords != null and !searchRequestDTO.keywords.isEmpty()">
+                EXISTS (
+                    SELECT 1
+                    FROM youth_policy_keyword ypk
+                    JOIN policy_keyword pk ON ypk.keyword_id = pk.id
+                    WHERE ypk.policy_id = yp.id
+                    AND pk.keyword IN
+                    <foreach collection="searchRequestDTO.keywords" item="keyword" open="(" separator="," close=")">
+                        #{keyword}
+                    </foreach>
+                )
+            </if>
+        )
+        <if test="searchRequestDTO.searchTexts != null and searchRequestDTO.searchTexts.size() > 0">
+            AND (
+            <foreach collection="searchRequestDTO.searchTexts" item="searchText" separator="OR">
+                (
+                yp.title LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.description LIKE CONCAT('%', #{searchText}, '%')
+                OR yp.support_content LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </foreach>
+            )
+        </if>
+    </select>
+
     <insert id="saveUserFilteredPolicies" parameterType="java.util.List">
         INSERT INTO user_filtered_policies (user_id, policy_id, created_at)
         VALUES
