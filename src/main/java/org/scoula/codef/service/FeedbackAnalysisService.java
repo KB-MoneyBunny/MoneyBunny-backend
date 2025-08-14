@@ -7,6 +7,7 @@ import org.scoula.push.dto.feedback.DayOfWeekPeak;
 import org.scoula.push.dto.feedback.WeeklySpendingComparison;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Service
@@ -22,15 +23,25 @@ public class FeedbackAnalysisService {
      * @return 주간 지출 비교 데이터
      */
     public WeeklySpendingComparison analyzeWeeklySpending(Long userId) {
-        log.debug("[피드백분석] 주간 지출 비교 분석 시작: userId={}", userId);
+        log.info("[피드백분석] 주간 지출 비교 분석 시작: userId={}", userId);
         
         try {
-            Map<String, Long> result = feedbackAnalysisMapper.getWeeklySpendingComparison(userId);
+            Map<String, Object> result = feedbackAnalysisMapper.getWeeklySpendingComparison(userId);
             
-            Long thisWeek = result.get("thisWeekAmount");
-            Long lastWeek = result.get("lastWeekAmount");
+            log.info("[피드백분석] 쿼리 결과 Map: {}", result);
+            log.info("[피드백분석] Map Keys: {}", result.keySet());
             
-            log.debug("[피드백분석] 주간 지출 데이터: 이번주={}, 지난주={}", thisWeek, lastWeek);
+            // BigDecimal을 Long으로 변환
+            BigDecimal thisWeekDecimal = (BigDecimal) result.get("this_week_amount");
+            BigDecimal lastWeekDecimal = (BigDecimal) result.get("last_week_amount");
+            
+            log.info("[피드백분석] thisWeek 원시값: {}, lastWeek 원시값: {}", thisWeekDecimal, lastWeekDecimal);
+            
+            // null 체크 및 BigDecimal을 Long으로 변환
+            Long thisWeek = (thisWeekDecimal != null) ? thisWeekDecimal.longValue() : 0L;
+            Long lastWeek = (lastWeekDecimal != null) ? lastWeekDecimal.longValue() : 0L;
+            
+            log.info("[피드백분석] 주간 지출 데이터: 이번주={}, 지난주={}", thisWeek, lastWeek);
             
             WeeklySpendingComparison comparison = WeeklySpendingComparison.of(thisWeek, lastWeek);
             
@@ -95,7 +106,7 @@ public class FeedbackAnalysisService {
     public boolean hasCardData(Long userId) {
         try {
             boolean hasData = feedbackAnalysisMapper.hasCardData(userId);
-            log.debug("[피드백분석] 카드 데이터 보유 여부: userId={}, hasData={}", userId, hasData);
+            log.info("[피드백분석] 카드 데이터 보유 여부: userId={}, hasData={}", userId, hasData);
             return hasData;
         } catch (Exception e) {
             log.error("[피드백분석] 카드 데이터 확인 실패: userId={}, error={}", userId, e.getMessage(), e);
