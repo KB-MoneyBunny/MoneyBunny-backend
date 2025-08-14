@@ -566,7 +566,14 @@ public class CodefService {
                     tx.setCardId(cardId);
 
                     Long globalCat = transactionCategorizer.categorizeGlobal(tx);
-                    tx.setCategoryId(globalCat != null ? globalCat : defaultCatId);
+                    Long appliedCat = globalCat != null ? globalCat : defaultCatId;
+                    tx.setCategoryId(appliedCat);
+
+                    System.out.println(
+                            "▶ tx: storeName=" + tx.getStoreName()
+                                    + ", storeType=" + tx.getStoreType()
+                                    + " → categoryId=" + appliedCat
+                    );
                 }
                 cardTransactionMapper.insertCardTransactions(batch);
                 log.debug("[카드등록] 배치 insert: cardId={}, batchStart={}, batchEnd={}", cardId, i, Math.min(i + 500, txList.size()));
@@ -767,7 +774,15 @@ public class CodefService {
             }
 
             Long globalCat = transactionCategorizer.categorizeGlobal(tx);
-            tx.setCategoryId(globalCat != null ? globalCat : defaultCatId);
+            Long appliedCat = globalCat != null ? globalCat : defaultCatId;
+            tx.setCategoryId(appliedCat);
+
+            System.out.println(
+                    "▶ tx: storeName=" + tx.getStoreName()
+                            + ", storeType=" + tx.getStoreType()
+                            + " → categoryId=" + appliedCat
+            );
+
 
             log.debug("  신규 삽입: {}", key);
             tx.setCardId(cardId);

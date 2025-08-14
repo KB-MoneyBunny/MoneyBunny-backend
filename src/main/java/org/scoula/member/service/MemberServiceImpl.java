@@ -74,9 +74,6 @@ public class MemberServiceImpl implements MemberService {
     // 회원 저장
     mapper.insert(member);
 
-    // 아바타 저장
-    saveAvatar(dto.getAvatar(), member.getLoginId());
-
     // 저장된 회원 정보 반환
     return get(member.getLoginId());
   }
@@ -96,8 +93,8 @@ public class MemberServiceImpl implements MemberService {
 
 
     // 비밀번호 유효성
-    if (password == null || password.length() < 10) {
-      throw new IllegalArgumentException("비밀번호는 10자 이상이어야 합니다.");
+    if (password == null || password.length() < 7) {
+      throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
     }
 
     boolean hasLetter = password.matches(".*[A-Za-z].*");
@@ -115,6 +112,12 @@ public class MemberServiceImpl implements MemberService {
     return member != null;
   }
 
+  @Override
+  public MemberDTO updateProfileImage(String loginId, int profileImageId) {
+    int updated = mapper.updateProfileImage(loginId, profileImageId);
+    log.info("profile_image_id updated rows={}", updated);
+    return MemberDTO.of(mapper.findByUsername(loginId)); // DB에서 다시 읽어서 반환
+  }
 
 
 
