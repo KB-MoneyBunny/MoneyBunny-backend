@@ -12,11 +12,13 @@ import org.scoula.asset.service.AssetService;
 import org.scoula.common.dto.PageResponse;
 import org.scoula.push.dto.response.NotificationResponse;
 import org.scoula.security.account.domain.CustomUser;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -59,32 +61,56 @@ public class AssetController {
     }
 
     // 계좌 거래내역 조회(페이징 20개씩)
-    @ApiOperation(value = "계좌 거래내역 페이징 조회(최근순)", notes = "특정 계좌의 거래내역을 페이지별로 조회합니다. page(0부터), size 지정 가능(default:20)")
+    @ApiOperation(
+            value = "계좌 거래내역 페이징 조회(서버필터)",
+            notes = "검색(q), 기간(startDate/endDate), 유형(txType), 정렬(sort=latest|oldest) 지원"
+    )
     @GetMapping("/accounts/{accountId}/transactions")
     public ResponseEntity<PageResponse<AccountTransactionVO>> getAccountTransactions(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long accountId,
-            @RequestParam(defaultValue = "0") int page,
+
+            // ✅ 페이징
+            @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String txType
-            ) {
+
+            // ✅ 필터(선택)
+            @RequestParam(required = false) String txType, // income | expense
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String q,      // 검색어 (상호/지점/메모)
+
+            // ✅ 정렬(기본 최신순)
+            @RequestParam(defaultValue = "latest") String sort // latest | oldest
+    ) {
         Long userId = customUser.getMember().getUserId();
-        PageResponse<AccountTransactionVO> resp = assetService.getAccountTransactions(userId, accountId, page, size, txType);
+        PageResponse<AccountTransactionVO> resp = assetService.getAccountTransactions(
+                userId, accountId, page, size, txType, startDate, endDate, q, sort
+        );
         return ResponseEntity.ok(resp);
     }
 
     // 카드 거래내역 조회(페이징 20개씩)
-    @ApiOperation(value = "카드 거래내역 페이징 조회(최근순)", notes = "특정 카드의 거래내역을 페이지별로 조회합니다. page(0부터), size 지정 가능(default:20)")
+    @ApiOperation(
+            value = "카드 거래내역 페이징 조회(검색/기간/정렬)",
+            notes = "page/size + startDate/endDate + q + txType(expense|refund) + sort(desc|asc)"
+    )
     @GetMapping("/cards/{cardId}/transactions")
     public ResponseEntity<PageResponse<CardTransactionVO>> getCardTransactions(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @PathVariable Long cardId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String txType
-            ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String txType,   // expense | refund
+            @RequestParam(defaultValue = "desc") String sort // desc | asc
+    ) {
         Long userId = customUser.getMember().getUserId();
-        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(userId, cardId, page, size, txType);
+        PageResponse<CardTransactionVO> resp = assetService.getCardTransactions(
+                userId, cardId, page, size, startDate, endDate, q, txType, sort
+        );
         return ResponseEntity.ok(resp);
     }
 
