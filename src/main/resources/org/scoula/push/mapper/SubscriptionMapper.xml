@@ -47,6 +47,7 @@
                 is_active_feedback = true
             </when>
         </choose>
+        GROUP BY user_id
     </select>
 
     <!-- 사용자의 구독 정보 조회 -->
@@ -76,6 +77,7 @@
         WHERE is_active_new_policy = true
         AND fcm_token IS NOT NULL
         AND fcm_token != ''
+        GROUP BY user_id
     </select>
     
     <!-- 특정 사용자의 북마크 알림이 활성화된 모든 토큰 조회 -->
