@@ -5,6 +5,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.scoula.asset.dto.AssetSummaryResponse;
+import org.scoula.asset.service.AssetService;
 import org.scoula.codef.domain.ConnectedAccountVO;
 import org.scoula.codef.domain.UserAccountVO;
 import org.scoula.codef.domain.UserCardVO;
@@ -29,6 +31,7 @@ import java.util.Map;
 public class CodefController {
 
     private final CodefService codefService;
+    private final AssetService assetService;
 
     // 1. 계좌목록만 프론트로 전달
     @ApiOperation(value = "CODEF 계좌연동/목록조회", notes = "CODEF 계좌 연결 및 계좌목록 반환")
@@ -44,12 +47,13 @@ public class CodefController {
     // 2. 프론트에서 선택한 계좌 등록 후 데이터 DB 추가
     @ApiOperation(value = "계좌등록 & 거래내역 저장", notes = "계좌목록에서 사용자가 선택한 계좌에 대한 데이터 DB 추가")
     @PostMapping("/register-accounts")
-    public ResponseEntity<Void> registerAccounts(
+    public ResponseEntity<AssetSummaryResponse> registerAccounts(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestBody List<UserAccountVO> selectedAccounts) {
         Long userId = customUser.getMember().getUserId();
         codefService.registerUserAccounts(userId, selectedAccounts);
-        return ResponseEntity.ok().build();
+        AssetSummaryResponse summary = assetService.getSummary(userId);
+        return ResponseEntity.ok(summary);
     }
 
     // 1. 카드목록만 프론트로 전달
@@ -66,12 +70,13 @@ public class CodefController {
     // 2. 카드 선택 후 등록 후 데이터 DB 추가
     @ApiOperation(value = "카드등록 & 거래내역 저장", notes = "카드목록에서 사용자가 선택한 카드에 대한 데이터 DB 추가")
     @PostMapping("/register-cards")
-    public ResponseEntity<Void> registerCards(
+    public ResponseEntity<AssetSummaryResponse> registerCards(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser,
             @RequestBody List<UserCardVO> selectedCards) {
         Long userId = customUser.getMember().getUserId();
         codefService.registerUserCards(userId, selectedCards);
-        return ResponseEntity.ok().build();
+        AssetSummaryResponse summary = assetService.getSummary(userId);
+        return ResponseEntity.ok(summary);
     }
 
 
