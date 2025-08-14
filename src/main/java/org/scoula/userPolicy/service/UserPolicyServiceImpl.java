@@ -22,11 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -602,16 +600,24 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 추가
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
-        Set<String> extendedRegions = new HashSet<>(originalRegions);
-        for (String region : originalRegions) {
-            if (region.length() >= 2) {
-                String generalizedRegion = region.substring(0, 2) + "000";
-                extendedRegions.add(generalizedRegion);
+        Set<String> expandedRegionNames = new HashSet<>();
+        for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
+            if (name.length() == 5 && name.endsWith("000")) {
+                String prefix = name.substring(0, 2);
+                expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
-        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
         List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
         // 마감일 필터링 로직 추가 (로그 포함)
@@ -679,7 +685,7 @@ public class UserPolicyServiceImpl implements UserPolicyService {
 
         MemberVO member = memberMapper.get(username);
         if (member == null) {
-            log.error("사��자를 찾을 수 없습니다: username={}", username);
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
             return null; // Or throw an exception
         }
         Long userId = member.getUserId();
@@ -719,20 +725,28 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 추가
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
-        Set<String> extendedRegions = new HashSet<>(originalRegions);
-        for (String region : originalRegions) {
-            if (region.length() >= 2) {
-                String generalizedRegion = region.substring(0, 2) + "000";
-                extendedRegions.add(generalizedRegion);
+        Set<String> expandedRegionNames = new HashSet<>();
+        for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
+            if (name.length() == 5 && name.endsWith("000")) {
+                String prefix = name.substring(0, 2);
+                expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
-        searchRequestDTO.setRegions(new ArrayList<>(extendedRegions));
+        searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
 
-        // 1. 벡터 정보를 포함한 정책 목록 조회 (N+1 문제 해결)
-        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+        // 1. 맞춤형 정책 목록 조회 (신청 완료한 정책 제외)
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findMatchingPoliciesExcludingApplied(searchRequestDTO, userId);
         // 마감일 필터링 로직 추가 (로그 포함)
         LocalDate today = LocalDate.now();
         DateTimeFormatter formatterDot = DateTimeFormatter.ofPattern("yyyy.MM.dd");
@@ -829,16 +843,22 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
         searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
 
-        // 지역 코드 확장 로직 (prefix가 "XX000"인 경우 전체 지역 포함)
+        // 지역 코드 확장 로직 (두 단계)
         List<String> originalRegions = searchRequestDTO.getRegions();
         Set<String> expandedRegionNames = new HashSet<>();
         for (String name : originalRegions) {
+            // 1. "XX000" 형태면 prefix로 확장
             if (name.length() == 5 && name.endsWith("000")) {
                 String prefix = name.substring(0, 2);
                 expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
-            } else {
-                expandedRegionNames.add(name);
             }
+            // 2. 모든 지역코드에 대해 "XX000" 일반화 코드 추가
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            // 3. 원본 지역코드도 추가
+            expandedRegionNames.add(name);
         }
         searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
 
@@ -1006,5 +1026,101 @@ public class UserPolicyServiceImpl implements UserPolicyService {
         } catch (Exception e) {
             log.error("선택한 최근 검색어 삭제 실패: username={}, keyword={}", username, keyword, e);
         }
+    }
+
+    /**
+     * 사용자 조건만으로 top3 정책을 조회수 순으로 반환하는 서비스
+     * @param username 사용자 이름
+     * @return 상위 3개 정책 목록
+     */
+    @Override
+    public List<SearchResultDTO> searchTop3PoliciesByViews(String username) {
+        MemberVO member = memberMapper.get(username);
+        if (member == null) {
+            log.error("사용자를 찾을 수 없습니다: username={}", username);
+            return null;
+        }
+        Long userId = member.getUserId();
+        UserPolicyConditionVO userPolicyCondition = userPolicyMapper.findUserPolicyConditionByUserId(userId);
+        if (userPolicyCondition == null) {
+            log.info("사용자 정책 조건이 존재하지 않습니다: userId={}", userId);
+            return null;
+        }
+        SearchRequestDTO searchRequestDTO = new SearchRequestDTO();
+        searchRequestDTO.setAge(userPolicyCondition.getAge());
+        searchRequestDTO.setMarriage(userPolicyCondition.getMarriage());
+        searchRequestDTO.setIncome(userPolicyCondition.getIncome());
+        searchRequestDTO.setRegions(userPolicyCondition.getRegions().stream()
+                .map(region -> policyDataHolder.getRegionName(region.getRegionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEducationLevels(userPolicyCondition.getEducationLevels().stream()
+                .map(level -> policyDataHolder.getEducationLevelName(level.getEducationLevelId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setEmploymentStatuses(userPolicyCondition.getEmploymentStatuses().stream()
+                .map(status -> policyDataHolder.getEmploymentStatusName(status.getEmploymentStatusId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setMajors(userPolicyCondition.getMajors().stream()
+                .map(major -> policyDataHolder.getMajorName(major.getMajorId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setSpecialConditions(userPolicyCondition.getSpecialConditions().stream()
+                .map(condition -> policyDataHolder.getSpecialConditionName(condition.getSpecialConditionId()))
+                .collect(Collectors.toList()));
+        searchRequestDTO.setKeywords(userPolicyCondition.getKeywords().stream()
+                .map(keyword -> policyDataHolder.getKeywordName(keyword.getKeywordId()))
+                .collect(Collectors.toList()));
+
+        // 빈 문자열 제거
+        searchRequestDTO.setRegions(removeEmptyStrings(searchRequestDTO.getRegions()));
+        searchRequestDTO.setEducationLevels(removeEmptyStrings(searchRequestDTO.getEducationLevels()));
+        searchRequestDTO.setEmploymentStatuses(removeEmptyStrings(searchRequestDTO.getEmploymentStatuses()));
+        searchRequestDTO.setMajors(removeEmptyStrings(searchRequestDTO.getMajors()));
+        searchRequestDTO.setSpecialConditions(removeEmptyStrings(searchRequestDTO.getSpecialConditions()));
+        searchRequestDTO.setKeywords(removeEmptyStrings(searchRequestDTO.getKeywords()));
+
+        // 지역 코드 확장
+        List<String> originalRegions = searchRequestDTO.getRegions();
+        Set<String> expandedRegionNames = new HashSet<>();
+        for (String name : originalRegions) {
+            if (name.length() == 5 && name.endsWith("000")) {
+                String prefix = name.substring(0, 2);
+                expandedRegionNames.addAll(policyDataHolder.getRegionCodesByPrefix(prefix));
+            }
+            if (name.length() >= 2) {
+                String generalizedRegion = name.substring(0, 2) + "000";
+                expandedRegionNames.add(generalizedRegion);
+            }
+            expandedRegionNames.add(name);
+        }
+        searchRequestDTO.setRegions(new ArrayList<>(expandedRegionNames));
+
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFilteredPoliciesWithVectors(searchRequestDTO);
+
+        // 조회수 기준 내림차순 정렬 후 상위 3개만 반환
+        return policiesWithVectors.stream()
+            .sorted((p1, p2) -> Integer.compare(
+                p2.getViews() != null ? p2.getViews() : 0,
+                p1.getViews() != null ? p1.getViews() : 0
+            ))
+            .limit(3)
+            .map(VectorUtil::toSearchResultDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 조건 없이 조회수 topN 정책을 반환하는 서비스
+     * @param count 반환할 정책 개수
+     * @return 상위 N개 정책 목록
+     */
+    @Override
+    public List<SearchResultDTO> searchTopPoliciesByViewsAll(int count) {
+        List<PolicyWithVectorDTO> policiesWithVectors = userPolicyMapper.findFinancialPoliciesWithVectors();
+        return policiesWithVectors.stream()
+            .sorted((p1, p2) -> Integer.compare(
+                p2.getViews() != null ? p2.getViews() : 0,
+                p1.getViews() != null ? p1.getViews() : 0
+            ))
+            .limit(count)
+            .map(VectorUtil::toSearchResultDTO)
+            .collect(Collectors.toList());
     }
 }
