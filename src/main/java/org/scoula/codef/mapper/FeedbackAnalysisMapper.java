@@ -13,7 +13,7 @@ public interface FeedbackAnalysisMapper {
      * @param userId 사용자 ID
      * @return 이번 주, 지난 주 지출 금액
      */
-    Map<String, Long> getWeeklySpendingComparison(@Param("userId") Long userId);
+    Map<String, Object> getWeeklySpendingComparison(@Param("userId") Long userId);
     
     /**
      * 사용자의 요일별 지출 피크 분석
