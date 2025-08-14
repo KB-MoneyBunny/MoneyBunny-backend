@@ -153,8 +153,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) {
         web.ignoring().antMatchers(
                 "/assets/**",
-//                "/*",
-//                "/admin/policy/**",
+                "/*",
+                "/admin/policy/**",
                 "/api/admin/prompt/**",
                 "/policy/*/reviews", // 💪(상일) 정책 리뷰 페이지 허용
 
