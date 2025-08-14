@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -85,28 +87,66 @@ public class AssetService {
         return cards;
     }
 
-    public PageResponse<AccountTransactionVO> getAccountTransactions(Long userId, Long accountId, int page, int size, String txType) {
-        // 계좌 소유자 검증
+    public PageResponse<AccountTransactionVO> getAccountTransactions(
+            Long userId, Long accountId, int page, int size,
+            String txType, LocalDate startDate, LocalDate endDate, String q, String sort
+    ) {
+        // 소유자 검증
         if (!assetUserAccountMapper.isAccountOwner(userId, accountId)) {
             throw new UnauthorizedException("계좌 소유자만 접근 가능합니다.");
         }
+
         int offset = page * size;
-        List<AccountTransactionVO> list = assetAccountTransactionMapper.findByAccountIdWithPaging(accountId, offset, size, txType);
-        int total = assetAccountTransactionMapper.countByAccountId(accountId, txType);
-        log.info("[ASSET] 계좌 {} 거래내역 페이지 조회 - page: {}, size: {}, 총 건수: {}", accountId, page, size, total);
+
+        // ✅ 날짜 하루 전체 포함: 00:00:00 ~ 23:59:59.999999999
+        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime end   = (endDate != null)   ? endDate.atTime(LocalTime.MAX)  : null;
+
+        // ✅ 정렬값 정규화
+        String normSort = "oldest".equalsIgnoreCase(sort) ? "oldest" : "latest";
+
+        List<AccountTransactionVO> list = assetAccountTransactionMapper.findByAccountIdFiltered(accountId, offset, size, txType, start, end, q, normSort);
+        int total = assetAccountTransactionMapper.countByAccountIdFiltered(accountId, txType, start, end, q);
+
+        log.info("[ASSET] 계좌 {} 거래내역 조회 - page:{}, size:{}, total:{}, sort:{}, txType:{}, start:{}, end:{}, q:{}", accountId, page, size, total, normSort, txType, start, end, q);
+
         return new PageResponse<>(list, page, size, total);
     }
-    public PageResponse<CardTransactionVO> getCardTransactions(Long userId, Long cardId, int page, int size, String txType) {
-        // 카드 소유자 검증
+
+
+
+    public PageResponse<CardTransactionVO> getCardTransactions(
+            Long userId, Long cardId, int page, int size,
+            LocalDate startDate, LocalDate endDate, String q, String txType, String sort
+    ) {
+        // 소유자 검증
         if (!assetUserCardMapper.isCardOwner(userId, cardId)) {
             throw new UnauthorizedException("카드 소유자만 접근 가능합니다.");
         }
+
         int offset = page * size;
-        List<CardTransactionVO> list = assetCardTransactionMapper.findByCardIdWithPaging(cardId, offset, size, txType);
-        int total = assetCardTransactionMapper.countByCardId(cardId, txType);
-        log.info("[ASSET] 카드 {} 거래내역 페이지 조회 - page: {}, size: {}, 총 건수: {}", cardId, page, size, total);
+
+        // 날짜 파라미터 → 조회에 쓸 경계 (하루 처음/마지막으로 보정)
+        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime end   = (endDate != null)   ? endDate.atTime(LocalTime.MAX) : null;
+
+        // 정렬 보안: 허용값만
+        String order = "asc".equalsIgnoreCase(sort) ? "ASC" : "DESC";
+
+        List<CardTransactionVO> list = assetCardTransactionMapper.findByCardIdWithFilters(
+                cardId, offset, size, start, end, q, txType, order
+        );
+        int total = assetCardTransactionMapper.countByCardIdWithFilters(
+                cardId, start, end, q, txType
+        );
+
+        log.info("[ASSET] 카드 {} 거래내역 조회 - page:{}, size:{}, total:{}, q:{}, txType:{}, {}~{}, sort:{}",
+                cardId, page, size, total, q, txType, start, end, order);
+
+        // 너희 카드쪽은 기존에 이 생성자 쓰고 있었음
         return new PageResponse<>(list, total, page, size);
     }
+
 
 
     public void updateCardTransactionMemo(Long transactionId, String memo) {

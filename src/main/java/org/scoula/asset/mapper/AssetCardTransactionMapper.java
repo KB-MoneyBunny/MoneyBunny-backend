@@ -5,6 +5,7 @@ import org.scoula.asset.domain.CardTransactionVO;
 import org.scoula.asset.dto.CategorySpending;
 import org.scoula.asset.dto.MonthlyTrendDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -41,4 +42,24 @@ public interface AssetCardTransactionMapper {
     List<CardTransactionVO> findRecent6MonthsByUserId(@Param("userId") Long userId);
 
     boolean existsHrdKoreaCardTransactionByUserId(@Param("userId") Long userId);
+
+    List<CardTransactionVO> findByCardIdWithFilters(
+            @Param("cardId") Long cardId,
+            @Param("offset") int offset,
+            @Param("size") int size,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("q") String q,
+            @Param("txType") String txType,    // expense | refund
+            @Param("sort") String sort         // "DESC" | "ASC"
+    );
+
+    int countByCardIdWithFilters(
+            @Param("cardId") Long cardId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("q") String q,
+            @Param("txType") String txType
+    );
+
 }
