@@ -103,18 +103,42 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .authorizeRequests() // 경로별 접근 권한 설정
+
+                // 공통/프리플라이트
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers("/codef/**").permitAll()
-                .antMatchers("/api/member/**").permitAll()
+
+                // 인증/로그인
                 .antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/api/asset/**").permitAll()
-                .antMatchers("/api/policy-interaction/application/incomplete").permitAll()
+
+                // 인증 후 회원 가입 및 회원정보 조회
+                .antMatchers("/api/member/**").permitAll()
+
+                // 외부 연동(Codef)🎵
+                .antMatchers("/codef/**").authenticated()
+
+                // 자산 🎵
+                .antMatchers("/api/asset/**").authenticated()
+
+                // 게스트 정책 검색
+                .antMatchers("/api/guestPolicy/**").permitAll()
+
+                // 정책 상호작용 - 미완료 신청 조회 🎵
+                .antMatchers("/api/policy-interaction/application/incomplete").authenticated()
+
+                // 정책 상세/공유 URL (비로그인 허용)
                 .antMatchers(HttpMethod.GET, "/api/policy/*").permitAll() // 공유 URL 로그인 X
                 .antMatchers(HttpMethod.GET, "/api/policy/detail/**").permitAll()
+
+                // 정책 리뷰(비로그인 허용)
                 .antMatchers(HttpMethod.GET, "/api/policy-interaction/review/*/list").permitAll() // 💪(상일) 정책 리뷰 목록 조회 허용
+
+                // 정책 API
                 .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
+                // 푸시 알림
                 .antMatchers("/api/push/**").authenticated()
+                // 사용자 정책
                 .antMatchers("/api/userPolicy/**").authenticated() // 사용자 정책 API 임시 허용
+
                 .anyRequest().authenticated(); // 현재는 모든 접근 허용 (개발 단계)
     }
 
@@ -133,8 +157,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/admin/policy/**",
                 "/api/admin/prompt/**",
                 "/policy/*/reviews", // 💪(상일) 정책 리뷰 페이지 허용
+
+                // swagger 관련
                 "/swagger-ui.html", "/webjars/**",
                 "/swagger-resources/**", "/v2/api-docs"
+
         );
     }
 
@@ -150,21 +177,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return new CorsFilter(source);
     }
 
-//    // Spring Security 검사를 우회할 경로 설정
-//    @Override
-//    public void configure(WebSecurity web) throws Exception {
-//        web.ignoring().antMatchers(
-//                "/assets/**",      // 정적 리소스
-//                "/*",              // 루트 경로의 파일들
-//                "/api/member/**",   // 회원 관련 공개 API
-//                "/api/userPolicy/**", // 사용자 정책 API 임시 허용
-//
-//                // 정책 수집 테스트용 경로 추가
-//                "/admin/policy/sync",
-//
-//                // Swagger 관련 URL은 보안에서 제외
-//                "/swagger-ui.html", "/webjars/**",
-//                "/swagger-resources/**", "/v2/api-docs"
-//        );
-//    }
 }
