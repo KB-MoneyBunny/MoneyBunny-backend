@@ -3,6 +3,7 @@ package org.scoula.push.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.scoula.push.dto.request.NotificationToggleRequest;
 import org.scoula.push.dto.request.SubscriptionRequest;
 import org.scoula.push.dto.response.NotificationResponse;
@@ -16,12 +17,18 @@ import org.scoula.push.service.subscription.SubscriptionService;
 import org.scoula.push.service.subscription.UserNotificationService;
 import org.scoula.push.service.core.TokenCleanupService;
 import org.scoula.security.account.domain.CustomUser;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * 통합 푸시 알림 API Controller
@@ -29,6 +36,7 @@ import java.util.List;
  * - 구독 관리
  * - 관리자 기능
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/push")
 @RequiredArgsConstructor
@@ -272,6 +280,81 @@ public class PushController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("토큰 정리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/admin/send-all")
+    @ApiOperation(value = "모든 알림 타입 한번에 발송",
+                  notes = "북마크, 신규 정책, TOP3, 피드백 알림을 모두 한번에 발송합니다. 각 알림은 병렬로 처리됩니다.")
+    public ResponseEntity<Map<String, String>> sendAllNotifications() {
+        Map<String, String> results = new HashMap<>();
+        
+        log.info("[통합 알림] 모든 알림 타입 발송 시작");
+        
+        // 북마크 알림
+        CompletableFuture<Void> bookmarkFuture = CompletableFuture.runAsync(() -> {
+            try {
+                bookmarkPolicyNotificationService.checkAndSendBookmarkNotifications();
+                results.put("bookmark", "성공");
+                log.info("[통합 알림] 북마크 알림 발송 완료");
+            } catch (Exception e) {
+                results.put("bookmark", "실패: " + e.getMessage());
+                log.error("[통합 알림] 북마크 알림 발송 실패", e);
+            }
+        });
+        
+        // 신규 정책 알림
+        CompletableFuture<Void> newPolicyFuture = CompletableFuture.runAsync(() -> {
+            try {
+                newPolicyNotificationService.processNewPolicyAlerts();
+                results.put("newPolicy", "성공");
+                log.info("[통합 알림] 신규 정책 알림 발송 완료");
+            } catch (Exception e) {
+                results.put("newPolicy", "실패: " + e.getMessage());
+                log.error("[통합 알림] 신규 정책 알림 발송 실패", e);
+            }
+        });
+        
+        // TOP3 알림
+        CompletableFuture<Void> top3Future = CompletableFuture.runAsync(() -> {
+            try {
+                top3NotificationService.sendTop3Notifications();
+                results.put("top3", "성공");
+                log.info("[통합 알림] TOP3 알림 발송 완료");
+            } catch (Exception e) {
+                results.put("top3", "실패: " + e.getMessage());
+                log.error("[통합 알림] TOP3 알림 발송 실패", e);
+            }
+        });
+        
+        // 피드백 알림
+        CompletableFuture<Void> feedbackFuture = CompletableFuture.runAsync(() -> {
+            try {
+                feedbackNotificationService.sendWeeklyConsumptionReportToAll();
+                results.put("feedback", "성공");
+                log.info("[통합 알림] 피드백 알림 발송 완료");
+            } catch (Exception e) {
+                results.put("feedback", "실패: " + e.getMessage());
+                log.error("[통합 알림] 피드백 알림 발송 실패", e);
+            }
+        });
+        
+        // 모든 작업이 완료될 때까지 대기
+        try {
+            CompletableFuture.allOf(bookmarkFuture, newPolicyFuture, top3Future, feedbackFuture)
+                    .get(60, TimeUnit.SECONDS); // 최대 60초 대기
+            
+            log.info("[통합 알림] 모든 알림 발송 완료 - 결과: {}", results);
+            return ResponseEntity.ok(results);
+            
+        } catch (TimeoutException e) {
+            results.put("error", "시간 초과 - 일부 알림이 아직 처리 중입니다");
+            log.error("[통합 알림] 시간 초과", e);
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(results);
+        } catch (Exception e) {
+            results.put("error", "알림 발송 중 오류 발생: " + e.getMessage());
+            log.error("[통합 알림] 오류 발생", e);
+            return ResponseEntity.internalServerError().body(results);
         }
     }
 }

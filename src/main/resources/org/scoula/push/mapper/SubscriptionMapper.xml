@@ -49,6 +49,7 @@
                 is_active_feedback = true
             </when>
         </choose>
+        GROUP BY user_id
     </select>
 
     <!-- 사용자의 구독 정보 조회 -->
