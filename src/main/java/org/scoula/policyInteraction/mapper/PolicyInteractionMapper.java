@@ -97,6 +97,9 @@ public interface PolicyInteractionMapper {
     
     /** 정책별 모든 리뷰 삭제 (관리자 전용) */
     int deleteReviewsByPolicyId(@Param("policyId") Long policyId);
+
+    /** 개별 리뷰 삭제 (관리자 전용) */
+    int deleteSingleReview(@Param("reviewId") Long reviewId);
     
     // ────────────────────────────────────────
     // 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화)

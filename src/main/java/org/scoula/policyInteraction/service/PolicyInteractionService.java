@@ -507,5 +507,20 @@ public class PolicyInteractionService {
             throw new RuntimeException("정책별 리뷰 삭제에 실패했습니다.", e);
         }
     }
+
+    /** 개별 리뷰 삭제 (관리자 전용) */
+    @Transactional
+    public boolean deleteSingleReview(Long reviewId) {
+        log.info("[PolicyInteractionService] 개별 리뷰 삭제 시작 - reviewId: {}", reviewId);
+        
+        try {
+            int deletedCount = policyInteractionMapper.deleteSingleReview(reviewId);
+            log.info("[PolicyInteractionService] 개별 리뷰 삭제 완료 - reviewId: {}, 삭제된 리뷰 수: {}", reviewId, deletedCount);
+            return deletedCount > 0;
+        } catch (Exception e) {
+            log.error("[PolicyInteractionService] 개별 리뷰 삭제 실패 - reviewId: {}", reviewId, e);
+            throw new RuntimeException("개별 리뷰 삭제에 실패했습니다.", e);
+        }
+    }
     
 }
