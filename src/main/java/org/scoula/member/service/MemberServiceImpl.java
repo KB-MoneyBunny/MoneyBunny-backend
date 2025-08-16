@@ -93,8 +93,8 @@ public class MemberServiceImpl implements MemberService {
 
 
     // 비밀번호 유효성
-    if (password == null || password.length() < 10) {
-      throw new IllegalArgumentException("비밀번호는 10자 이상이어야 합니다.");
+    if (password == null || password.length() < 7) {
+      throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
     }
 
     boolean hasLetter = password.matches(".*[A-Za-z].*");

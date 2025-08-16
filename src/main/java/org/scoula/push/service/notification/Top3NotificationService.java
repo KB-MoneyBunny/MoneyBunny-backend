@@ -105,21 +105,20 @@ public class Top3NotificationService {
                 return true; // 성공으로 처리
             }
 
-            // 3. TOP3 정책 선택 및 총 지원금액 계산
+            // 3. TOP3 정책 선택 (상위 3개, 지원금 0원 포함)
             List<SearchResultDTO> top3Policies = matchingPolicies.stream()
-                    .filter(policy -> policy.getPolicyBenefitAmount() != null && policy.getPolicyBenefitAmount() > 0)
                     .limit(3)
                     .toList();
 
             if (top3Policies.size() < 3) {
-                log.info("[TOP3 알림] 지원금 정보가 있는 정책이 3개 미만 - userId: {}, 정책 수: {}", 
+                log.info("[TOP3 알림] 정책이 3개 미만 - userId: {}, 정책 수: {}", 
                         subscriber.getUserId(), top3Policies.size());
                 return false;
             }
 
-            // 4. 총 지원금액 계산
+            // 4. 총 지원금액 계산 (null인 경우 0원으로 처리)
             long totalAmount = top3Policies.stream()
-                    .mapToLong(SearchResultDTO::getPolicyBenefitAmount)
+                    .mapToLong(policy -> policy.getPolicyBenefitAmount() != null ? policy.getPolicyBenefitAmount() : 0L)
                     .sum();
 
             // 5. 알림 메시지 생성

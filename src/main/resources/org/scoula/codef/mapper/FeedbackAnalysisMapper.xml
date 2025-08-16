@@ -6,17 +6,28 @@
 
     <!-- 주간 지출 비교 쿼리 -->
     <select id="getWeeklySpendingComparison" parameterType="long" resultType="map">
+        <![CDATA[
         SELECT 
-            SUM(CASE WHEN YEARWEEK(ct.transaction_date, 1) = YEARWEEK(NOW(), 1) THEN ct.amount ELSE 0 END) as thisWeekAmount,
-            SUM(CASE WHEN YEARWEEK(ct.transaction_date, 1) = YEARWEEK(NOW(), 1) - 1 THEN ct.amount ELSE 0 END) as lastWeekAmount
+            SUM(CASE 
+                WHEN ct.transaction_date >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE())-1 DAY)
+                THEN ct.amount 
+                ELSE 0 
+            END) as this_week_amount,
+            SUM(CASE 
+                WHEN ct.transaction_date >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE())-1+7 DAY)
+                AND ct.transaction_date < DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE())-1 DAY)
+                THEN ct.amount 
+                ELSE 0 
+            END) as last_week_amount
         FROM card_transaction ct
         JOIN user_card uc ON ct.card_id = uc.id
         WHERE uc.user_id = #{userId}
-          AND ct.transaction_date >= DATE_SUB(NOW(), INTERVAL 2 WEEK)
-          AND ct.cancel_status != 'Y'
+          AND ct.transaction_date >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE())-1+14 DAY)
+          AND (ct.cancel_status IS NULL OR ct.cancel_status != 'normal')
+        ]]>
     </select>
 
-    <!-- 요일별 지출 피크 분석 쿼리 -->
+    <!-- 요일별 지출 피크 분석 쿼리 (이번 주 기준) -->
     <select id="getDayOfWeekPeak" parameterType="long" resultType="org.scoula.push.dto.feedback.DayOfWeekPeak">
         SELECT 
             DAYOFWEEK(ct.transaction_date) as dayOfWeek,
@@ -34,8 +45,8 @@
         FROM card_transaction ct
         JOIN user_card uc ON ct.card_id = uc.id
         WHERE uc.user_id = #{userId}
-          AND ct.transaction_date >= DATE_SUB(NOW(), INTERVAL 4 WEEK)
-          AND ct.cancel_status != 'Y'
+          AND ct.transaction_date >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE())-1 DAY)
+          AND (ct.cancel_status IS NULL OR ct.cancel_status != 'normal')
         GROUP BY DAYOFWEEK(ct.transaction_date)
         ORDER BY totalAmount DESC
         LIMIT 1
@@ -48,7 +59,7 @@
         JOIN card_transaction ct ON uc.id = ct.card_id
         WHERE uc.user_id = #{userId}
           AND ct.transaction_date >= DATE_SUB(NOW(), INTERVAL 4 WEEK)
-          AND ct.cancel_status != 'Y'
+          AND (ct.cancel_status IS NULL OR ct.cancel_status != 'normal')
     </select>
 
 </mapper>
