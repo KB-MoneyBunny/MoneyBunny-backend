@@ -468,4 +468,59 @@ public class PolicyInteractionService {
         return redisUtil.isUserLikedReview(userId, reviewId);
     }
     
+    // ────────────────────────────────────────
+    // 📌 관리자 리뷰 관련
+    // ────────────────────────────────────────
+    
+    /** 전체 리뷰 조회 (관리자 전용) */
+    public List<ReviewWithUserDTO> getAllReviews() {
+        log.debug("[PolicyInteractionService] 전체 리뷰 조회 시작");
+        
+        try {
+            List<ReviewWithUserDTO> reviews = policyInteractionMapper.selectAllReviewsWithUser();
+            
+            // 각 리뷰에 실시간 좋아요 수 적용
+            reviews.forEach(review -> {
+                Long redisLikeCount = redisUtil.getLikeCount(review.getReviewId());
+                review.setLikeCount(redisLikeCount.intValue());
+            });
+            
+            log.debug("[PolicyInteractionService] 전체 리뷰 조회 완료: {}개", reviews.size());
+            return reviews;
+        } catch (Exception e) {
+            log.error("[PolicyInteractionService] 전체 리뷰 조회 실패", e);
+            throw new RuntimeException("전체 리뷰 조회에 실패했습니다.", e);
+        }
+    }
+    
+    /** 정책별 모든 리뷰 삭제 (관리자 전용) */
+    @Transactional
+    public boolean deleteReviewsByPolicyId(Long policyId) {
+        log.info("[PolicyInteractionService] 정책별 리뷰 삭제 시작 - policyId: {}", policyId);
+        
+        try {
+            int deletedCount = policyInteractionMapper.deleteReviewsByPolicyId(policyId);
+            log.info("[PolicyInteractionService] 정책별 리뷰 삭제 완료 - policyId: {}, 삭제된 리뷰 수: {}", policyId, deletedCount);
+            return deletedCount > 0;
+        } catch (Exception e) {
+            log.error("[PolicyInteractionService] 정책별 리뷰 삭제 실패 - policyId: {}", policyId, e);
+            throw new RuntimeException("정책별 리뷰 삭제에 실패했습니다.", e);
+        }
+    }
+
+    /** 개별 리뷰 삭제 (관리자 전용) */
+    @Transactional
+    public boolean deleteSingleReview(Long reviewId) {
+        log.info("[PolicyInteractionService] 개별 리뷰 삭제 시작 - reviewId: {}", reviewId);
+        
+        try {
+            int deletedCount = policyInteractionMapper.deleteSingleReview(reviewId);
+            log.info("[PolicyInteractionService] 개별 리뷰 삭제 완료 - reviewId: {}, 삭제된 리뷰 수: {}", reviewId, deletedCount);
+            return deletedCount > 0;
+        } catch (Exception e) {
+            log.error("[PolicyInteractionService] 개별 리뷰 삭제 실패 - reviewId: {}", reviewId, e);
+            throw new RuntimeException("개별 리뷰 삭제에 실패했습니다.", e);
+        }
+    }
+    
 }

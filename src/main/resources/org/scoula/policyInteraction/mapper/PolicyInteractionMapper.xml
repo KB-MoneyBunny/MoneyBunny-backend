@@ -250,6 +250,36 @@
         ORDER BY r.created_at DESC
     </select>
 
+    <!-- 전체 리뷰 조회 (관리자 전용) -->
+    <select id="selectAllReviewsWithUser" resultType="org.scoula.policyInteraction.dto.response.ReviewWithUserDTO">
+        SELECT
+            r.id AS reviewId,
+            r.policy_id AS policyId,
+            r.like_count AS likeCount,
+            r.benefit_status AS benefitStatus,
+            r.content,
+            r.created_at AS createdAt,
+            r.updated_at AS updatedAt,
+            r.user_id AS userId,
+            u.name AS userName,
+            u.profile_image_id AS profileImageId
+        FROM user_policy_review r
+        INNER JOIN users u ON r.user_id = u.user_id
+        ORDER BY r.created_at DESC
+    </select>
+
+    <!-- 정책별 모든 리뷰 삭제 (관리자 전용) -->
+    <delete id="deleteReviewsByPolicyId">
+        DELETE FROM user_policy_review
+        WHERE policy_id = #{policyId}
+    </delete>
+
+    <!-- 개별 리뷰 삭제 (관리자 전용) -->
+    <delete id="deleteSingleReview">
+        DELETE FROM user_policy_review
+        WHERE id = #{reviewId}
+    </delete>
+
     <!-- ──────────────────────────────────────── -->
     <!-- 📌 좋아요 시스템 관련 (하이브리드: Redis + DB 동기화) -->
     <!-- ──────────────────────────────────────── -->
