@@ -56,9 +56,9 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtProcessor.generateToken(username);
         String refreshToken = jwtProcessor.generateRefreshToken(username);
 
-        // Redis에 Refresh Token 저장 (e.g. 7일)
-        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofDays(7));
-//        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofMinutes(3)); // test용
+        // Redis에 Refresh Token 저장 (14d)
+        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofDays(14));
+
         // 응답 DTO 구성
         AuthResultDTO result = AuthResultDTO.builder()
                 .accessToken(accessToken)

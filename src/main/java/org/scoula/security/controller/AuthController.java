@@ -1,7 +1,6 @@
 package org.scoula.security.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.common.util.RedisUtil;
@@ -45,15 +44,27 @@ public class AuthController {
     }
 
     // 로그아웃
-    @ApiOperation(value = "로그아웃", notes = "로그아웃 처리 후 서버에 저장된 Refresh Token을 삭제합니다.")
+    @ApiOperation(
+            value = "로그아웃",
+            notes = "현재 로그인 사용자의 서버 저장 **Refresh Token**을 삭제하여 세션을 종료합니다.\n\n" +
+                    "• 헤더: `Authorization: Bearer <Access Token>`\n" +
+                    "• 성공 시 200 반환(서버 RT 삭제)"
+    )
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "Authorization", value = "Bearer <Access Token>", required = true, paramType = "header", dataType = "string")
+    })
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK - Logout success"),
+            @ApiResponse(code = 401, message = "Unauthorized - 토큰 누락/만료/위조")
+    })
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String bearer) {
         String accessToken = bearer.replace("Bearer ", "");
         String username = jwtProcessor.getUsername(accessToken);
-
         authService.logout(username);
         return ResponseEntity.ok("Logout success");
     }
+
 
     // 로그인
 //    @PostMapping("/login")
@@ -216,30 +227,44 @@ public class AuthController {
     // Access Token, Refresh Token
 
     // Access Token 재발급
-    @ApiOperation(value = "Access Token 재발급", notes = "유효한 Refresh Token을 통해 새로운 Access Token을 발급받습니다.")
+    @ApiOperation(
+            value = "Access Token 재발급(회전)",
+            notes = "유효한 **Refresh Token**으로 **새 Access Token + 새 Refresh Token(회전)**을 발급합니다.\n\n" +
+                    "• 헤더: `Authorization: Bearer <Refresh Token>`\n" +
+                    "• 응답: `{ accessToken, refreshToken }`\n" +
+                    "• 보안: 매 재발급 시 RT를 교체하고 Redis에 최신 RT만 저장하여 재사용 공격을 방지합니다.\n" +
+                    "• 실패: 만료/위조/저장된 RT 불일치 시 401"
+    )
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "Authorization", value = "Bearer <Refresh Token>", required = true, paramType = "header", dataType = "string", example = "Bearer eyJhbGciOi...")
+    })
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "OK - 새 Access/Refresh Token 반환"),
+            @ApiResponse(code = 401, message = "Unauthorized - Refresh Token 문제")
+    })
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String bearer) {
-        // "Bearer " 접두어 제거 후 실제 토큰 추출
+    public ResponseEntity<?> refreshAccessTokenRotating(@RequestHeader("Authorization") String bearer) {
         String refreshToken = bearer.replace("Bearer ", "");
-
-        // Refresh Token 유효성 검증 (서명 및 만료 확인)
         if (!jwtProcessor.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token expired or faked");
         }
-
-        // 토큰에서 loginId 추출
         String loginId = jwtProcessor.getUsername(refreshToken);
 
-        // Redis에 저장된 refresh 토큰과 비교
-        String stored = redisUtil.getRefreshToken("refresh_" + loginId);
+        String key = "refresh_" + loginId;
+        String stored = redisUtil.getRefreshToken(key);
         if (!refreshToken.equals(stored)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("not match stored token");
         }
 
-        // 새 Access Token 발급 후 응답
         String newAccessToken = jwtProcessor.generateToken(loginId);
+        String newRefreshToken = jwtProcessor.generateRefreshToken(loginId); // 회전
+        // TTL은 정책에 맞춰 조정(예: 14일)
+        redisUtil.saveRefreshToken(key, newRefreshToken, java.time.Duration.ofDays(14));
 
-        return ResponseEntity.ok().body(Collections.singletonMap("accessToken", newAccessToken));
+        return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken
+        ));
     }
 
 
