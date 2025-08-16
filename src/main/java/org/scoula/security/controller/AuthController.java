@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.common.util.RedisUtil;
+import org.scoula.security.account.domain.CustomUser;
 import org.scoula.security.service.MailService;
 import org.scoula.security.account.domain.MemberVO;
 import org.scoula.security.dto.*;
@@ -13,10 +14,12 @@ import org.scoula.security.util.JwtProcessor;
 import org.scoula.security.util.PasswordValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -255,6 +258,29 @@ public class AuthController {
         }
 
         return ResponseEntity.ok("Refresh token is still valid.");
+    }
+
+    @ApiOperation(value = "현재 사용자 조회", notes = "Access Token으로 인증된 현재 사용자 정보를 반환합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<?> me(@AuthenticationPrincipal CustomUser user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        var member = user.getMember(); // MemberVO
+        var roles = user.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", "")) // ROLE_USER -> USER
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new MeResponse(
+                member.getUserId(),
+                member.getLoginId(),
+                member.getEmail(),
+                member.getName(),
+                roles,
+                member.getProfileImageId(),
+                member.getCreatedAt(),
+                member.getPoint()
+        ));
     }
 
 }
