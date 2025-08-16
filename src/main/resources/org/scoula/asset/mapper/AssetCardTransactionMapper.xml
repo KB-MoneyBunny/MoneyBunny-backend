@@ -165,4 +165,73 @@
           AND t.store_name = '한국산업인력공단'
     </select>
 
+
+    <!-- 리스트 -->
+    <select id="findByCardIdWithFilters" resultType="org.scoula.asset.domain.CardTransactionVO">
+        SELECT *
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+
+        <if test="start != null">
+            AND transaction_date <![CDATA[>=]]> #{start}
+        </if>
+        <if test="end != null">
+            AND transaction_date <![CDATA[<=]]> #{end}
+        </if>
+
+        <if test="txType != null and txType != ''">
+            <choose>
+                <when test="txType == 'expense'">
+                    AND (cancel_status IS NULL OR cancel_status = '')
+                </when>
+                <when test="txType == 'refund'">
+                    AND cancel_status = 'normal'
+                </when>
+            </choose>
+        </if>
+
+        <if test="q != null and q != ''">
+            AND (
+            store_name  LIKE CONCAT('%', #{q}, '%')
+            OR memo        LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+
+        ORDER BY transaction_date ${sort}
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 카운트 -->
+    <select id="countByCardIdWithFilters" resultType="int">
+        SELECT COUNT(*)
+        FROM card_transaction
+        WHERE card_id = #{cardId}
+
+        <if test="start != null">
+            AND transaction_date <![CDATA[>=]]> #{start}
+        </if>
+        <if test="end != null">
+            AND transaction_date <![CDATA[<=]]> #{end}
+        </if>
+
+        <if test="txType != null and txType != ''">
+            <choose>
+                <when test="txType == 'expense'">
+                    AND (cancel_status IS NULL OR cancel_status = '')
+                </when>
+                <when test="txType == 'refund'">
+                    AND cancel_status = 'normal'
+                </when>
+            </choose>
+        </if>
+
+        <if test="q != null and q != ''">
+            AND (
+            store_name  LIKE CONCAT('%', #{q}, '%')
+            OR memo        LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+    </select>
+
+
 </mapper>

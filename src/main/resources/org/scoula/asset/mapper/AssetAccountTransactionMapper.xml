@@ -36,4 +36,64 @@
         WHERE a.user_id = #{userId}
           AND t.memo = '월세'
     </select>
+
+
+    <select id="findByAccountIdFiltered" resultType="org.scoula.asset.domain.AccountTransactionVO">
+        SELECT *
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+
+        <if test="txType != null and txType != ''">
+            AND tx_type = #{txType}
+        </if>
+
+        <if test="start != null">
+            AND transaction_date_time <![CDATA[>=]]> #{start}
+        </if>
+        <if test="end != null">
+            AND transaction_date_time <![CDATA[<=]]> #{end}
+        </if>
+
+        <if test="q != null and q != ''">
+            AND (
+            store_name  LIKE CONCAT('%', #{q}, '%')
+            OR memo        LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+
+        <choose>
+            <when test="sort == 'oldest'">
+                ORDER BY transaction_date_time ASC, id ASC
+            </when>
+            <otherwise>
+                ORDER BY transaction_date_time DESC, id DESC
+            </otherwise>
+        </choose>
+
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByAccountIdFiltered" resultType="int">
+        SELECT COUNT(*)
+        FROM account_transaction
+        WHERE account_id = #{accountId}
+
+        <if test="txType != null and txType != ''">
+            AND tx_type = #{txType}
+        </if>
+
+        <if test="start != null">
+            AND transaction_date_time <![CDATA[>=]]> #{start}
+        </if>
+        <if test="end != null">
+            AND transaction_date_time <![CDATA[<=]]> #{end}
+        </if>
+
+        <if test="q != null and q != ''">
+            AND (
+            store_name  LIKE CONCAT('%', #{q}, '%')
+            OR memo        LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+    </select>
 </mapper>
