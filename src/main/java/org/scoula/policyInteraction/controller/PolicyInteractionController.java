@@ -323,4 +323,36 @@ public class PolicyInteractionController {
         boolean isLiked = policyInteractionService.isUserLikedReview(userId, reviewId);
         return ResponseEntity.ok(isLiked);
     }
+
+    // ────────────────────────────────────────
+    // 📌 관리자 리뷰 API
+    // ────────────────────────────────────────
+
+    @GetMapping("/review/all")
+    @ApiOperation(value = "전체 리뷰 목록 조회 (관리자 전용)", notes = "시스템 내 모든 리뷰를 조회합니다")
+    public ResponseEntity<List<ReviewWithUserDTO>> getAllReviews() {
+        
+        List<ReviewWithUserDTO> reviews = policyInteractionService.getAllReviews();
+        return ResponseEntity.ok(reviews);
+    }
+
+    @DeleteMapping("/review/admin/{policyId}")
+    @ApiOperation(value = "정책별 리뷰 삭제 (관리자 전용)", notes = "특정 정책의 모든 리뷰를 삭제합니다")
+    public ResponseEntity<Void> deleteReviewsByPolicyId(@PathVariable Long policyId) {
+        
+        boolean success = policyInteractionService.deleteReviewsByPolicyId(policyId);
+        return success ? 
+                ResponseEntity.ok().build() : 
+                ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/review/admin/single/{reviewId}")
+    @ApiOperation(value = "개별 리뷰 삭제 (관리자 전용)", notes = "특정 리뷰 하나만 삭제합니다")
+    public ResponseEntity<Void> deleteSingleReview(@PathVariable Long reviewId) {
+        
+        boolean success = policyInteractionService.deleteSingleReview(reviewId);
+        return success ? 
+                ResponseEntity.ok().build() : 
+                ResponseEntity.notFound().build();
+    }
 }
