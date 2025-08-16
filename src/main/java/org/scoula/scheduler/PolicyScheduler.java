@@ -21,6 +21,7 @@ public class PolicyScheduler {
      * 매일 새벽 5시에 정책 데이터 동기화 및 사용자 벡터 갱신 실행
      * cron: "초 분 시 일 월 요일"
      * 0 0 5 * * * = 매일 05:00:00에 실행
+     * 스케줄링 중단
      */
     // @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul")
     // public void scheduledPolicySync() {

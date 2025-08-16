@@ -13,8 +13,10 @@ import org.scoula.security.account.domain.MemberVO;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +46,9 @@ public class FeedbackNotificationService {
             String displayName = getDisplayName(member);
             
             // 카드 데이터 보유 여부 확인
-            if (!feedbackAnalysisService.hasCardData(userId)) {
+            boolean hasCardData = feedbackAnalysisService.hasCardData(userId);
+            log.info("[피드백알림] 카드 데이터 보유 여부 확인: userId={}, hasCardData={}", userId, hasCardData);
+            if (!hasCardData) {
                 log.info("[피드백알림] 카드 데이터 없음, 알림 건너뜀: userId={}", userId);
                 return;
             }
@@ -88,7 +92,11 @@ public class FeedbackNotificationService {
                 return;
             }
             
-            log.info("[피드백알림] FEEDBACK 알림 대상 사용자 수: {}", feedbackSubscriptions.size());
+            // 사용자별로 중복 제거 (같은 사용자가 여러 토큰을 가진 경우 한 번만 발송)
+            Set<Long> processedUserIds = new HashSet<>();
+            int duplicateCount = 0;
+            
+            log.info("[피드백알림] FEEDBACK 알림 대상 토큰 수: {}", feedbackSubscriptions.size());
             
             int successCount = 0;
             int errorCount = 0;
@@ -97,6 +105,15 @@ public class FeedbackNotificationService {
             for (SubscriptionVO subscription : feedbackSubscriptions) {
                 try {
                     Long userId = subscription.getUserId();
+                    
+                    // 이미 처리한 사용자인지 확인
+                    if (processedUserIds.contains(userId)) {
+                        duplicateCount++;
+                        log.debug("[피드백알림] 중복 사용자 건너뜀: userId={}", userId);
+                        continue;
+                    }
+                    
+                    processedUserIds.add(userId);
                     log.debug("[피드백알림] 피드백 알림 처리 중: userId={}", userId);
                     
                     // 개별 사용자에게 주간 소비 리포트 발송
@@ -110,7 +127,8 @@ public class FeedbackNotificationService {
                 }
             }
             
-            log.info("[피드백알림] 전체 사용자 주간 소비 리포트 발송 완료 - 성공: {}, 실패: {}", successCount, errorCount);
+            log.info("[피드백알림] 전체 사용자 주간 소비 리포트 발송 완료 - 성공: {}, 실패: {}, 중복 제외: {}", 
+                    successCount, errorCount, duplicateCount);
             
         } catch (Exception e) {
             log.error("[피드백알림] 전체 사용자 주간 소비 리포트 발송 중 오류 발생: {}", e.getMessage(), e);
