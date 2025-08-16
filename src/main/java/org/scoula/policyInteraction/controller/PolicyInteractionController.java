@@ -345,4 +345,14 @@ public class PolicyInteractionController {
                 ResponseEntity.ok().build() : 
                 ResponseEntity.notFound().build();
     }
+
+    @DeleteMapping("/review/admin/single/{reviewId}")
+    @ApiOperation(value = "개별 리뷰 삭제 (관리자 전용)", notes = "특정 리뷰 하나만 삭제합니다")
+    public ResponseEntity<Void> deleteSingleReview(@PathVariable Long reviewId) {
+        
+        boolean success = policyInteractionService.deleteSingleReview(reviewId);
+        return success ? 
+                ResponseEntity.ok().build() : 
+                ResponseEntity.notFound().build();
+    }
 }
