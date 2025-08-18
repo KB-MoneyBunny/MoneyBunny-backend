@@ -99,6 +99,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")     // JUnit 5 API
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")     // JUnit 5 실행 엔진
 
+    // Mockito - Mock 객체 생성 및 단위 테스트
+    testImplementation 'org.mockito:mockito-core:5.8.0'                          // Mockito 핵심 라이브러리
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.8.0'                 // JUnit 5와 Mockito 통합
+
 
     // ===== 데이터베이스 관련 의존성 =====
     implementation 'com.mysql:mysql-connector-j:9.3.0'     // MySQL JDBC 드라이버
