@@ -113,16 +113,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 인증 후 회원 가입 및 회원정보 조회
                 .antMatchers("/api/member/**").permitAll()
 
-                // 외부 연동(Codef)🎵
+                // 외부 연동(Codef)
                 .antMatchers("/codef/**").authenticated()
 
-                // 자산 🎵
+                // 자산
                 .antMatchers("/api/asset/**").authenticated()
 
                 // 게스트 정책 검색
                 .antMatchers("/api/guestPolicy/**").permitAll()
 
-                // 정책 상호작용 - 미완료 신청 조회 🎵
+                // 정책 상호작용 - 미완료 신청 조회
                 .antMatchers("/api/policy-interaction/application/incomplete").authenticated()
 
                 // 정책 상세/공유 URL (비로그인 허용)
@@ -130,7 +130,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/api/policy/detail/**").permitAll()
 
                 // 정책 리뷰(비로그인 허용)
-                .antMatchers(HttpMethod.GET, "/api/policy-interaction/review/*/list").permitAll() // 💪(상일) 정책 리뷰 목록 조회 허용
+                .antMatchers(HttpMethod.GET, "/api/policy-interaction/review/*/list").permitAll() // 정책 리뷰 목록 조회 허용
 
                 // 정책 API
                 .antMatchers("/api/policy/**").authenticated() // 정책 API 임시 허용
@@ -156,7 +156,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/*",
                 "/admin/policy/**",
                 "/api/admin/prompt/**",
-                "/policy/*/reviews", // 💪(상일) 정책 리뷰 페이지 허용
+                "/policy/*/reviews", // 정책 리뷰 페이지 허용
 
                 // swagger 관련
                 "/swagger-ui.html", "/webjars/**",

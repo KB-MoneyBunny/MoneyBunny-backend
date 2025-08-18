@@ -1,38 +1,31 @@
 plugins {
-    id 'java'  // Java 컴파일 및 빌드 기능 제공
-    id 'war'   // WAR 파일 생성을 위한 웹 애플리케이션 플러그인
+    id 'java'
+    id 'war'
 }
 
-// 프로젝트 기본 정보 설정
-group 'org.scoula'        // 프로젝트 그룹 ID
-version '1.0-SNAPSHOT'    // 프로젝트 버전 (SNAPSHOT: 개발 중인 버전)
+group 'org.scoula'
+version '1.0-SNAPSHOT'
 
-// 의존성 라이브러리를 다운로드할 저장소 설정
 repositories {
-    mavenCentral()  // Maven 중앙 저장소 사용
+    mavenCentral()
 }
 
-// 프로젝트에서 사용할 라이브러리 버전을 변수로 정의
-// -> 버전 관리가 용이하고 일관성을 유지할 수 있음
 ext {
-    junitVersion = '5.10.2'       // JUnit 5 테스팅 프레임워크
-    springVersion = '5.3.39'       // Spring Framework 5.3.x 마지막 버전 (보안 패치 포함)
-    lombokVersion = '1.18.38'      // Lombok 라이브러리 최신 버전 (2025년 기준)
-    aspectjVersion = '1.9.20.1'    // AspectJ 최신 마이너 버전
-    log4j2Version = '2.24.1'       // Log4j2 최신 안정 버전 (보안 업데이트 포함)
-    jacksonVersion = '2.12.7'      // Spring 5.3.x와 호환되는 Jackson 최신 안정 버전
-    springSecurityVersion = '5.8.13' // Spring Security 버전
+    junitVersion = '5.10.2'
+    springVersion = '5.3.39'
+    lombokVersion = '1.18.38'
+    aspectjVersion = '1.9.20.1'
+    log4j2Version = '2.24.1'
+    jacksonVersion = '2.12.7'
+    springSecurityVersion = '5.8.13'
 }
-// Java 컴파일 버전 설정
-sourceCompatibility = '17'  // 소스 코드 호환성 (Java 17)
-targetCompatibility = '17'  // 컴파일된 바이트코드 타겟 버전 (Java 17)
+sourceCompatibility = '17'
+targetCompatibility = '17'
 
-// Java 컴파일 태스크 설정
 tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'  // 소스 파일 인코딩을 UTF-8로 설정
+    options.encoding = 'UTF-8'
 }
 
-// 프로젝트 의존성 라이브러리 선언 (최신 버전으로 업데이트)
 dependencies {
     // ===== Redis 관련 의존성 =====
     implementation 'io.lettuce:lettuce-core:6.2.5.RELEASE' // Redis 클라이언트: Lettuce
