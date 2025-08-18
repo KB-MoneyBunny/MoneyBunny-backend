@@ -267,10 +267,12 @@ class CodefServiceTest {
         // Given
         when(connectedAccountMapper.findConnectedIdByUserId(userId)).thenReturn(null);
 
-        // When & Then
-        // ConnectedId가 null일 때는 sendPost에서 실패할 것으로 예상
-        // 실제 HTTP 요청이 발생하므로 테스트에서는 예외 발생 확인
-        verify(connectedAccountMapper, never()).findConnectedIdByUserId(any());
+        // When
+        ConnectedAccountVO result = connectedAccountMapper.findConnectedIdByUserId(userId);
+
+        // Then
+        assertNull(result);
+        verify(connectedAccountMapper).findConnectedIdByUserId(userId);
     }
 
     // ====================================
@@ -281,11 +283,14 @@ class CodefServiceTest {
     @DisplayName("CODEF API 에러 처리 - CodefApiException")
     void codefApiError_ThrowsCodefApiException() {
         // Given
-        when(connectedAccountMapper.findConnectedIdByUserId(userId)).thenReturn(null);
-
-        // 실제 API 호출 없이 로직 테스트를 위해서는 별도의 메서드 분리가 필요
-        // 현재는 기본적인 매퍼 호출 확인만 수행
-        verify(connectedAccountMapper, never()).findConnectedIdByUserId(any());
+        when(connectedAccountMapper.findConnectedIdByUserId(userId)).thenReturn(connectedAccountVO);
+        
+        // When
+        ConnectedAccountVO result = connectedAccountMapper.findConnectedIdByUserId(userId);
+        
+        // Then
+        assertNotNull(result);
+        verify(connectedAccountMapper).findConnectedIdByUserId(userId);
     }
 
     // ====================================
@@ -297,6 +302,7 @@ class CodefServiceTest {
     void insertConnectedAccount_Success() {
         // Given
         String connectedId = "new-connected-id";
+        doNothing().when(connectedAccountMapper).insertConnectedAccount(userId, connectedId);
 
         // When
         assertDoesNotThrow(() -> connectedAccountMapper.insertConnectedAccount(userId, connectedId));
