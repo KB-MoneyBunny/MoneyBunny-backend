@@ -41,11 +41,11 @@ class RootConfigTest {
 
             // 커넥션이 HikariCP Proxy인지 확인
             if (con.getClass().getName().contains("Hikari")) {
-                log.info("✅ HikariCP 커넥션 풀이 정상 작동중입니다.");
+                log.info("HikariCP 커넥션 풀이 정상 작동중입니다.");
             }
 
         } catch (SQLException e) {
-            log.error("❌ DataSource 연결 실패: {}", e.getMessage());
+            log.error("DataSource 연결 실패: {}", e.getMessage());
             throw e;
         }
     }

@@ -103,7 +103,6 @@ public class AuthController {
         // 인증 코드 생성
         String code = String.valueOf((int)(Math.random() * 900000) + 100000);
 
-        System.out.println("redisUtil = " + redisUtil);
 
         // Redis에 저장 (3분 유효)
         redisUtil.saveCode(email, code);
