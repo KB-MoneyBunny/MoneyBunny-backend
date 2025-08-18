@@ -435,7 +435,6 @@ public class CodefService {
                 String addResponse = sendPost(addUrl, addBody);
                 String decodedAddResponse = URLDecoder.decode(addResponse, StandardCharsets.UTF_8);
 
-                System.out.println("[카드] RAW ADD RESPONSE: " + decodedAddResponse);
                 log.debug("[카드] 계정 추가 API 응답: {}", decodedAddResponse);
 
                 if (!CodefUtil.isSuccess(decodedAddResponse)) {
@@ -458,12 +457,10 @@ public class CodefService {
                     }
                     """.formatted(request.getOrganization(), connectedId);
 
-            System.out.println("account/card-lis");
 
             String response = sendPost(cardListUrl, cardListBody);
             String decodedCardListResponse = URLDecoder.decode(response, StandardCharsets.UTF_8);
 
-            System.out.println("decodedCardListResponse = " + decodedCardListResponse);
 
             log.debug("[카드] 카드목록 API 응답: {}", decodedCardListResponse);
 
@@ -569,11 +566,6 @@ public class CodefService {
                     Long appliedCat = globalCat != null ? globalCat : defaultCatId;
                     tx.setCategoryId(appliedCat);
 
-                    System.out.println(
-                            "▶ tx: storeName=" + tx.getStoreName()
-                                    + ", storeType=" + tx.getStoreType()
-                                    + " → categoryId=" + appliedCat
-                    );
                 }
                 cardTransactionMapper.insertCardTransactions(batch);
                 log.debug("[카드등록] 배치 insert: cardId={}, batchStart={}, batchEnd={}", cardId, i, Math.min(i + 500, txList.size()));
@@ -709,14 +701,14 @@ public class CodefService {
      * - DB 내 기존 거래와 CODEF 거래내역을 비교해 신규건만 insert
      */
     public void syncAccountTransaction(Long userId, Long accountId, String bankCode, String connectedId, String accountNo, String startDate, String endDate) {
-        log.info("⚡ [CODEF] 거래내역 fetch 시작: bankCode={}, 기간={}-{}", bankCode, startDate, endDate);
+        log.info("[CODEF] 거래내역 fetch 시작: bankCode={}, 기간={}-{}", bankCode, startDate, endDate);
 
         // 1. CODEF 거래내역 불러오기
         List<AccountTransactionVO> apiTxList = fetchAndParseAccountTransactions(
                 bankCode, connectedId, accountNo, startDate, endDate
         );
 
-        log.info("⚡ [CODEF] API에서 받은 거래내역 개수: {}", apiTxList.size());
+        log.info("[CODEF] API에서 받은 거래내역 개수: {}", apiTxList.size());
 
         // 2. 해당 계좌의 모든 기존 거래 (중복 비교 키 세트로!)
         Set<String> dbTxKeySet = accountTransactionMapper.findAllTxKeyByAccountIdFromDate(accountId, startDate);
@@ -777,11 +769,6 @@ public class CodefService {
             Long appliedCat = globalCat != null ? globalCat : defaultCatId;
             tx.setCategoryId(appliedCat);
 
-            System.out.println(
-                    "▶ tx: storeName=" + tx.getStoreName()
-                            + ", storeType=" + tx.getStoreType()
-                            + " → categoryId=" + appliedCat
-            );
 
 
             log.debug("  신규 삽입: {}", key);

@@ -5,10 +5,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * 🏠 홈(메인) 페이지 컨트롤러
+ * 홈(메인) 페이지 컨트롤러
  * - 애플리케이션의 메인 페이지와 기본 요청을 처리하는 컨트롤러
  * <p>
- * 📋 주요 기능:
+ * 주요 기능:
  * - 루트 경로("/") 요청 처리
  * - 홈페이지 렌더링
  * - 기본 진입점 역할
@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     /**
-     * 🌐 홈페이지 요청 처리 메서드
+     * 홈페이지 요청 처리 메서드
      *
      * @return "index" - 논리적 뷰 이름 (index.jsp)
      * @GetMapping("/") - HTTP GET 요청, 루트 경로 매핑
      * <p>
-     * 🔄 처리 흐름:
+     * 처리 흐름:
      * 1. 사용자가 "/" 경로로 접근
      * 2. 로그 기록 (접근 추적용)
      * 3. "index" 뷰 이름 반환

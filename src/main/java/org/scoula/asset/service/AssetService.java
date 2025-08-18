@@ -36,7 +36,6 @@ public class AssetService {
     public AssetSummaryResponse getSummary(Long userId) {
 //        Long userId = assetUserAccountMapper.findUserIdByLoginId(loginId);
 
-        System.out.println("userId = " + userId);
 
         // 1. 계좌 현황, 총액
         List<AccountSummaryVO> accounts = assetUserAccountMapper.findAccountSummariesByUserId(userId);
