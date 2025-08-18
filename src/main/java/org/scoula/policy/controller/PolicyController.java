@@ -30,17 +30,6 @@ public class PolicyController {
 
     private final PolicyService policyService;
 
-    /**
-     * 정책 수집 및 저장 API
-     * 이 API는 외부에서 정책 데이터를 수집하고, 이를 데이터베이스에 저장하는 기능을 제공합니다.
-     * 정책 데이터는 외부 API를 통해 수집되며, 수집된 데이터는 YouthPolicyVO 객체로 변환되어 저장됩니다.
-     * POST: http://localhost:8080/admin/policy/sync
-     *
-     * @return ResponseEntity
-     * - 200 OK: 정책 데이터 수집 및 저장 성공시 "정책 수집 및 저장 완료!" 메시지 반환
-     * - 400 Bad Request: 잘못된 요청 데이터 (예: 외부 API 호출 실패 등)
-     * - 500 Internal Server Error: 서버 내부 오류 발생 시
-     */
     @ApiOperation(value = "정책 수집 및 저장", notes = "정책 수집 및 저장을 수행하는 API")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다."),
@@ -49,20 +38,10 @@ public class PolicyController {
     })
     @GetMapping(value = "/sync", produces = "text/plain;charset=UTF-8")
     public String syncPolicyData() {
-        System.out.println("test!!");
         policyService.fetchAndSaveAllPolicies();
         return "정책 수집 및 저장 완료!";
     }
 
-    /**
-     * 사용자용 정책 상세 조회 API (조회수 증가 + 벡터 갱신)
-     * 로그인 사용자의 경우 Redis에 조회 기록 저장 및 첫 조회 시 벡터 갱신 (가중치 0.1)
-     * GET: http://localhost:8080/policy/detail/{policyId}
-     *
-     * @param policyId   조회할 정책 ID
-     * @param customUser 로그인한 사용자 정보 (선택적)
-     * @return ResponseEntity<PolicyDetailDTO>
-     */
     @ApiOperation(value = "사용자용 정책 상세 조회", notes = "정책 상세 정보를 조회하며, 사용자 조회 기록을 Redis에 저장하고 벡터를 갱신합니다")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "성공적으로 요청이 처리되었습니다.", response = PolicyDetailDTO.class),

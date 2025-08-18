@@ -53,9 +53,7 @@ public interface PolicyMapper {
     void updatePolicyApplyUrl(@Param("policyNo") String policyNo, 
                              @Param("applyUrl") String applyUrl);
 
-    // ────────────────────────────────────────
-    // 📌 키워드 관련
-    // ────────────────────────────────────────
+    // 키워드 관련
 
     /** 키워드 조회 (중복 확인) */
     PolicyKeywordVO findKeywordByName(@Param("keyword") String keyword);
@@ -70,9 +68,7 @@ public interface PolicyMapper {
     void insertYouthPolicyKeyword(YouthPolicyKeywordVO keywordVO);
 
 
-    // ────────────────────────────────────────
-    // 📌 지역 관련
-    // ────────────────────────────────────────
+    // 지역 관련
 
     /** 지역 조회 (중복 확인) */
     PolicyRegionVO findRegionByCode(@Param("regionCode") String regionCode);
@@ -85,9 +81,7 @@ public interface PolicyMapper {
 
     /** 정책-지역 연결 저장 */
     void insertYouthPolicyRegion(YouthPolicyRegionVO regionVO);
-    // ────────────────────────────────────────
-    // 📌 전공(Major) 관련
-    // ────────────────────────────────────────
+    // 전공 관련
 
     /** 전공 조회 */
     PolicyMajorVO findMajorByName(@Param("major") String major);
@@ -101,9 +95,7 @@ public interface PolicyMapper {
     /** 정책-전공 연결 저장 */
     void insertYouthPolicyMajor(YouthPolicyMajorVO vo);
 
-    // ────────────────────────────────────────
-    // 📌 학력(Education Level) 관련
-    // ────────────────────────────────────────
+    // 학력 관련
 
     /** 학력 조회 */
     PolicyEducationLevelVO findEducationLevelByName(@Param("educationLevel") String educationLevel);
@@ -117,9 +109,7 @@ public interface PolicyMapper {
     /** 정책-학력 연결 저장 */
     void insertYouthPolicyEducationLevel(YouthPolicyEducationLevelVO vo);
 
-    // ────────────────────────────────────────
-    // 📌 취업 상태(Employment Status) 관련
-    // ────────────────────────────────────────
+    // 취업 상태 관련
 
     /** 취업 상태 조회 */
     PolicyEmploymentStatusVO findEmploymentStatusByName(@Param("employmentStatus") String employmentStatus);
@@ -133,9 +123,7 @@ public interface PolicyMapper {
     /** 정책-취업 상태 연결 저장 */
     void insertYouthPolicyEmploymentStatus(YouthPolicyEmploymentStatusVO vo);
 
-    // ────────────────────────────────────────
-    // 📌 특수 조건(Special Condition) 관련
-    // ────────────────────────────────────────
+    // 특수 조건 관련
 
     /** 특수 조건 조회 */
     PolicySpecialConditionVO findSpecialConditionByName(@Param("specialCondition") String specialCondition);
@@ -161,9 +149,7 @@ public interface PolicyMapper {
     List<PolicySpecialConditionVO> findSpecialConditionsByPolicyId(Long policyId);
     List<PolicyKeywordVO> findKeywordsByPolicyId(Long policyId);
 
-    // ────────────────────────────────────────
-    // 📌 정책 업데이트 관련
-    // ────────────────────────────────────────
+    // 정책 업데이트 관련
 
     /** 정책 조회수 업데이트 */
     void updatePolicyViews(@Param("policyNo") String policyNo, @Param("views") Long views);
@@ -180,9 +166,7 @@ public interface PolicyMapper {
     /** 당일 생성된 신규 정책 조회 */
     List<YouthPolicyVO> findTodayNewPolicies();
 
-    // ────────────────────────────────────────
-    // 📌 마스터 테이블 전체 조회 (Master VO 반환)
-    // ────────────────────────────────────────
+    // 마스터 테이블 전체 조회
 
     List<MasterPolicyRegionVO> findAllMasterRegions();
     List<MasterPolicyKeywordVO> findAllMasterKeywords();

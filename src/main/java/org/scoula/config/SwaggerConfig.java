@@ -77,14 +77,15 @@ public class SwaggerConfig {
      */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("💰 MoneyBunny API 문서")
+                .title("MoneyBunny API 문서")
                 .description("MZ세대의 자산관리를 위한 맞춤형 금융·정책 정보 플랫폼 MoneyBunny의 API 문서입니다.\n\n" +
-                           "🎯 주요 기능:\n" +
+                           "주요 기능:\n" +
                            "• 청년 정책 정보 제공 및 맞춤 추천\n" +
                            "• 금융 데이터 연동 (CODEF API)\n" +
+                           "• 정책 북마크, 신청, 리뷰 관리 시스템\n" +
                            "• 북마크 정책 및 피드백 푸시 알림 (FCM)\n" +
                            "• JWT 기반 인증 시스템\n\n" +
-                           "📌 인증 방법: Bearer Token (JWT)")
+                           "인증 방법: Bearer Token (JWT)")
                 .version("1.0.0")
                 .build();
     }

@@ -94,7 +94,7 @@ public class PolicyServiceImpl implements PolicyService {
                     // 3. 신청 기간 업데이트
                     policyMapper.updatePolicyPeriod(dto.getPolicyNo(), dto.getApplyPeriod());
                     
-                    // 💪 기존 정책의 정보 변경 → 벡터 재계산
+                    // 기존 정책의 정보 변경 → 벡터 재계산
                     Long policyId = policyMapper.findPolicyIdByPolicyNo(dto.getPolicyNo());
                     calculateAndSavePolicyVector(policyId);
                     continue;
@@ -106,9 +106,9 @@ public class PolicyServiceImpl implements PolicyService {
                 // GPT 분석 (동적 프롬프트)
                 String dynamicPrompt = promptBuilderService.buildPromptOptimized(dto.getSupportContent());
                 GptRequestDto gptRequest = GptRequestDto.of(dynamicPrompt);
-                log.info("\n📤 [GPT 프롬프트 요청]\n{}", gptRequest.getPrompt());
+                log.info("\n[GPT 프롬프트 요청]\n{}", gptRequest.getPrompt());
                 GptResponseDto gptResponseDto = gptApiClient.analyzePolicy(gptRequest);
-                log.info("\n📥 [GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {},\n  \"policyBenefitDescription\": \"{}\"\n}}",
+                log.info("\n[GPT 분석 결과]\n{{\n  \"isFinancialSupport\": {},\n  \"estimatedAmount\": {},\n  \"policyBenefitDescription\": \"{}\"\n}}",
                         gptResponseDto.isFinancialSupport(),
                         gptResponseDto.getEstimatedAmount(),
                         gptResponseDto.getPolicyBenefitDescription());
@@ -274,7 +274,7 @@ public class PolicyServiceImpl implements PolicyService {
         log.info("[정책 수집] 전체 완료");
     }
 
-    // 💪 정책 벡터 계산 + DB 저장
+    // 정책 벡터 계산 + DB 저장
     private void calculateAndSavePolicyVector(Long policyId) {
         log.info("[정책 벡터] 계산 시작 - 정책 ID: {}", policyId);
         
