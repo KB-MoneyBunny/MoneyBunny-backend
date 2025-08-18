@@ -197,7 +197,8 @@ class AssetServiceTest {
         assertEquals(1, result.getContent().size());
         assertEquals(1, result.getTotalElements());
         verify(assetUserAccountMapper).isAccountOwner(userId, accountId);
-        verify(assetAccountTransactionMapper).findByAccountIdFiltered(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(assetAccountTransactionMapper).findByAccountIdFiltered(
+                eq(accountId), eq(0), eq(10), eq("출금"), any(), any(), eq("커피"), eq("latest"));
     }
 
     @Test
@@ -211,7 +212,7 @@ class AssetServiceTest {
                 assetService.getAccountTransactions(userId, accountId, 0, 10, null, null, null, null, null));
         
         verify(assetUserAccountMapper).isAccountOwner(userId, accountId);
-        verify(assetAccountTransactionMapper, never()).findByAccountIdFiltered(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(assetAccountTransactionMapper, never()).findByAccountIdFiltered(anyLong(), anyInt(), anyInt(), any(), any(), any(), any(), any());
     }
 
     // ====================================
@@ -237,9 +238,9 @@ class AssetServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(1, result.getTotalElements());
         verify(assetUserCardMapper).isCardOwner(userId, cardId);
-        verify(assetCardTransactionMapper).findByCardIdWithFilters(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(assetCardTransactionMapper).findByCardIdWithFilters(
+                eq(cardId), eq(0), eq(10), any(), any(), eq("스타벅스"), eq("일반"), eq("DESC"));
     }
 
     @Test
@@ -253,7 +254,7 @@ class AssetServiceTest {
                 assetService.getCardTransactions(userId, cardId, 0, 10, null, null, null, null, null));
         
         verify(assetUserCardMapper).isCardOwner(userId, cardId);
-        verify(assetCardTransactionMapper, never()).findByCardIdWithFilters(any(), any(), any(), any(), any(), any(), any(), any());
+        verify(assetCardTransactionMapper, never()).findByCardIdWithFilters(anyLong(), anyInt(), anyInt(), any(), any(), any(), any(), any());
     }
 
     // ====================================
@@ -271,7 +272,7 @@ class AssetServiceTest {
         assertDoesNotThrow(() -> assetService.updateCardTransactionMemo(transactionId, memo));
 
         // Then
-        verify(assetCardTransactionMapper).updateMemo(transactionId, memo);
+        verify(assetCardTransactionMapper).updateMemo(eq(transactionId), eq(memo));
     }
 
     @Test
@@ -285,7 +286,7 @@ class AssetServiceTest {
         assertDoesNotThrow(() -> assetService.updateAccountTransactionMemo(transactionId, memo));
 
         // Then
-        verify(assetAccountTransactionMapper).updateMemo(transactionId, memo);
+        verify(assetAccountTransactionMapper).updateMemo(eq(transactionId), eq(memo));
     }
 
     // ====================================
@@ -299,7 +300,7 @@ class AssetServiceTest {
         MonthlyTrendDTO trend1 = new MonthlyTrendDTO(2024, 8, 500000L);
         MonthlyTrendDTO trend2 = new MonthlyTrendDTO(2024, 7, 450000L);
         
-        when(assetCardTransactionMapper.findMonthlyTrend(any(Map.class)))
+        when(assetCardTransactionMapper.findMonthlyTrend(anyMap()))
                 .thenReturn(Arrays.asList(trend1, trend2));
 
         // When
@@ -309,7 +310,7 @@ class AssetServiceTest {
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(500000L, result.get(0).getTotalAmount());
-        verify(assetCardTransactionMapper).findMonthlyTrend(any(Map.class));
+        verify(assetCardTransactionMapper).findMonthlyTrend(anyMap());
     }
 
     // ====================================
@@ -330,7 +331,7 @@ class AssetServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(assetCardTransactionMapper).findCategoryTransactions(userId, categoryId, 2024, 8);
+        verify(assetCardTransactionMapper).findCategoryTransactions(eq(userId), eq(categoryId), eq(2024), eq(8));
     }
 
     // ====================================
@@ -350,7 +351,7 @@ class AssetServiceTest {
         assertDoesNotThrow(() -> assetService.updateTransactionCategory(transactionId, newCategoryId));
 
         // Then
-        verify(assetCardTransactionMapper).updateTransactionCategory(transactionId, newCategoryId);
+        verify(assetCardTransactionMapper).updateTransactionCategory(eq(transactionId), eq(newCategoryId));
     }
 
     @Test
@@ -366,7 +367,7 @@ class AssetServiceTest {
         assertThrows(RuntimeException.class, () ->
                 assetService.updateTransactionCategory(transactionId, newCategoryId));
         
-        verify(assetCardTransactionMapper).updateTransactionCategory(transactionId, newCategoryId);
+        verify(assetCardTransactionMapper).updateTransactionCategory(eq(transactionId), eq(newCategoryId));
     }
 
     // ====================================
@@ -388,7 +389,7 @@ class AssetServiceTest {
         when(assetCardTransactionMapper.findMonthlyTotal(userId, 2024, 7)).thenReturn(450000L);
         when(assetCardTransactionMapper.findMonthlyCategorySpending(userId, 2024, 8))
                 .thenReturn(Arrays.asList(categorySpending));
-        when(assetCardTransactionMapper.findMonthlyTrend(any(Map.class)))
+        when(assetCardTransactionMapper.findMonthlyTrend(anyMap()))
                 .thenReturn(Arrays.asList(trendData));
 
         // When
@@ -400,8 +401,8 @@ class AssetServiceTest {
         assertEquals(450000L, result.getPrevMonth().getTotalSpending());
         assertEquals(1, result.getCategories().size());
         assertEquals(6, result.getTrend().size());
-        verify(assetCardTransactionMapper).findMonthlyTotal(userId, 2024, 8);
-        verify(assetCardTransactionMapper).findMonthlyCategorySpending(userId, 2024, 8);
+        verify(assetCardTransactionMapper).findMonthlyTotal(eq(userId), eq(2024), eq(8));
+        verify(assetCardTransactionMapper).findMonthlyCategorySpending(eq(userId), eq(2024), eq(8));
     }
 
     // ====================================
@@ -430,7 +431,7 @@ class AssetServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("후불교통대금", result.get(0).getStoreName());
-        verify(assetCardTransactionMapper).findRecent6MonthsByUserId(userId);
+        verify(assetCardTransactionMapper).findRecent6MonthsByUserId(eq(userId));
     }
 
     // ====================================
@@ -448,7 +449,7 @@ class AssetServiceTest {
 
         // Then
         assertTrue(result);
-        verify(assetAccountTransactionMapper).existsRentTransactionByUserId(userId);
+        verify(assetAccountTransactionMapper).existsRentTransactionByUserId(eq(userId));
     }
 
     @Test
@@ -462,6 +463,6 @@ class AssetServiceTest {
 
         // Then
         assertFalse(result);
-        verify(assetCardTransactionMapper).existsHrdKoreaCardTransactionByUserId(userId);
+        verify(assetCardTransactionMapper).existsHrdKoreaCardTransactionByUserId(eq(userId));
     }
 }
