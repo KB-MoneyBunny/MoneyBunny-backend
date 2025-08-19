@@ -42,13 +42,13 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtProcessor.generateToken(loginDTO.getUsername());
         String refreshToken = jwtProcessor.generateRefreshToken(loginDTO.getUsername());
 
-        // Redis에 Refresh Token 저장 (e.g. 7일 TTL)
-        redisUtil.saveRefreshToken("refresh_" + loginDTO.getUsername(), refreshToken, Duration.ofDays(7));
+        // Redis에 Refresh Token 저장 (e.g. 14일 TTL)
+        redisUtil.saveRefreshToken("refresh_" + loginDTO.getUsername(), refreshToken, Duration.ofDays(14));
 
-        // 토큰 반환
+        // 토큰 반환 (Refresh Token은 Cookie로만 전송하므로 제외)
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", accessToken);
-        tokens.put("refreshToken", refreshToken);
+        tokens.put("refreshToken", refreshToken); // Controller에서 Cookie 설정용
         return tokens;
     }
 

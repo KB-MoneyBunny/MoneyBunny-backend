@@ -66,11 +66,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Bearer 접두사 제거하여 순수 토큰 추출
             String token = bearerToken.substring(BEARER_PREFIX.length());
 
-            // 토큰에서 사용자 정보 추출 및 Authentication 객체 구성
-            Authentication authentication = getAuthentication(token);
+            try {
+                // 토큰에서 사용자 정보 추출 및 Authentication 객체 구성
+                Authentication authentication = getAuthentication(token);
 
-            // *** SecurityContext에 인증 정보 저장 ***
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                // *** SecurityContext에 인증 정보 저장 ***
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                log.error("JWT 토큰 처리 중 오류: {}", e.getMessage());
+            }
         }
 
         // 다음 필터로 요청 전달

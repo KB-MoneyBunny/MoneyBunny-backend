@@ -11,11 +11,16 @@ import org.scoula.security.dto.*;
 import org.scoula.security.service.AuthServiceImpl;
 import org.scoula.security.util.JwtProcessor;
 import org.scoula.security.util.PasswordValidator;
+import org.scoula.security.util.CsrfTokenUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -34,21 +39,79 @@ public class AuthController {
     // 로그인 및 로그아웃
 
     // 로그인
-    @ApiOperation(value = "로그인", notes = "사용자 로그인 후 Access Token과 Refresh Token을 반환합니다.")
+    @ApiOperation(value = "로그인", notes = "사용자 로그인 후 Access Token은 반환하고 Refresh Token은 httpOnly Cookie로 설정합니다.")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO dto) {
+    public ResponseEntity<?> login(@RequestBody LoginDTO dto, HttpServletResponse response) {
         Map<String, String> tokens = authService.login(dto);
-        return ResponseEntity.ok(tokens);
+        
+        // Refresh Token을 httpOnly Cookie로 설정
+        Cookie refreshTokenCookie = new Cookie("refreshToken", tokens.get("refreshToken"));
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(false); // HTTPS 환경에서는 true로 변경
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(14 * 24 * 60 * 60); // 14일
+        
+        // CSRF 토큰 생성 (Double Submit Cookie 패턴)
+        String csrfToken = CsrfTokenUtil.generateToken();
+        
+        // Refresh Token Cookie 설정
+        String refreshCookieHeader = String.format(
+            "refreshToken=%s; Path=/; Max-Age=%d; HttpOnly",
+            tokens.get("refreshToken"),
+            14 * 24 * 60 * 60
+        );
+        
+        // CSRF 토큰 Cookie 설정 (httpOnly)
+        String csrfCookieHeader = String.format(
+            "csrfToken=%s; Path=/; Max-Age=%d; HttpOnly",
+            csrfToken,
+            14 * 24 * 60 * 60
+        );
+        
+        // HTTPS 환경에서는 아래 주석 해제
+        // refreshCookieHeader += "; Secure; SameSite=None";
+        // csrfCookieHeader += "; Secure; SameSite=None";
+        
+        response.addHeader("Set-Cookie", refreshCookieHeader);
+        response.addHeader("Set-Cookie", csrfCookieHeader);
+        
+        // 사용자 정보 조회
+        MemberVO member = authService.findByUsername(dto.getUsername());
+        
+        // Access Token과 사용자 정보 반환 (CSRF 토큰도 응답에 포함)
+        Map<String, Object> loginResponse = new HashMap<>();
+        loginResponse.put("accessToken", tokens.get("accessToken"));
+        loginResponse.put("username", member.getLoginId());
+        loginResponse.put("email", member.getEmail() != null ? member.getEmail() : "");
+        loginResponse.put("role", "USER"); // 기본 권한
+        loginResponse.put("csrfToken", csrfToken); // CSRF 토큰을 응답 Body에 포함
+        // refreshToken은 Cookie로만 전송하므로 응답 Body에 포함하지 않음
+        
+        return ResponseEntity.ok()
+            .header("X-CSRF-Token", csrfToken)  // 헤더에도 설정 (혹시 모르니)
+            .body(loginResponse);
     }
 
     // 로그아웃
-    @ApiOperation(value = "로그아웃", notes = "로그아웃 처리 후 서버에 저장된 Refresh Token을 삭제합니다.")
+    @ApiOperation(value = "로그아웃", notes = "로그아웃 처리 후 서버에 저장된 Refresh Token을 삭제하고 Cookie를 제거합니다.")
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String bearer) {
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String bearer, HttpServletResponse response) {
         String accessToken = bearer.replace("Bearer ", "");
         String username = jwtProcessor.getUsername(accessToken);
 
         authService.logout(username);
+        
+        // Refresh Token 및 CSRF Token Cookie 삭제
+        String deleteRefreshCookie = "refreshToken=; Path=/; Max-Age=0; HttpOnly";
+        String deleteCsrfCookie = "csrfToken=; Path=/; Max-Age=0; HttpOnly";
+        
+        // HTTPS 환경에서는 아래 주석 해제
+        // deleteRefreshCookie += "; Secure; SameSite=None";
+        // deleteCsrfCookie += "; Secure; SameSite=None";
+        
+        response.addHeader("Set-Cookie", deleteRefreshCookie);
+        response.addHeader("Set-Cookie", deleteCsrfCookie);
+        
         return ResponseEntity.ok("Logout success");
     }
 
@@ -212,11 +275,23 @@ public class AuthController {
     // Access Token, Refresh Token
 
     // Access Token 재발급
-    @ApiOperation(value = "Access Token 재발급", notes = "유효한 Refresh Token을 통해 새로운 Access Token을 발급받습니다.")
+    @ApiOperation(value = "Access Token 재발급", notes = "Cookie의 Refresh Token을 통해 새로운 Access Token을 발급받습니다.")
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String bearer) {
-        // "Bearer " 접두어 제거 후 실제 토큰 추출
-        String refreshToken = bearer.replace("Bearer ", "");
+    public ResponseEntity<?> refreshAccessToken(HttpServletRequest request) {
+        // Cookie에서 Refresh Token 추출
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token not found in cookies");
+        }
 
         // Refresh Token 유효성 검증 (서명 및 만료 확인)
         if (!jwtProcessor.validateToken(refreshToken)) {
@@ -232,10 +307,20 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("not match stored token");
         }
 
-        // 새 Access Token 발급 후 응답
+        // 새 Access Token 발급
         String newAccessToken = jwtProcessor.generateToken(loginId);
+        
+        // 사용자 정보 조회
+        MemberVO member = authService.findByUsername(loginId);
+        
+        // Access Token과 사용자 정보 반환
+        Map<String, Object> refreshResponse = new HashMap<>();
+        refreshResponse.put("accessToken", newAccessToken);
+        refreshResponse.put("username", member.getLoginId());
+        refreshResponse.put("email", member.getEmail() != null ? member.getEmail() : "");
+        refreshResponse.put("role", "USER"); // 기본 권한
 
-        return ResponseEntity.ok().body(Collections.singletonMap("accessToken", newAccessToken));
+        return ResponseEntity.ok().body(refreshResponse);
     }
 
 

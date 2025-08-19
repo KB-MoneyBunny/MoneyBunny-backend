@@ -90,8 +90,17 @@ public class MemberController {
   @ApiOperation(value = "내 프로필 조회", notes = "로그인된 사용자의 username, name, email 반환")
   @GetMapping("/information")
   public ResponseEntity<MemberDTO> get(Authentication auth) {
+    if (auth == null) {
+      return ResponseEntity.status(401).build();
+    }
+    
+    String username = auth.getName();
+    if (username == null) {
+      return ResponseEntity.status(401).build();
+    }
+    
     // auth.getName() 으로 username 꺼내서 기존 service.get() 호출
-    MemberDTO dto = service.get(auth.getName());
+    MemberDTO dto = service.get(username);
 
     return ResponseEntity.ok(dto);
   }

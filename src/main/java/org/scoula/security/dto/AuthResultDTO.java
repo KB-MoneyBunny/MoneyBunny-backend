@@ -15,4 +15,5 @@ public class AuthResultDTO {
     private String refreshToken;
     private String username;
     private String role;
+    private String csrfToken;  // CSRF 토큰 추가
 }

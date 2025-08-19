@@ -8,6 +8,7 @@ import org.scoula.security.account.domain.CustomUser;
 import org.scoula.security.dto.UserInfoDTO;
 import org.scoula.security.util.JsonResponse;
 import org.scoula.security.util.JwtProcessor;
+import org.scoula.security.util.CsrfTokenUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -56,14 +57,34 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtProcessor.generateToken(username);
         String refreshToken = jwtProcessor.generateRefreshToken(username);
 
-        // Redis에 Refresh Token 저장 (e.g. 7일)
-        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofDays(7));
-//        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofMinutes(3)); // test용
-        // 응답 DTO 구성
+        // Redis에 Refresh Token 저장 (14일로 수정)
+        redisUtil.saveRefreshToken("refresh_" + username, refreshToken, Duration.ofDays(14));
+        
+        // CSRF 토큰 생성
+        String csrfToken = CsrfTokenUtil.generateToken();
+        
+        // Refresh Token Cookie 설정
+        String refreshCookieHeader = String.format(
+            "refreshToken=%s; Path=/; Max-Age=%d; HttpOnly",
+            refreshToken,
+            14 * 24 * 60 * 60
+        );
+        
+        // CSRF 토큰 Cookie 설정
+        String csrfCookieHeader = String.format(
+            "csrfToken=%s; Path=/; Max-Age=%d; HttpOnly",
+            csrfToken,
+            14 * 24 * 60 * 60
+        );
+        
+        response.addHeader("Set-Cookie", refreshCookieHeader);
+        response.addHeader("Set-Cookie", csrfCookieHeader);
+        
+        // 응답 DTO 구성 (refreshToken 제외, csrfToken 포함)
         AuthResultDTO result = AuthResultDTO.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .username(username)
+                .csrfToken(csrfToken)  // CSRF 토큰 추가
                 .build();
 
         // JSON 응답
