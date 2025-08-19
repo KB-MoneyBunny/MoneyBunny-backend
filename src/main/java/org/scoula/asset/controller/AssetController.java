@@ -45,7 +45,6 @@ public class AssetController {
     @GetMapping("/accounts")
     public ResponseEntity<List<AccountSummaryVO>> getAccounts(
             @ApiIgnore @AuthenticationPrincipal CustomUser customUser) {
-        System.out.println("customUser = " + customUser);
         Long userId = customUser.getMember().getUserId();
         return ResponseEntity.ok(assetService.getAccounts(userId));
     }
