@@ -13,8 +13,8 @@ import java.util.Date;
 @Slf4j
 @Component // SecurityConfig에서 @ComponenetScan 수행
 public class JwtProcessor {
-
-    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 60 * 24 * 30; // RefreshToken 구현 전까지만 한 달로 유지!
+    // access token 액세스 토큰 유효 기간: 15분
+    static private final long TOKEN_VALID_MILLISECOND = 1000L * 60 * 15;
 
     private final Key key;
 
@@ -41,9 +41,8 @@ public class JwtProcessor {
 
     // RefreshToken
     public String generateRefreshToken(String subject) {
-        // e.g. 유효 기간: 7일
-//        long refreshTokenValidTime = 1000L * 60 * 60 * 24 * 7;
-        long refreshTokenValidTime = 1000L * 60 * 30; // 30분
+        // 유효 기간: 14일
+        long refreshTokenValidTime = 1000L * 60 * 60 * 24 * 14;
         return Jwts.builder()
                 .setSubject(subject)
                 .setIssuedAt(new Date())
