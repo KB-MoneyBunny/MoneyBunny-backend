@@ -20,9 +20,7 @@ import javax.sql.DataSource;
 import java.util.concurrent.Executor;
 
 /**
- * 🌱 Root Application Context 설정 클래스
- * - Spring Framework의 최상위(Root) 애플리케이션 컨텍스트를 설정하는 클래스
- * - 웹 계층과 무관한 비즈니스 로직, 서비스, 데이터 액세스 계층의 Bean들을 관리
+ * Root Application Context 설정 클래스
  */
 @Slf4j
 @Configuration
@@ -163,7 +161,7 @@ public class RootConfig {
         // 스레드풀 초기화
         executor.initialize();
         
-        log.info("🚀 [FCM 스레드풀] 초기화 완료 - Core: {}, Max: {}, Queue: {}", 
+        log.info("[FCM 스레드풀] 초기화 완료 - Core: {}, Max: {}, Queue: {}", 
                 executor.getCorePoolSize(), executor.getMaxPoolSize(), executor.getQueueCapacity());
         
         return executor;
