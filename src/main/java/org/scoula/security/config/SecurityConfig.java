@@ -6,6 +6,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.scoula.security.filter.AuthenticationErrorFilter;
 import org.scoula.security.filter.JwtAuthenticationFilter;
 import org.scoula.security.filter.JwtUsernamePasswordAuthenticationFilter;
+import org.scoula.security.filter.CsrfValidationFilter;
 import org.scoula.security.handler.CustomAccessDeniedHandler;
 import org.scoula.security.handler.CustomAuthenticationEntryPoint;
 import org.scoula.security.handler.LoginFailureHandler;
@@ -46,6 +47,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
+    private final CsrfValidationFilter csrfValidationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -86,6 +88,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class) // 인증 에러 필터
                 .addFilterAt(jwtUsernamePasswordAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 로그인 필터
                 .addFilterBefore(jwtAuthenticationFilter, JwtUsernamePasswordAuthenticationFilter.class)  // JWT 인증 필터
+                .addFilterAfter(csrfValidationFilter, JwtAuthenticationFilter.class)  // CSRF 검증 필터
 
                 // 예외 처리 설정
                 .exceptionHandling()
@@ -110,8 +113,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 인증/로그인
                 .antMatchers("/api/auth/**").permitAll()
 
-                // 인증 후 회원 가입 및 회원정보 조회
-                .antMatchers("/api/member/**").permitAll()
+                // 회원 관련 API
+                .antMatchers("/api/member/checkusername/**").permitAll()  // ID 중복 체크
+                .antMatchers("/api/member/join").permitAll()              // 회원가입  
+                .antMatchers("/api/member/check-email").permitAll()       // 이메일 중복 체크
+                .antMatchers("/api/member/*/avatar").permitAll()          // 아바타 이미지 다운로드
+                .antMatchers("/api/member/**").authenticated()            // 나머지는 인증 필요
 
                 // 외부 연동(Codef)
                 .antMatchers("/codef/**").authenticated()
@@ -173,6 +180,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
+        
+        // 커스텀 헤더 노출 설정
+        config.addExposedHeader("X-CSRF-Token");
+        config.addExposedHeader("Set-Cookie");
+        
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
