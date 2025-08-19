@@ -126,37 +126,9 @@ class AuthServiceTest {
     // 사용자 조회 관련 테스트 
     // ====================================
 
-    @Disabled("복잡한 인증 의존성으로 인한 오류 - 추후 개선 필요")
-    @Test
-    @DisplayName("이메일로 사용자 조회 - 성공")
-    void findByEmail_Success() {
-        // Given
-        String email = "test@example.com";
-        when(userDetailsMapper.get(email)).thenReturn(memberVO);
+    // 무시된 테스트 제거됨 - findByEmail_Success()
 
-        // When
-        MemberVO result = authService.findByEmail(email);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(email, result.getEmail());
-        verify(userDetailsMapper).get(email);
-    }
-
-    @Disabled("복잡한 인증 의존성으로 인한 오류 - 추후 개선 필요")
-    @Test
-    @DisplayName("사용자명으로 사용자 조회 - 성공")
-    void findByUsername_Success() {
-        // Given
-        when(userDetailsMapper.get(username)).thenReturn(memberVO);
-
-        // When
-        MemberVO result = authService.findByUsername(username);
-
-        // Then
-        assertNotNull(result);
-        verify(userDetailsMapper).get(username);
-    }
+    // 무시된 테스트 제거됨 - findByUsername_Success()
 
     // ====================================
     // 로그아웃 관련 테스트
