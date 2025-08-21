@@ -1,4 +1,5 @@
 # 머니버니 :rabbit:
+<img width="1086" height="558" alt="스크린샷 2025-08-21 오후 2 05 01" src="https://github.com/user-attachments/assets/84a06b20-94d4-4eca-8139-3fecc05684f2" />
 
 안녕하세요, MZ 세대를 위한 맞춤형 금융 생활 플랫폼 "머니버니"입니다.
 
