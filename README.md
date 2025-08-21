@@ -107,45 +107,77 @@ Databases <br>
 
 ## 역할 상세
 
-> ### 안홍영
+> ### 안홍영  
+팀장 / 백엔드 & 프론트 / GitHub / DB  
 
 ---
 
-> ### 박상일
+> ### 박상일  
+PM / 백엔드 & 프론트 / DB / CI/CD  
 
 ---
 
-> ### 박성빈
+> ### 박성빈  
+프론트 & 백엔드 / UX / DB  
 
 ---
 
-> ### 서은진
+> ### 서은진  
+프론트 / UI·UX / DB  
 
 ---
 
-> ### 윤제승
+> ### 윤제승  
+백엔드 & 프론트 / DB 
 
 ---
 
-> ### 최유정
+> ### 최유정  
+백엔드 & 프론트 / DB
+
 
 ---
 
 ## 🛠️ 개발 환경 및 설치 방법
 
+🛠️ 개발 환경
+
+Language & Framework: Java 17, Spring Boot 3.x, React 18, Node.js 20
+
+Database: MySQL 8.0, Redis
+
+Infra & Tools: Docker, GitHub Actions(CI/CD), Nginx
+
+IDE & Build: IntelliJ IDEA, VS Code, Gradle/Maven
+
 ---
 
-## Result
+## System Architecture 
+
+<img width="1001" height="581" alt="시스템아키텍처_13회차_1팀(MoneyBunny)" src="https://github.com/user-attachments/assets/30af3773-4a53-431d-b8ba-67f4e3e579b2" />
+
 
 ---
 
-## Discussion
+## ERD
+
+<img width="1461" height="517" alt="스크린샷 2025-08-21 오전 11 56 35" src="https://github.com/user-attachments/assets/83e30d7f-15bd-4e1d-a31a-116354afc786" />
 
 ---
 
 ## Communication
 
-### Naming Convetion
+<img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/bfa30c0c-c08b-4d43-b417-e7732cc2c8d2" />
+
+<img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/274b0e8c-9c2c-4d4f-9a36-a51ff1653be2" />
+
+### 주요 기능 소개
+
+<img width="1085" height="561" alt="스크린샷 2025-08-21 오후 2 18 11" src="https://github.com/user-attachments/assets/1c837a1b-8b28-41c8-9afd-9043b42d9c4f" />
+<img width="1085" height="561" alt="스크린샷 2025-08-21 오후 2 17 55" src="https://github.com/user-attachments/assets/b32cca16-eaf3-4fe9-a461-3b098ddeb24c" />
+<img width="1084" height="562" alt="스크린샷 2025-08-21 오후 2 17 38" src="https://github.com/user-attachments/assets/161e4453-ef26-4e61-96a9-1124e43b2c3f" />
+<img width="1084" height="561" alt="스크린샷 2025-08-21 오후 2 17 28" src="https://github.com/user-attachments/assets/a86a96a0-c174-4de4-819e-afc44a17f74c" />
+<img width="1085" height="561" alt="스크린샷 2025-08-21 오후 2 17 21" src="https://github.com/user-attachments/assets/9a1dea14-17a5-40da-be65-1d7a89f5b298" />
 
 ---
 
